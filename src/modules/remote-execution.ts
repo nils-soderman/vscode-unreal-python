@@ -1,3 +1,8 @@
+/**
+ * Remote connection between JavaScript & Unreal Engine.
+ * Keep this module generic, do not import 'vscode' here!
+ */
+
 import * as dgram from 'dgram';
 import * as uuid from 'uuid';
 import * as net from 'net';
@@ -12,18 +17,11 @@ const TYPE_CLOSE_CONNECTION = 'close_connection';             // Close any activ
 const TYPE_COMMAND = 'command';                               // Execute a remote Python command (TCP)
 const TYPE_COMMAND_RESULT = 'command_result';                 // Result of executing a remote Python command (TCP)
 
-const NODE_PING_SECONDS = 1;                                  // Number of seconds to wait before sending another "ping" message to discover remote notes
-const NODE_TIMEOUT_SECONDS = 5;                               // Number of seconds to wait before timing out a remote node that was discovered via UDP and has stopped sending "pong" responses
 
 const DEFAULT_MULTICAST_TTL = 0;                                                 // Multicast TTL (0 is limited to the local host, 1 is limited to the local subnet)
 const DEFAULT_MULTICAST_GROUP_ENDPOINT: [string, number] = ['239.0.0.1', 6766];  // The multicast group endpoint tuple that the UDP multicast socket should join (must match the "Multicast Group Endpoint" setting in the Python plugin)
 const DEFAULT_MULTICAST_BIND_ADDRESS = '0.0.0.0';                                // The adapter address that the UDP multicast socket should bind to, or 0.0.0.0 to bind to all adapters (must match the "Multicast Bind Address" setting in the Python plugin)
 const DEFAULT_COMMAND_ENDPOINT: [string, number] = ['127.0.0.1', 6776];          // The endpoint tuple for the TCP command connection hosted by this client (that the remote client will connect to)
-
-// Execution modes (these must match the names given to LexToString for EPythonCommandExecutionMode in IPythonScriptPlugin.h)
-const MODE_EXEC_FILE = 'ExecuteFile';                          // Execute the Python command as a file. This allows you to execute either a literal Python script containing multiple statements, or a file with optional arguments
-const MODE_EXEC_STATEMENT = 'ExecuteStatement';                // Execute the Python command as a single statement. This will execute a single statement and print the result. This mode cannot run files
-const MODE_EVAL_STATEMENT = 'EvaluateStatement';
 
 
 export class FExecMode {
@@ -80,10 +78,10 @@ export class RemoteConnection {
             throw Error("A broadcast socket has not been created, use `start()` first.");
         }
 
-        const message = new RemoteExecutionMessage(TYPE_COMMAND, this._nodeId, this._nodeId, {
+        const message = new RemoteExecutionMessage(TYPE_COMMAND, this._nodeId, null, {
             'command': command,
             'unattended': bUnattended,
-            'exec_mode': execMode,
+            'exec_mode': execMode,  /* eslint-disable-line  @typescript-eslint/naming-convention */
         });
 
         return this._broadcastSocket.sendMessage(message);
@@ -242,6 +240,7 @@ class CommandServer {
 
 
     public sendMessage(message: RemoteExecutionMessage) {
+        console.log(this.commandSocket);
         if (this.commandSocket) {
             this.commandSocket.write(message.toJsonString());
         }
@@ -270,7 +269,9 @@ class CommandSocket {
     }
 
     write(buffer: string | Uint8Array, cb?: ((err?: Error | undefined) => void) | undefined) {
-        return this.socket.write(buffer, cb);
+        console.log("buffer: " + buffer);
+        return this.socket.write(buffer, (err?: Error | undefined) => {
+        });
     }
 }
 
@@ -358,8 +359,7 @@ class RemoteExecutionMessage {
     }
 }
 
-
-export function test() {
+export async function test() {
     const remoteConnection = new RemoteConnection();
 
     remoteConnection.start(() => {
