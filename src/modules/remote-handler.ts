@@ -15,24 +15,10 @@ export function getRemoteConnection() {
 }
 
 
-let bStarted = false;
-export function ensureRemoteConnectionServerStarted(remoteConnection: remoteExecution.RemoteConnection, callback: (err?: Error) => any) {
-    // TODO: Propertly check if it already has been started
-    if (bStarted) {
-        callback();
-    }
-    bStarted = true;
-
-    remoteConnection.start(callback);
-}
-
-
 export function sendCommand(command: string, callback?: Function) {
     const remoteConnection = getRemoteConnection();
-
-    ensureRemoteConnectionServerStarted(remoteConnection, (err?: Error) => {
-        remoteConnection.runCommand(command);
-    });
+    
+    remoteConnection.runCommand(command);
 }
 
 

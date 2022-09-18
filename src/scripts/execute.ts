@@ -6,6 +6,7 @@ import * as uuid from 'uuid';
 import * as utils from '../modules/utils';
 
 import * as remoteHandler from "../modules/remote-handler";
+import * as vsCodeExec from "../modules/code-exec";
 
 
 const TEMP_FILENAME = "vscode_motionbuilder_exec.py";
@@ -89,117 +90,17 @@ function writeDataFile(fileToExecute: string, originalFilepath: string, addition
 }
 
 
-/**
- * Try to make sure the text is runnable
- * This includes e.g. making sure that all of the text is not indented
- * @param text The text to format
- * @param firstCharIndex Index of the first character (how far it's indented)
- */
-function formatSelectedText(text: string, firstCharIndex: number) {
-    if (firstCharIndex <= 0) {
-        return text;
-    }
-
-    let formattedText = "";
-    let charactersToRemove = firstCharIndex;
-    let i = 0;
-    for (let line of text.split("\n")) {
-        if (charactersToRemove) {
-            if (i === 0) {
-                line = line.trimStart();
-            }
-            else {
-                const numberOfWhitespaceCharacters = line.length - line.trimStart().length;
-                if (numberOfWhitespaceCharacters < charactersToRemove) {
-                    charactersToRemove = numberOfWhitespaceCharacters;
-                }
-                line = line.slice(charactersToRemove);
-            }
-        }
-
-        formattedText += line + "\n";
-        i++;
-    }
-
-    return formattedText;
-}
-
-
-/**
- * Get the selection as an python executable string
- */
-function getSelectedTextAsExecutableString() {
-    if (!vscode.window.activeTextEditor) {
-        return;
-    }
-
-    const activeDocuemt = vscode.window.activeTextEditor.document;
-    let executableCodeText = "";
-
-    let selections: Array<vscode.Selection> = [vscode.window.activeTextEditor.selection];
-
-    // If there are more than 1 selection, sort them by their start line number
-    if (vscode.window.activeTextEditor.selections.length > 1) {
-        // Add selections into an array that we can run the sort function on
-        selections = [];
-        for (const selection of vscode.window.activeTextEditor.selections) {
-            selections.push(selection);
-        }
-
-        selections = selections.sort(function (a: any, b: any) {
-            return a.start.line - b.start.line;
-        });
-    }
-
-    // Combine all user selections into a single string
-    for (const selection of selections) {
-        if (!selection.isEmpty) {
-
-            // Get the character index of the first character that's not whitespace (on the first line that's not whitespace)
-            let firstCharIndex = -1;
-            for (let i = 0; i < selection.end.line - selection.start.line; i++) {
-                const line = activeDocuemt.lineAt(selection.start.line + i);
-                if (!line.isEmptyOrWhitespace) {
-                    firstCharIndex = line.firstNonWhitespaceCharacterIndex;
-                    break;
-                }
-            }
-
-            // Add empty lines to match line numbers with the actual source file.
-            // This is to make sure you get correct line numbers for error messages & to make sure
-            // breakpoints work correctly.
-            const numberOfLines = executableCodeText.split("\n").length - 1;
-            const additionalEmptyLines = "\n".repeat(selection.start.line - numberOfLines);
-
-            executableCodeText += additionalEmptyLines + formatSelectedText(activeDocuemt.getText(selection), firstCharIndex);
-        }
-    }
-
-    return executableCodeText;
-}
-
 
 export async function execute() {
     if (!vscode.window.activeTextEditor) {
         return;
     }
     const activeDocuemt = vscode.window.activeTextEditor.document;
-    const selectedCode = getSelectedTextAsExecutableString();
-
-    let fileToExecute = "";
-
-    // If user has any selected text, save the selection as a temp file to execute
-    if (selectedCode) {
-        fileToExecute = utils.saveTempFile(TEMP_FILENAME, selectedCode);
-    }
-
-    // If file is dirty, save a copy of the text and execute that copy instead
-    else if (activeDocuemt.isDirty) {
-        fileToExecute = utils.saveTempFile(TEMP_FILENAME, activeDocuemt.getText());
-    }
-
-    else {
-        fileToExecute = activeDocuemt.uri.fsPath;
+    
+    const tempFilepath = path.join(utils.getExtentionTempDir(), TEMP_FILENAME);
+    const fileToExecute = vsCodeExec.getFileToExecute(tempFilepath);
+    if (!fileToExecute) {
+        return;
     }
 
     // File an info file telling mb what script to run, etc.
