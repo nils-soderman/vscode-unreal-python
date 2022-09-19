@@ -33,7 +33,21 @@
         "command": "unreal-engine-python.execute",
         "key": "ctrl+enter"
       }
-    ]
+    ],
+    "configuration": {
+      "unreal-engine-python.execute.showOutput": {
+        "type": "boolean",
+        "default": true,
+        "description": "Display the output log when something is executed",
+        "scope": "resource"
+      },
+      "unreal-engine-python.execute.clearOutput": {
+        "type": "boolean",
+        "default": false,
+        "description": "Clear output log each time somethings new is executed.",
+        "scope": "resource"
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

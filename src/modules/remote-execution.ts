@@ -52,8 +52,14 @@ export class RemoteExecutionConfig {
 }
 
 
-
-async function timeout(itterations = 10, interval = 1, check: () => boolean) {
+/**
+ * 
+ * @param itterations How many times to run the 'check' function before returning false.
+ * @param interval Seconds to wait between each itteration
+ * @param check The function to check, function must return a boolean
+ * @returns True whenever the test function returns true, otherwise false if it times out.
+ */
+async function timeoutCheck(itterations = 10, interval = 1, check: () => boolean) {
     const sleep = (seconds: number) => {
         return new Promise((resolve, reject) => {
             setTimeout(resolve, (seconds * 1000));
@@ -62,12 +68,9 @@ async function timeout(itterations = 10, interval = 1, check: () => boolean) {
 
     let i = 0;
     while (i < itterations) {
-
         await sleep(interval);
-
         if (check()) {
             return true;
-            break;
         }
         i++;
     }
@@ -105,18 +108,18 @@ export class RemoteConnection {
         this._broadcastSocket = null;
     }
 
-    public async runCommand(command: string, bUnattended = true, execMode = FExecMode.execStatement, bRaiseOnFailure = false, callback?: Function) {
+    public async runCommand(command: string, callback?: (message: RemoteExecutionMessage) => void, bUnattended = true, execMode = FExecMode.execStatement, bRaiseOnFailure = false) {
         if (!this._broadcastSocket) {
             // Start the broadcast socket and re-run this function
             this.start(() => {
-                this.runCommand(command, bUnattended, execMode, bRaiseOnFailure, callback);
+                this.runCommand(command, callback, bUnattended, execMode, bRaiseOnFailure);
             });
             return;
         }
 
         // If broadcast socket isn't running yet, wait a few sec for it to start
         if (!this._broadcastSocket.isRunning()) {
-            if (!(await timeout(25, 0.2, this._broadcastSocket.isRunning))) {
+            if (!(await timeoutCheck(25, 0.2, this._broadcastSocket.isRunning))) {
                 return false;
             }
         }
@@ -234,7 +237,7 @@ class BroadcastSocket {
         this._socket.send(message.toJsonString(), this._config.multicastGroupEndpoint[1], this._config.multicastGroupEndpoint[0], this.onConnect);
     }
 
-    public sendMessage(message: RemoteExecutionMessage, callback?: Function) {
+    public sendMessage(message: RemoteExecutionMessage, callback?: (message: RemoteExecutionMessage) => void) {
         if (!this.commandServer) {
             throw Error("Command server has not been started yet!");
         }
@@ -300,7 +303,7 @@ class CommandServer {
         this._bIsRunning = false;
     }
 
-    public sendMessage(message: RemoteExecutionMessage, callback?: Function) {
+    public sendMessage(message: RemoteExecutionMessage, callback?: (message: RemoteExecutionMessage) => void) {
         if (this.commandSocket) {
             this.commandSocket.write(message.toJsonString(), callback);
         }
@@ -308,12 +311,15 @@ class CommandServer {
 }
 
 
+
 // TODO: This class may be redundant?
 class CommandSocket {
-    socket;
-    bIsWriting = false;
+    private socket;
+    private bIsWriting = false;
 
-    commandQue: any = [];
+    private commandQue: any = [];
+
+    private callbacks: (Function | undefined)[] = [];
 
     constructor(socket: net.Socket) {
         this.socket = socket;
@@ -323,27 +329,34 @@ class CommandSocket {
         this.socket.on('close', this.onClose);
     }
 
-    onClose() {
+    private onClose() {
         console.log("Socket closed");
     }
 
-    onData(data: Buffer) {
-        let m = data.toString();
-        console.log("m: " + m);
+    private onData(data: Buffer) {
+        // let message = data.toString();
+        const callback = this.callbacks.shift();
+        if (callback) {
+            const message = RemoteExecutionMessage.fromBuffer(data);
+            callback(message);
+        }
+
         this.handleNextCommandInQue();
     }
 
-    onError(err: Error) {
+    private onError(err: Error) {
         console.log("Error:" + err);
     }
 
-    public write(buffer: string | Uint8Array, callback?: Function) {
+    public write(buffer: string | Uint8Array, callback?: (message: RemoteExecutionMessage) => void) {
         if (this.bIsWriting) {
             this.queCommand(buffer, callback);
             return;
         }
 
         this.bIsWriting = true;
+        this.callbacks.push(callback);
+
         return this._write(buffer);
     }
 
@@ -370,8 +383,7 @@ class CommandSocket {
 
 }
 
-
-class RemoteExecutionMessage {
+export class RemoteExecutionMessage {
     readonly type;
     readonly source;
     readonly dest;

@@ -15,14 +15,14 @@ export function getRemoteConnection() {
 }
 
 
-export function sendCommand(command: string, callback?: Function) {
+export function sendCommand(command: string, callback?: (message: remoteExecution.RemoteExecutionMessage) => void) {
     const remoteConnection = getRemoteConnection();
     
-    remoteConnection.runCommand(command);
+    remoteConnection.runCommand(command, callback);
 }
 
 
-export function executeFile(filepath: string, variables = {}, callback?: Function) {
+export function executeFile(filepath: string, variables = {}, callback?: (message: remoteExecution.RemoteExecutionMessage) => void) {
     let variableString = "";
     for (const [key, value] of Object.entries(variables)) {
         let safeValueStr = value;

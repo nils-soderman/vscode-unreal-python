@@ -2,16 +2,20 @@ import * as vscode from 'vscode';
 
 import * as path from 'path';
 import * as uuid from 'uuid';
+import * as fs from 'fs';
 
 import * as utils from '../modules/utils';
 
 import * as remoteHandler from "../modules/remote-handler";
 import * as vsCodeExec from "../modules/code-exec";
 
+import { RemoteExecutionMessage } from "../modules/remote-execution";
 
 const TEMP_FILENAME = "vscode_motionbuilder_exec.py";
 const TEMP_EXECDATA_FILENAME = "vscode-exec";
 const PYTHON_EXEC_FILE = path.join(utils.EXTENSION_PYTHON_DIR, "execute.py");
+
+const OUTPUT_FILEPATH = path.join(utils.getExtentionTempDir(), "vscode-exec-out.txt");
 
 const DATA_FILEPATH_GLOBAL_VAR_NAME = "data_filepath";
 
@@ -30,35 +34,42 @@ function getOutputChannel(bEnsureChannelExists = true) {
 }
 
 
-/** Check if we're currently attached to a MotionBuilder instance */
-function isDebuggingMotionBuilder() {
+/** Check if we're currently attached to a Unreal instance */
+function isDebuggingUnreal() {
     return vscode.debug.activeDebugSession && vscode.debug.activeDebugSession.name === utils.DEBUG_SESSION_NAME;
 }
 
 
-/** Handle data recived from the MotionBuilder python server */
-function handleResponse(response: string) {
+function readResponse() {
+    if (fs.existsSync(OUTPUT_FILEPATH)) {
+        return fs.readFileSync(OUTPUT_FILEPATH).toString("utf8");
+    }
+    return "";
+}
+
+
+
+/** Handle data recived from the Unreal python server */
+function handleResponse(message: RemoteExecutionMessage) {
     // If user is debugging MB, all output will automatically be appended to the debug console
-    if (isDebuggingMotionBuilder()) {
+    if (isDebuggingUnreal()) {
         return;
     }
 
     // Format response
-    response = response.replace(/\n\r/g, "\n");
-
-    // Remove the first 2 lines in a traceback message, since those will be related to how this code is executed
-    const traceBackString = "Traceback (most recent call last):\n";
-    if (response.includes(traceBackString)) {
-        const responseTracebackSplit = response.split(traceBackString, 2);
-        const tracebackMsg = responseTracebackSplit[1].split("\n").slice(2).join("\n");
-        response = responseTracebackSplit[0] + traceBackString + tracebackMsg;
+    let outputMessage = "";
+    const parsedOutputMessage = readResponse();
+    if (parsedOutputMessage) {
+        outputMessage = `${parsedOutputMessage}>>>`;
     }
 
+    // Format response
+    outputMessage = outputMessage.replace(/\n\r/g, "\n");
 
     const outputChannel = getOutputChannel();
     if (outputChannel) {
         // Add the message to the output channel
-        outputChannel.appendLine(response);
+        outputChannel.appendLine(outputMessage);
 
         // Bring up the output channel on screen
         if (utils.getExtensionConfig().get("execute.showOutput")) {
@@ -104,7 +115,7 @@ export async function execute() {
     }
 
     // File an info file telling mb what script to run, etc.
-    const additionalPrint = isDebuggingMotionBuilder() ? ">>>" : "";
+    const additionalPrint = isDebuggingUnreal() ? ">>>" : "";
     const dataFilepath = writeDataFile(fileToExecute, activeDocuemt.uri.fsPath, additionalPrint);
 
     // Clear the output channel if enabled in user settings
