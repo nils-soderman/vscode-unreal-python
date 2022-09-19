@@ -33,4 +33,4 @@ If you have any questions, feature requests or run into any bugs, don't hesitate
 
 <br>
 
-_* This is a third party extension as is not assosiated with Unreal Engine or Epic Games in any way._
+_* This is a third-party extension and is not associated with Unreal Engine or Epic Games in any way._
