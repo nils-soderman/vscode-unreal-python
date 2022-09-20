@@ -27,10 +27,11 @@ export function executeFile(filepath: string, variables = {}, callback?: (messag
     for (const [key, value] of Object.entries(variables)) {
         let safeValueStr = value;
         if (typeof value === "string") {
-            safeValueStr = `"${value}"`;
+            safeValueStr = `r"${value}"`;
         }
         variableString += `${key}=${safeValueStr};`;
     }
 
-    sendCommand(`${variableString}f=open(r'${filepath}','r');exec(f.read());f.close()`, callback);
+    const command = `${variableString}f=open(r'${filepath}','r');exec(f.read());f.close()`;
+    sendCommand(command, callback);
 }

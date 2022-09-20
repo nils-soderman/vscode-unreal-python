@@ -11,11 +11,11 @@ import * as vsCodeExec from "../modules/code-exec";
 
 import { RemoteExecutionMessage } from "../modules/remote-execution";
 
-const TEMP_FILENAME = "vscode_motionbuilder_exec.py";
-const TEMP_EXECDATA_FILENAME = "vscode-exec";
 const PYTHON_EXEC_FILE = path.join(utils.EXTENSION_PYTHON_DIR, "execute.py");
 
-const OUTPUT_FILEPATH = path.join(utils.getExtentionTempDir(), "vscode-exec-out.txt");
+const INPUT_DATA_FILENAME = "exec-in-data";
+const INPUT_TEMP_PYTHON_FILENAME = "exec-in-code";
+const OUTPUT_FILENAME = "exec-out";
 
 const DATA_FILEPATH_GLOBAL_VAR_NAME = "data_filepath";
 
@@ -34,31 +34,39 @@ function getOutputChannel(bEnsureChannelExists = true) {
 }
 
 
-/** Check if we're currently attached to a Unreal instance */
-function isDebuggingUnreal() {
-    return vscode.debug.activeDebugSession && vscode.debug.activeDebugSession.name === utils.DEBUG_SESSION_NAME;
+function getOutputFilepath(commandId: string) {
+    return path.join(utils.getExtentionTempDir(), `${OUTPUT_FILENAME}-${commandId}.txt`);
 }
 
 
-function readResponse() {
-    if (fs.existsSync(OUTPUT_FILEPATH)) {
-        return fs.readFileSync(OUTPUT_FILEPATH).toString("utf8");
+function getTempPythonInputFilepath(commandId: string) {
+    return path.join(utils.getExtentionTempDir(), `${INPUT_TEMP_PYTHON_FILENAME}-${commandId}.py`);
+}
+
+function getInputDataFilepath(commandId: string) {
+    return path.join(utils.getExtentionTempDir(), `${INPUT_DATA_FILENAME}-${commandId}.json`);
+}
+
+
+function readResponse(commandId: string) {
+    const outputFilename = getOutputFilepath(commandId);
+    if (fs.existsSync(outputFilename)) {
+        return fs.readFileSync(outputFilename).toString("utf8");
     }
     return "";
 }
 
 
-
 /** Handle data recived from the Unreal python server */
-function handleResponse(message: RemoteExecutionMessage) {
+function handleResponse(message: RemoteExecutionMessage, commandId: string) {
     // If user is debugging MB, all output will automatically be appended to the debug console
-    if (isDebuggingUnreal()) {
+    if (utils.isDebuggingUnreal()) {
         return;
     }
 
     // Format response
     let outputMessage = "";
-    const parsedOutputMessage = readResponse();
+    const parsedOutputMessage = readResponse(commandId);
     if (parsedOutputMessage) {
         outputMessage = `${parsedOutputMessage}>>>`;
     }
@@ -76,28 +84,46 @@ function handleResponse(message: RemoteExecutionMessage) {
             outputChannel.show(true);
         }
     }
+
+    // cleanUpTempFiles(commandId);
+}
+
+async function cleanUpTempFiles(commandId: string) {
+    const filepaths = [
+        getTempPythonInputFilepath(commandId),
+        getOutputFilepath(commandId),
+        getInputDataFilepath(commandId)
+    ];
+
+    for (const filepath of filepaths) {
+        if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+        }
+    }
 }
 
 
 /**
- * Write a json temp file that can be read by MotionBuilder, to know what script to execute etc.
+ * Write a json temp file that can be read by execute.py, to know what script to execute etc.
  * @param fileToExecute The abs filepath to the .py file that should be executed
  * @param originalFilepath The abs filepath to the source filepath, will be used to set the python var `__file__`
  * @param additionalPrint Additional text to be printed to the output once the code has been executed
  */
-function writeDataFile(fileToExecute: string, originalFilepath: string, additionalPrint = "") {
-    let data: any = {};
-    data["file"] = fileToExecute;
-    data["__file__"] = originalFilepath;
+function writeDataFile(fileToExecute: string, originalFilepath: string, commandId: string, additionalPrint = "") {
+    let data: any = {
+        "file": fileToExecute,
+        "__file__": originalFilepath,
+        "id": commandId
+    };
+    
     if (additionalPrint) {
         data["additionalPrint"] = additionalPrint;
     }
 
-    const outFilename = `${TEMP_EXECDATA_FILENAME}-${uuid.v4()}.json`;
+    const outDataFilepath = getInputDataFilepath(commandId);
+    utils.saveTempFile(outDataFilepath, JSON.stringify(data));
 
-    utils.saveTempFile(outFilename, JSON.stringify(data));
-
-    return outFilename;
+    return outDataFilepath;
 }
 
 
@@ -107,16 +133,18 @@ export async function execute() {
         return;
     }
     const activeDocuemt = vscode.window.activeTextEditor.document;
-    
-    const tempFilepath = path.join(utils.getExtentionTempDir(), TEMP_FILENAME);
-    const fileToExecute = vsCodeExec.getFileToExecute(tempFilepath);
+
+    // Generate a random command id, used to differentiate from other commands run at the same time
+    const commandId = uuid.v4();
+
+    const fileToExecute = vsCodeExec.getFileToExecute(getTempPythonInputFilepath(commandId));
     if (!fileToExecute) {
         return;
     }
 
     // File an info file telling mb what script to run, etc.
-    const additionalPrint = isDebuggingUnreal() ? ">>>" : "";
-    const dataFilepath = writeDataFile(fileToExecute, activeDocuemt.uri.fsPath, additionalPrint);
+    const additionalPrint = utils.isDebuggingUnreal() ? ">>>" : "";
+    const dataFilepath = writeDataFile(fileToExecute, activeDocuemt.uri.fsPath, commandId, additionalPrint);
 
     // Clear the output channel if enabled in user settings
     if (utils.getExtensionConfig().get("execute.clearOutput")) {
@@ -128,6 +156,6 @@ export async function execute() {
 
     let globalVariables: any = {};
     globalVariables[DATA_FILEPATH_GLOBAL_VAR_NAME] = dataFilepath;
-    
-    remoteHandler.executeFile(PYTHON_EXEC_FILE, globalVariables, handleResponse);
+
+    remoteHandler.executeFile(PYTHON_EXEC_FILE, globalVariables, (message: RemoteExecutionMessage) => { handleResponse(message, commandId); });
 }

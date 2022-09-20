@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 
 import * as https from 'https';
-import * as path  from 'path';
-import * as os    from "os";
-import * as fs    from 'fs';
+import * as path from 'path';
+import * as os from "os";
+import * as fs from 'fs';
 
-const TEMPFOLDER_NAME = "VSCode-Unreal-Python-Utils";
+const TEMPFOLDER_NAME = "VSCode-Unreal-Python";
 const PYTHON_MODULES_FOLDER_NAME = "python-modules";
 export const DEBUG_SESSION_NAME = "Unreal Python";
 export const EXTENSION_DIR = path.dirname(path.dirname(__dirname));
@@ -17,7 +17,7 @@ export const EXTENSION_RESOURCES_DIR = path.join(EXTENSION_DIR, "resources");
  * @param bEnsureExists If folder doesn't exist, create it
  * @returns absolute path to this extensions tempdir
  */
- export function getExtentionTempDir(bEnsureExists = true) {
+export function getExtentionTempDir(bEnsureExists = true) {
     const tempDir = path.join(os.tmpdir(), TEMPFOLDER_NAME);
     if (bEnsureExists && !fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir);
@@ -32,16 +32,23 @@ export const EXTENSION_RESOURCES_DIR = path.join(EXTENSION_DIR, "resources");
  * @param text Text to write to the file
  * @returns the absolute filepath of the file
  */
- export function saveTempFile(filename: string, text: string) {
-    const filepath = path.join(getExtentionTempDir(), filename);
-    fs.writeFileSync(filepath, text);
-    return filepath;
+export function saveTempFile(filename: string, text: string) {
+    if (!path.isAbsolute(filename)) {
+        filename = path.join(getExtentionTempDir(), filename);
+    }
+    fs.writeFileSync(filename, text);
+    return filename;
 }
 
 
 /**
- * @returns The workspace configuration for this extension _('motionbuilder')_
+ * @returns The workspace configuration for this extension _('unreal-engine-python')_
  */
- export function getExtensionConfig() {
+export function getExtensionConfig() {
     return vscode.workspace.getConfiguration("unreal-engine-python");
+}
+
+/** Check if we're currently attached to an Unreal instance */
+export function isDebuggingUnreal() {
+    return vscode.debug.activeDebugSession && vscode.debug.activeDebugSession.name === DEBUG_SESSION_NAME;
 }

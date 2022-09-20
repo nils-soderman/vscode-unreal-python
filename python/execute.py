@@ -13,8 +13,8 @@ import sys
 import os
 import re
 
-TEMP_FOLDERPATH = os.path.join(tempfile.gettempdir(), "VSCode-Unreal-Python-Utils")
-OUTPUT_FILEPATH = os.path.join(TEMP_FOLDERPATH, "vscode-exec-out.txt")
+TEMP_FOLDERPATH = os.path.join(tempfile.gettempdir(), "VSCode-Unreal-Python")
+OUTPUT_FILENAME = "exec-out"
 
 DATA_FILEPATH_GLOBAL_VAR_NAME = "data_filepath"
 
@@ -79,11 +79,14 @@ def main():
         ExecGlobals["__name__"] = VsCodeData["__name__"]
     elif "__name__" in ExecGlobals:
         ExecGlobals.pop("__name__")
+        
+    command_id = VsCodeData.get("id", "")
+    OutputFilepath = os.path.join(TEMP_FOLDERPATH, f"{OUTPUT_FILENAME}-{command_id}.txt")
     
     with open(VsCodeData["file"], 'r') as VsCodeInFile:
         if not bVsCodeDebugging and sys.version_info.major >= 3:
             # Re-direct the output through a text file
-            with open(OUTPUT_FILEPATH, 'w') as VsCodeOutFile, contextlib.redirect_stdout(VsCodeOutFile):
+            with open(OutputFilepath, 'w') as VsCodeOutFile, contextlib.redirect_stdout(VsCodeOutFile):
                 VsCodeExecuteCode(VsCodeInFile.read(),
                                   TargetFilepath, bVsCodeDebugging)
         else:
