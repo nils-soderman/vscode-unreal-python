@@ -3,13 +3,27 @@
  */
 
 import * as remoteExecution from "./remote-execution";
+import * as utils from "./utils";
 
 let gRemoteConnection: remoteExecution.RemoteConnection;
 
 
+function getRemoteConfig() {
+    const extConfig = utils.getExtensionConfig();
+    
+    const multicastTTL: number | undefined = extConfig.get("remote.multicastTTL");
+    const multicastGroupEndpoint: string | undefined = extConfig.get("remote.multicastGroupEndpoint");
+    const multicastBindAddress: string | undefined = extConfig.get("remote.multicastBindAddress");
+    const commandEndpoint: string | undefined = extConfig.get("remote.commandEndpoint");
+    
+    return new remoteExecution.RemoteExecutionConfig(multicastTTL, multicastGroupEndpoint, multicastBindAddress, commandEndpoint);
+}
+
 export function getRemoteConnection() {
     if (!gRemoteConnection) {
-        gRemoteConnection = new remoteExecution.RemoteConnection();
+
+        const config = getRemoteConfig();
+        gRemoteConnection = new remoteExecution.RemoteConnection(config);
     }
     return gRemoteConnection;
 }

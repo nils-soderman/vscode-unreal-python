@@ -8,46 +8,48 @@ import * as uuid from 'uuid';
 import * as net from 'net';
 
 
-const PROTOCOL_VERSION = 1;                                   // Protocol version number
-const PROTOCOL_MAGIC = 'ue_py';                               // Protocol magic identifier
-const TYPE_PING = 'ping';                                     // Service discovery request (UDP)
-const TYPE_PONG = 'pong';                                     // Service discovery response (UDP)
-const TYPE_OPEN_CONNECTION = 'open_connection';               // Open a TCP command connection with the requested server (UDP)
-const TYPE_CLOSE_CONNECTION = 'close_connection';             // Close any active TCP command connection (UDP)
-const TYPE_COMMAND = 'command';                               // Execute a remote Python command (TCP)
-const TYPE_COMMAND_RESULT = 'command_result';                 // Result of executing a remote Python command (TCP)
-
-
-const DEFAULT_MULTICAST_TTL = 0;                                                 // Multicast TTL (0 is limited to the local host, 1 is limited to the local subnet)
-const DEFAULT_MULTICAST_GROUP_ENDPOINT: [string, number] = ['239.0.0.1', 6766];  // The multicast group endpoint tuple that the UDP multicast socket should join (must match the "Multicast Group Endpoint" setting in the Python plugin)
-const DEFAULT_MULTICAST_BIND_ADDRESS = '0.0.0.0';                                // The adapter address that the UDP multicast socket should bind to, or 0.0.0.0 to bind to all adapters (must match the "Multicast Bind Address" setting in the Python plugin)
-const DEFAULT_COMMAND_ENDPOINT: [string, number] = ['127.0.0.1', 6776];          // The endpoint tuple for the TCP command connection hosted by this client (that the remote client will connect to)
+const PROTOCOL_VERSION = 1;      // Protocol version number
+const PROTOCOL_MAGIC = 'ue_py';  // Protocol magic identifier
 
 
 export class FExecMode {
-    static execFile = 'ExecuteFile';                          // Execute the Python command as a file. This allows you to execute either a literal Python script containing multiple statements, or a file with optional arguments
-    static execStatement = 'ExecuteStatement';                // Execute the Python command as a single statement. This will execute a single statement and print the result. This mode cannot run files
-    static evalStatement = 'EvaluateStatement';
+    static readonly execFile = 'ExecuteFile';               // Execute the Python command as a file. This allows you to execute either a literal Python script containing multiple statements, or a file with optional arguments
+    static readonly execStatement = 'ExecuteStatement';     // Execute the Python command as a single statement. This will execute a single statement and print the result. This mode cannot run files
+    static readonly evalStatement = 'EvaluateStatement';
+}
+
+
+export class FCommandTypes {
+    static readonly ping = "ping";                          // Service discovery request (UDP)
+    static readonly pong = "pong";                          // Service discovery response (UDP)
+    static readonly openConnection = "open_connection";     // Open a TCP command connection with the requested server (UDP)
+    static readonly closeConnection = "close_connection";   // Close any active TCP command connection (UDP)
+    static readonly command = "command";                    // Execute a remote Python command (TCP)
+    static readonly commandResults = "command_result";      // Result of executing a remote Python command (TCP)
 }
 
 
 export class RemoteExecutionConfig {
-    multicastTTL;
-    multicastGroupEndpoint;
-    multicastBindAddress;
-    commandEndpoint;
+    multicastTTL: number;                       // Multicast TTL (0 is limited to the local host, 1 is limited to the local subnet)
+    multicastGroupEndpoint: [string, number];   // The multicast group endpoint tuple that the UDP multicast socket should join (must match the "Multicast Group Endpoint" setting in the Python plugin)
+    multicastBindAddress: string;               // The adapter address that the UDP multicast socket should bind to, or 0.0.0.0 to bind to all adapters (must match the "Multicast Bind Address" setting in the Python plugin)
+    commandEndpoint: [string, number];          // The endpoint tuple for the TCP command connection hosted by this client (that the remote client will connect to)
 
     constructor
         (
-            multicastTTL = DEFAULT_MULTICAST_TTL,
-            multicastGroupEndpoint = DEFAULT_MULTICAST_GROUP_ENDPOINT,
-            multicastBindAddress = DEFAULT_MULTICAST_BIND_ADDRESS,
-            commandEndpoint = DEFAULT_COMMAND_ENDPOINT
+            multicastTTL = 0,                               
+            multicastGroupEndpoint = "239.0.0.1:6766",      
+            multicastBindAddress = "0.0.0.0",               
+            commandEndpoint = "127.0.0.1:6776"              
         ) {
         this.multicastTTL = multicastTTL;
-        this.multicastGroupEndpoint = multicastGroupEndpoint;
         this.multicastBindAddress = multicastBindAddress;
-        this.commandEndpoint = commandEndpoint;
+
+        const multicastGroupEndpointTuple = multicastGroupEndpoint.split(":", 2);
+        this.multicastGroupEndpoint = [multicastGroupEndpointTuple[0], Number(multicastGroupEndpointTuple[1])];
+        
+        const commandEndpointTuple = commandEndpoint.split(":", 2);
+        this.commandEndpoint = [commandEndpointTuple[0], Number(commandEndpointTuple[1])];
     }
 }
 
@@ -124,7 +126,7 @@ export class RemoteConnection {
             }
         }
 
-        const message = new RemoteExecutionMessage(TYPE_COMMAND, this._nodeId, null, {
+        const message = new RemoteExecutionMessage(FCommandTypes.command, this._nodeId, null, {
             'command': command,
             'unattended': bUnattended,
             'exec_mode': execMode,  /* eslint-disable-line  @typescript-eslint/naming-convention */
@@ -217,7 +219,7 @@ class BroadcastSocket {
         console.log("Recived message on broadcast server:");
         console.log(remoteMessage);
 
-        if (remoteMessage.type === TYPE_OPEN_CONNECTION) {
+        if (remoteMessage.type === FCommandTypes.openConnection) {
             this.commandServer = new CommandServer(this._nodeId, this._config);
             this.commandServer.start(this.startCallback);
 
@@ -229,7 +231,7 @@ class BroadcastSocket {
     }
 
     private _openCommandServer() {
-        const message = new RemoteExecutionMessage(TYPE_OPEN_CONNECTION, this._nodeId, null, {
+        const message = new RemoteExecutionMessage(FCommandTypes.openConnection, this._nodeId, null, {
             'command_ip': this._config.commandEndpoint[0],  /* eslint-disable-line  @typescript-eslint/naming-convention */
             'command_port': this._config.commandEndpoint[1],  /* eslint-disable-line @typescript-eslint/naming-convention */
         });
