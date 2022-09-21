@@ -467,12 +467,3 @@ export class RemoteExecutionMessage {
         return this.fromJson(jsonData);
     }
 }
-
-export async function test() {
-    const remoteConnection = new RemoteConnection();
-
-    remoteConnection.start(() => {
-        remoteConnection.runCommand("print('Hello World from VSCode!')");
-    });
-
-}
