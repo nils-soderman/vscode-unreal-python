@@ -42,6 +42,17 @@ export function saveTempFile(filename: string, text: string) {
 
 
 /**
+ * Delete the temp folder created by this extension (and all of the files inside of it)
+ */
+ export function cleanupTempFiles() {
+    const tempDir = getExtentionTempDir();
+    if (fs.existsSync(tempDir)) {
+        fs.rmSync(tempDir, { recursive: true });
+    }
+}
+
+
+/**
  * @returns The workspace configuration for this extension _('unreal-engine-python')_
  */
 export function getExtensionConfig() {
