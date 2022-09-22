@@ -85,7 +85,7 @@ function handleResponse(message: RemoteExecutionMessage, commandId: string) {
         }
     }
 
-    // cleanUpTempFiles(commandId);
+    cleanUpTempFiles(commandId);
 }
 
 async function cleanUpTempFiles(commandId: string) {

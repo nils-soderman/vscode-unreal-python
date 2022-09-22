@@ -375,7 +375,9 @@ class CommandSocket {
             const command = this.commandQue.shift();
             const buffer = command[0];
             const callback = command[1];
-            this._write(buffer, callback);
+            this.callbacks.push(callback);
+            
+            this._write(buffer);
         }
         else {
             // If command que is empty, set writing to false
