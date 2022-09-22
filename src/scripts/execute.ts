@@ -65,11 +65,8 @@ function handleResponse(message: RemoteExecutionMessage, commandId: string) {
     }
 
     // Format response
-    let outputMessage = "";
     const parsedOutputMessage = readResponse(commandId);
-    if (parsedOutputMessage) {
-        outputMessage = `${parsedOutputMessage}>>>`;
-    }
+    let outputMessage = `${parsedOutputMessage}>>>`;
 
     // Format response
     outputMessage = outputMessage.replace(/\n\r/g, "\n");
