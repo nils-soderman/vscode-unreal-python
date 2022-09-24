@@ -64,7 +64,7 @@
           },
           "unreal-engine-python.remote.multicastBindAdress": {
             "type": "string",
-            "default": "239.0.0.1:6766",
+            "default": "0.0.0.0",
             "markdownDescription": "The adapter address that the UDP multicast socket should bind to, or 0.0.0.0 to bind to all adapters _(must match the \"Multicast Bind Address\" setting in the Python plugin)_",
             "scope": "resource",
             "order": 1
