@@ -105,6 +105,9 @@ export class RemoteConnection {
             if (error) {
                 this.stop();
             }
+            else {
+                this._broadcastSocket?.onCommandSocket("close", () => { this.onLostConnection(); });
+            }
 
             if (callback) {
                 callback(error);
@@ -144,6 +147,10 @@ export class RemoteConnection {
 
         return this._broadcastSocket.sendMessage(message, callback);
     }
+
+    private onLostConnection() {
+        this.stop();
+    }
 }
 
 
@@ -161,6 +168,12 @@ class BroadcastSocket {
         this._nodeId = nodeId;
         this._config = config;
         this._socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
+    }
+
+    public onCommandSocket(event: 'close', listener: Function) {
+        if (this.commandServer) {
+            this.commandServer.onSocket(event, listener);
+        }
     }
 
     public isRunning() {
@@ -239,7 +252,6 @@ class BroadcastSocket {
         if (remoteMessage.type === FCommandTypes.openConnection) {
             this.commandServer = new CommandServer(this._nodeId, this._config);
             this.commandServer.start(this.startCallback, this.startTimeout);
-
         }
     }
 
@@ -276,12 +288,19 @@ class CommandServer {
 
     private _bIsRunning = false;
 
+    private onSocketClosedEvents: Function[] = [];
     private commandQue = [];
 
     constructor(nodeId: string, config = new RemoteExecutionConfig()) {
         this.server = net.createServer();
         this._config = config;
         this._nodeId = nodeId;
+    }
+
+    public onSocket(event: "close", listener: Function) {
+        if (event === "close") {
+            this.onSocketClosedEvents.push(listener);
+        }
     }
 
     public isRunning() {
@@ -303,6 +322,12 @@ class CommandServer {
         this.server.listen(this._config.commandEndpoint[1], this._config.commandEndpoint[0]);
     }
 
+    public sendMessage(message: RemoteExecutionMessage, callback?: (message: RemoteExecutionMessage) => void) {
+        if (this.commandSocket) {
+            this.commandSocket.write(message.toJsonString(), callback);
+        }
+    }
+
     public close(callback?: ((err?: Error) => void)) {
         if (this.isRunning() && this.commandSocket) {
             this.commandSocket.close(() => {
@@ -321,40 +346,22 @@ class CommandServer {
         }
     }
 
-    private onError(err: Error) {
-        throw err;
-        console.log("ERR: " + err);
-    }
-
     private async onListening() {
         console.log("listening");
         if (this.startTimeout) {
             setTimeout(() => {
                 if (!this._bIsRunning) {
-                    console.log("Nope;");
-                    this.timeout();
+                    this.onTimeout();
                 }
             }, this.startTimeout * 1000);
         }
     }
 
-
-    // Start timeout
-    private timeout() {
-        console.log("Start command timed out");
-        this.close();
-
-        if (this.startCallback) {
-            const error = new Error("Timed out while trying to connect to Unreal Engine.");
-            this.startCallback(error);
-        }
-
-    }
-
-
     private onConnection(socket: net.Socket) {
         console.log("CommandServer started, socket recived.");
         this.commandSocket = new CommandSocket(socket);
+        this.commandSocket.socket.on('close', (bHadError: boolean) => { this.onSocketClosed(bHadError); });
+
         if (this.startCallback) {
             this.startCallback();
         }
@@ -362,23 +369,36 @@ class CommandServer {
         this._bIsRunning = true;
     }
 
+    private onTimeout() {
+        this.close();
+        if (this.startCallback) {
+            const error = new Error("Timed out while trying to connect to Unreal Engine.");
+            this.startCallback(error);
+        }
+    }
+
     private onClose() {
-        console.log("Closed");
         this._bIsRunning = false;
     }
 
-    public sendMessage(message: RemoteExecutionMessage, callback?: (message: RemoteExecutionMessage) => void) {
-        if (this.commandSocket) {
-            this.commandSocket.write(message.toJsonString(), callback);
+    private onSocketClosed(bHadError: boolean) {
+        for (const callback of this.onSocketClosedEvents) {
+            callback();
         }
     }
-}
 
+    private onError(err: Error) {
+        throw err;
+    }
+
+
+}
 
 
 // TODO: This class may be redundant?
 class CommandSocket {
-    private socket;
+    socket;
+
     private bIsWriting = false;
 
     private commandQue: any = [];
