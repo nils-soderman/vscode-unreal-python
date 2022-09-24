@@ -109,10 +109,10 @@ async function cleanUpTempFiles(commandId: string) {
 function writeDataFile(fileToExecute: string, originalFilepath: string, commandId: string, additionalPrint = "") {
     let data: any = {
         "file": fileToExecute,
-        "__file__": originalFilepath,
+        "__file__": originalFilepath,  // eslint-disable-line @typescript-eslint/naming-convention
         "id": commandId
     };
-    
+
     if (additionalPrint) {
         data["additionalPrint"] = additionalPrint;
     }

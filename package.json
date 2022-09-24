@@ -82,6 +82,13 @@
             "markdownDescription": "The endpoint for the TCP command connection hosted by this client _(that the remote client will connect to)_",
             "scope": "resource",
             "order": 3
+          },
+          "unreal-engine-python.remote.timeout": {
+            "type": "number",
+            "default": "2",
+            "markdownDescription": "How many seconds to wait while trying to connect to Unreal Engine before terminating the command",
+            "scope": "resource",
+            "order": 4
           }
         }
       }

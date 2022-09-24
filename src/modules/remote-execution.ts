@@ -37,17 +37,17 @@ export class RemoteExecutionConfig {
 
     constructor
         (
-            multicastTTL = 0,                               
-            multicastGroupEndpoint = "239.0.0.1:6766",      
-            multicastBindAddress = "0.0.0.0",               
-            commandEndpoint = "127.0.0.1:6776"              
+            multicastTTL = 0,
+            multicastGroupEndpoint = "239.0.0.1:6766",
+            multicastBindAddress = "0.0.0.0",
+            commandEndpoint = "127.0.0.1:6776"
         ) {
         this.multicastTTL = multicastTTL;
         this.multicastBindAddress = multicastBindAddress;
 
         const multicastGroupEndpointTuple = multicastGroupEndpoint.split(":", 2);
         this.multicastGroupEndpoint = [multicastGroupEndpointTuple[0], Number(multicastGroupEndpointTuple[1])];
-        
+
         const commandEndpointTuple = commandEndpoint.split(":", 2);
         this.commandEndpoint = [commandEndpointTuple[0], Number(commandEndpointTuple[1])];
     }
@@ -95,17 +95,27 @@ export class RemoteConnection {
      * Check if start() has already been requested, this does not mean that the server and all sockets has actually fully started yet.
      */
     public hasStartBeenRequested() {
-        return this._broadcastSocket === null;
+        return this._broadcastSocket !== null;
     }
 
-    public start(cb?: ((err?: Error | undefined) => void)) {
+    public start(callback?: ((error?: Error) => void), timeout = 2) {
         this._broadcastSocket = new BroadcastSocket(this._config, this._nodeId);
-        this._broadcastSocket.open(cb);
+
+        this._broadcastSocket.start((error?: Error) => {
+            if (error) {
+                this.stop();
+            }
+
+            if (callback) {
+                callback(error);
+            }
+        }, timeout);
+
     }
 
-    public stop() {
+    public stop(callback?: (error?: Error) => void) {
         if (this._broadcastSocket) {
-            this._broadcastSocket.close();
+            this._broadcastSocket.close(callback);
         }
         this._broadcastSocket = null;
     }
@@ -143,7 +153,9 @@ class BroadcastSocket {
     private _nodeId;
     private _config;
     private commandServer: CommandServer | null = null;
-    private startCallback?: (() => void);
+
+    private startCallback?: ((error?: Error) => void);
+    private startTimeout = 0;
 
     constructor(config: RemoteExecutionConfig = new RemoteExecutionConfig(), nodeId: string) {
         this._nodeId = nodeId;
@@ -159,10 +171,11 @@ class BroadcastSocket {
         return this._bIsRunning && this.commandServer && this.commandServer.isRunning();
     }
 
-    public open(cb?: (() => void)) {
+    public start(callback?: ((error?: Error) => void), timeout = 2) {
         console.log("Opening broadcast socket...");
 
-        this.startCallback = cb;
+        this.startCallback = callback;
+        this.startTimeout = timeout;
 
         // Hook up events
         this._socket.on('listening', () => this.onListening());
@@ -179,9 +192,18 @@ class BroadcastSocket {
         });
     }
 
-
-    public close() {
-
+    public close(callback?: (error?: Error) => void) {
+        if (this.commandServer) {
+            this.commandServer.close((error?: Error) => {
+                this._socket.close(callback);
+            });
+        }
+        else if (this._socket) {
+            this._socket.close(callback);
+        }
+        else if (callback) {
+            callback();
+        }
     }
 
     private onClose() {
@@ -189,7 +211,6 @@ class BroadcastSocket {
     }
 
     private onConnect(err: Error | null, bytes: number) {
-        // TODO: Start command server here?
         if (err) {
             throw err;
         }
@@ -198,14 +219,10 @@ class BroadcastSocket {
     private onListening() {
         var address = this._socket.address();
         console.log('UDP Client listening on ' + address.address + ":" + address.port);
-        // socket.setBroadcast(true);
+
         this._socket.setMulticastLoopback(true);
         this._socket.setMulticastTTL(this._config.multicastTTL);
-
-        // _broadcast_socket.setsockopt(_socket.IPPROTO_IP, _socket.IP_MULTICAST_IF, _socket.inet_aton(_config.multicast_bind_address))
         this._socket.setMulticastInterface(this._config.multicastBindAddress);
-
-        // _broadcast_socket.setsockopt(_socket.IPPROTO_IP, _socket.IP_ADD_MEMBERSHIP, _socket.inet_aton(_config.multicast_group_endpoint[0]) + _socket.inet_aton(_config.multicast_bind_address))
         this._socket.addMembership(this._config.multicastGroupEndpoint[0]);
 
         this._bIsRunning = true;
@@ -221,7 +238,7 @@ class BroadcastSocket {
 
         if (remoteMessage.type === FCommandTypes.openConnection) {
             this.commandServer = new CommandServer(this._nodeId, this._config);
-            this.commandServer.start(this.startCallback);
+            this.commandServer.start(this.startCallback, this.startTimeout);
 
         }
     }
@@ -253,8 +270,9 @@ class CommandServer {
     private server;
     private _config;
     private _nodeId;
+    private startTimeout?: number;
     private commandSocket: CommandSocket | undefined;
-    private startCallback?: (() => void);
+    private startCallback?: ((error?: Error) => void);
 
     private _bIsRunning = false;
 
@@ -270,26 +288,69 @@ class CommandServer {
         return this._bIsRunning;
     }
 
-    public start(cb?: (() => void)) {
+    public start(cb?: ((error?: Error) => void), timeout = 2) {
         console.log("Starting CommandServer...");
+
+        this.startTimeout = timeout;
 
         this.startCallback = cb;
 
         this.server.on('error', this.onError);
-        this.server.on('listening', this.onListening);
+        this.server.on('listening', () => { this.onListening(); });
         this.server.on('connection', (socket: net.Socket) => this.onConnection(socket));
         this.server.on('close', this.onClose);
 
         this.server.listen(this._config.commandEndpoint[1], this._config.commandEndpoint[0]);
     }
 
-    private onError(err: Error) {
-        throw err;
+    public close(callback?: ((err?: Error) => void)) {
+        if (this.isRunning() && this.commandSocket) {
+            this.commandSocket.close(() => {
+                if (this.server) {
+                    this.server.close(callback);
+                }
+            });
+        }
+        else {
+            if (this.server) {
+                this.server.close(callback);
+            }
+            else if (callback) {
+                callback();
+            }
+        }
     }
 
-    private onListening() {
-        const address = this.server.address();
+    private onError(err: Error) {
+        throw err;
+        console.log("ERR: " + err);
     }
+
+    private async onListening() {
+        console.log("listening");
+        if (this.startTimeout) {
+            setTimeout(() => {
+                if (!this._bIsRunning) {
+                    console.log("Nope;");
+                    this.timeout();
+                }
+            }, this.startTimeout * 1000);
+        }
+    }
+
+
+    // Start timeout
+    private timeout() {
+        console.log("Start command timed out");
+        this.close();
+
+        if (this.startCallback) {
+            const error = new Error("Timed out while trying to connect to Unreal Engine.");
+            this.startCallback(error);
+        }
+
+    }
+
 
     private onConnection(socket: net.Socket) {
         console.log("CommandServer started, socket recived.");
@@ -302,6 +363,7 @@ class CommandServer {
     }
 
     private onClose() {
+        console.log("Closed");
         this._bIsRunning = false;
     }
 
@@ -331,12 +393,15 @@ class CommandSocket {
         this.socket.on('close', this.onClose);
     }
 
+    public close(cb?: (() => void)) {
+        this.socket.end(cb);
+    }
+
     private onClose() {
         console.log("Socket closed");
     }
 
     private onData(data: Buffer) {
-        // let message = data.toString();
         const callback = this.callbacks.shift();
         if (callback) {
             const message = RemoteExecutionMessage.fromBuffer(data);
@@ -376,7 +441,7 @@ class CommandSocket {
             const buffer = command[0];
             const callback = command[1];
             this.callbacks.push(callback);
-            
+
             this._write(buffer);
         }
         else {

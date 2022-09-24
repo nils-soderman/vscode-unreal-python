@@ -2,25 +2,27 @@
  * A module handling the connection between Unreal and VSCode
  */
 
+import * as vscode from 'vscode';
+
 import * as remoteExecution from "./remote-execution";
 import * as utils from "./utils";
 
-let gRemoteConnection: remoteExecution.RemoteConnection;
+let gRemoteConnection: remoteExecution.RemoteConnection | null = null;
 
 
 function getRemoteConfig() {
     const extConfig = utils.getExtensionConfig();
-    
+
     const multicastTTL: number | undefined = extConfig.get("remote.multicastTTL");
     const multicastGroupEndpoint: string | undefined = extConfig.get("remote.multicastGroupEndpoint");
     const multicastBindAddress: string | undefined = extConfig.get("remote.multicastBindAddress");
     const commandEndpoint: string | undefined = extConfig.get("remote.commandEndpoint");
-    
+
     return new remoteExecution.RemoteExecutionConfig(multicastTTL, multicastGroupEndpoint, multicastBindAddress, commandEndpoint);
 }
 
-export function getRemoteConnection() {
-    if (!gRemoteConnection) {
+export function getRemoteConnection(bEnsureConnection = true) {
+    if (!gRemoteConnection && bEnsureConnection) {
 
         const config = getRemoteConfig();
         gRemoteConnection = new remoteExecution.RemoteConnection(config);
@@ -31,8 +33,25 @@ export function getRemoteConnection() {
 
 export function sendCommand(command: string, callback?: (message: remoteExecution.RemoteExecutionMessage) => void) {
     const remoteConnection = getRemoteConnection();
-    
-    remoteConnection.runCommand(command, callback);
+    if (!remoteConnection) {
+        return;
+    }
+
+    if (remoteConnection.hasStartBeenRequested()) {
+        remoteConnection.runCommand(command, callback);
+    }
+    else {
+        const timeout: number | undefined = utils.getExtensionConfig().get("remote.timeout");
+        remoteConnection.start((error?: Error | undefined) => {
+            if (error) {
+                vscode.window.showErrorMessage(error.message);
+            }
+            else {
+                remoteConnection.runCommand(command, callback);
+            }
+        }, timeout);
+    }
+
 }
 
 
@@ -48,4 +67,12 @@ export function executeFile(filepath: string, variables = {}, callback?: (messag
 
     const command = `${variableString}f=open(r'${filepath}','r');exec(f.read());f.close()`;
     sendCommand(command, callback);
+}
+
+
+export function closeRemoteConnection() {
+    const remoteConnection = getRemoteConnection(false);
+    if (remoteConnection) {
+        remoteConnection.stop();
+    }
 }
