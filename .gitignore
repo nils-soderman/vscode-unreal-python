@@ -2,3 +2,5 @@ node_modules
 out
 src/test
 **/__pycache__
+**/**.vsix
+builds/**
