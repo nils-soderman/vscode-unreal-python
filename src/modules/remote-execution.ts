@@ -185,8 +185,6 @@ class BroadcastSocket {
     }
 
     public start(callback?: ((error?: Error) => void), timeout = 2) {
-        console.log("Opening broadcast socket...");
-
         this.startCallback = callback;
         this.startTimeout = timeout;
 
@@ -194,9 +192,7 @@ class BroadcastSocket {
         this._socket.on('listening', () => this.onListening());
         this._socket.on('message', (message: Buffer, remote: dgram.RemoteInfo) => this.onMessage(message, remote));
         this._socket.on('error', (err: Error) => this.onError(err));
-        this._socket.on('connect', () => {
-            console.log("connected");
-        });
+        // this._socket.on('connect', () => { });
         this._socket.on('close', this.onClose);
 
         this._socket.bind({
@@ -230,8 +226,8 @@ class BroadcastSocket {
     }
 
     private onListening() {
-        var address = this._socket.address();
-        console.log('UDP Client listening on ' + address.address + ":" + address.port);
+        // var address = this._socket.address();
+        // console.log('UDP Client listening on ' + address.address + ":" + address.port);
 
         this._socket.setMulticastLoopback(true);
         this._socket.setMulticastTTL(this._config.multicastTTL);
@@ -246,8 +242,8 @@ class BroadcastSocket {
     private onMessage(message: Buffer, remote: dgram.RemoteInfo) {
         const remoteMessage = RemoteExecutionMessage.fromBuffer(message);
 
-        console.log("Recived message on broadcast server:");
-        console.log(remoteMessage);
+        // console.log("Recived message on broadcast server:");
+        // console.log(remoteMessage);
 
         if (remoteMessage.type === FCommandTypes.openConnection) {
             this.commandServer = new CommandServer(this._nodeId, this._config);
@@ -256,7 +252,7 @@ class BroadcastSocket {
     }
 
     private onError(err: Error) {
-        console.log("On Error: " + err);
+        // console.log("On Error: " + err);
     }
 
     private _openCommandServer() {
@@ -308,7 +304,7 @@ class CommandServer {
     }
 
     public start(cb?: ((error?: Error) => void), timeout = 2) {
-        console.log("Starting CommandServer...");
+        // console.log("Starting CommandServer...");
 
         this.startTimeout = timeout;
 
@@ -347,7 +343,7 @@ class CommandServer {
     }
 
     private async onListening() {
-        console.log("listening");
+        // console.log("listening");
         if (this.startTimeout) {
             setTimeout(() => {
                 if (!this._bIsRunning) {
@@ -358,7 +354,7 @@ class CommandServer {
     }
 
     private onConnection(socket: net.Socket) {
-        console.log("CommandServer started, socket recived.");
+        // console.log("CommandServer started, socket recived.");
         this.commandSocket = new CommandSocket(socket);
         this.commandSocket.socket.on('close', (bHadError: boolean) => { this.onSocketClosed(bHadError); });
 
@@ -418,7 +414,7 @@ class CommandSocket {
     }
 
     private onClose() {
-        console.log("Socket closed");
+        // console.log("Socket closed");
     }
 
     private onData(data: Buffer) {
@@ -432,7 +428,7 @@ class CommandSocket {
     }
 
     private onError(err: Error) {
-        console.log("Error:" + err);
+        // console.log("Error:" + err);
     }
 
     public write(buffer: string | Uint8Array, callback?: (message: RemoteExecutionMessage) => void) {
