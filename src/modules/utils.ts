@@ -52,10 +52,10 @@ export function saveTempFile(filename: string, text: string) {
 
 
 /**
- * @returns The workspace configuration for this extension _('unreal-engine-python')_
+ * @returns The workspace configuration for this extension _('ue-python')_
  */
 export function getExtensionConfig() {
-    return vscode.workspace.getConfiguration("unreal-engine-python");
+    return vscode.workspace.getConfiguration("ue-python");
 }
 
 /** Check if we're currently attached to an Unreal instance */

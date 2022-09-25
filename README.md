@@ -10,10 +10,9 @@ Editor features to assist when writing Python code for Unreal Engine.
 
 ### Execute Code
 
-Run code in Unreal Engine directly from within the editor
+Run code in Unreal Engine directly from within the editor:
 
 ![execute code in unreal demo](https://github.com/nils-soderman/vscode-unreal-python/blob/main/media/demo/demo-exec.gif?raw=true)
-
 
 Command: `Unreal Python: Execute` <br>
 Keyboard Shortcut: <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
@@ -28,13 +27,13 @@ This extension contributes the following settings:
 
 | Setting  | Default | Description |
 | --- | --- | --- |
-| `unreal-engine-python.execute.showOutput` | true | Bring up the Output log after running the execute command. |
-| `unreal-engine-python.execute.clearOutput` | false | Clear the output log before executing the code. |
-| `unreal-engine-python.remote.multicastGroupEndpoint` | "239.0.0.1:6766" | The multicast group endpoint _(must match the \"Multicast Group Endpoint\" setting in the Python plugin)_ |
-| `unreal-engine-python.remote.multicastBindAdress` | "0.0.0.0" | The adapter address that the UDP multicast socket should bind to, or 0.0.0.0 to bind to all adapters _(must match the \"Multicast Bind Address\" setting in the Python plugin)_ |
-| `unreal-engine-python.remote.multicastTTL` | 0 | Multicast TTL _(0 is limited to the local host, 1 is limited to the local subnet)_ |
-| `unreal-engine-python.remote.commandEndpoint` | "127.0.0.1:6776" | The endpoint for the TCP command connection hosted by this client _(that the remote client will connect to)_ |
-| `unreal-engine-python.remote.timeout` | 2 | How many seconds to wait while trying to connect to Unreal Engine before terminating the command |
+| `ue-python.execute.showOutput` | true | Bring up the Output log after running the execute command. |
+| `ue-python.execute.clearOutput` | false | Clear the output log before executing the code. |
+| `ue-python.remote.multicastGroupEndpoint` | "239.0.0.1:6766" | The multicast group endpoint _(must match the \"Multicast Group Endpoint\" setting in the Python plugin)_ |
+| `ue-python.remote.multicastBindAdress` | "0.0.0.0" | The adapter address that the UDP multicast socket should bind to, or 0.0.0.0 to bind to all adapters _(must match the \"Multicast Bind Address\" setting in the Python plugin)_ |
+| `ue-python.remote.multicastTTL` | 0 | Multicast TTL _(0 is limited to the local host, 1 is limited to the local subnet)_ |
+| `ue-python.remote.commandEndpoint` | "127.0.0.1:6776" | The endpoint for the TCP command connection hosted by this client _(that the remote client will connect to)_ |
+| `ue-python.remote.timeout` | 2 | How many seconds to wait while trying to connect to Unreal Engine before terminating the command |
 
 <br>
 

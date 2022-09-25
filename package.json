@@ -1,5 +1,5 @@
 {
-  "name": "unreal-engine-python",
+  "name": "ue-python",
   "displayName": "Unreal Engine Python",
   "publisher": "NilsSoderman",
   "description": "Tools to assist when writing Python for Unreal Engine",
@@ -15,7 +15,7 @@
     "epic games"
   ],
   "activationEvents": [
-    "onCommand:unreal-engine-python.execute"
+    "onCommand:ue-python.execute"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -23,12 +23,12 @@
       {
         "category": "Unreal Python",
         "title": "Execute",
-        "command": "unreal-engine-python.execute"
+        "command": "ue-python.execute"
       }
     ],
     "keybindings": [
       {
-        "command": "unreal-engine-python.execute",
+        "command": "ue-python.execute",
         "key": "ctrl+enter"
       }
     ],
@@ -36,13 +36,13 @@
       {
         "title": "Execute",
         "properties": {
-          "unreal-engine-python.execute.showOutput": {
+          "ue-python.execute.showOutput": {
             "type": "boolean",
             "default": true,
             "description": "Display the output log when something is executed",
             "scope": "resource"
           },
-          "unreal-engine-python.execute.clearOutput": {
+          "ue-python.execute.clearOutput": {
             "type": "boolean",
             "default": false,
             "description": "Clear output log each time somethings new is executed.",
@@ -53,35 +53,35 @@
       {
         "title": "Remote Execution Server",
         "properties": {
-          "unreal-engine-python.remote.multicastGroupEndpoint": {
+          "ue-python.remote.multicastGroupEndpoint": {
             "type": "string",
             "default": "239.0.0.1:6766",
             "markdownDescription": "The multicast group endpoint _(must match the \"Multicast Group Endpoint\" setting in the Python plugin)_",
             "scope": "resource",
             "order": 0
           },
-          "unreal-engine-python.remote.multicastBindAdress": {
+          "ue-python.remote.multicastBindAdress": {
             "type": "string",
             "default": "0.0.0.0",
             "markdownDescription": "The adapter address that the UDP multicast socket should bind to, or 0.0.0.0 to bind to all adapters _(must match the \"Multicast Bind Address\" setting in the Python plugin)_",
             "scope": "resource",
             "order": 1
           },
-          "unreal-engine-python.remote.multicastTTL": {
+          "ue-python.remote.multicastTTL": {
             "type": "number",
             "default": 0,
             "markdownDescription": "Multicast TTL _(0 is limited to the local host, 1 is limited to the local subnet)_",
             "scope": "resource",
             "order": 2
           },
-          "unreal-engine-python.remote.commandEndpoint": {
+          "ue-python.remote.commandEndpoint": {
             "type": "string",
             "default": "127.0.0.1:6776",
             "markdownDescription": "The endpoint for the TCP command connection hosted by this client _(that the remote client will connect to)_",
             "scope": "resource",
             "order": 3
           },
-          "unreal-engine-python.remote.timeout": {
+          "ue-python.remote.timeout": {
             "type": "number",
             "default": "2",
             "markdownDescription": "How many seconds to wait while trying to connect to Unreal Engine before terminating the command",
