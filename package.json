@@ -1,11 +1,12 @@
 {
   "name": "unreal-engine-python",
   "displayName": "Unreal Engine Python",
+  "publisher": "NilsSoderman",
   "description": "Tools to assist when writing Python for Unreal Engine",
   "version": "0.0.1",
-  "engines": {
-    "vscode": "^1.66.0"
-  },
+  "categories": [
+    "Other"
+  ],
   "keywords": [
     "python",
     "unreal",
@@ -13,11 +14,8 @@
     "game",
     "epic games"
   ],
-  "categories": [
-    "Other"
-  ],
   "activationEvents": [
-    "*"
+    "onCommand:unreal-engine-python.execute"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -94,6 +92,27 @@
       }
     ]
   },
+  "engines": {
+    "vscode": "^1.66.0"
+  },
+  "galleryBanner": {
+    "color": "#0f0f0f",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nils-soderman/vscode-unreal-python"
+  },
+  "bugs": {
+    "url": "https://github.com/nils-soderman/vscode-unreal-python/issues"
+  },
+  "author": {
+    "name": "Nils Söderman",
+    "url": "https://nilssoderman.com"
+  },
+  "qna": "marketplace",
+  "license": "SEE LICENSE IN LICENSE",
+  "icon": "media/icon.png",
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
