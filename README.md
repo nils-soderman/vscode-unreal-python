@@ -10,8 +10,13 @@ Editor features to assist when writing Python code for Unreal Engine.
 
 Run code in Unreal Engine directly from within the editor
 
+![execute code in unreal demo](https://github.com/nils-soderman/vscode-unreal-python/blob/main/media/demo/demo-exec.gif?raw=true)
+
+
 Command: `Unreal Python: Execute` <br>
 Keyboard Shortcut: <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
+
+The selected text will be executed, if nothing is selected the entire document will be executed.
 
 <br>
 
@@ -20,7 +25,7 @@ Keyboard Shortcut: <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
 This extension contributes the following settings:
 
 | Setting  | Default | Description |
-| - | - | - |
+| --- | --- | --- |
 | `unreal-engine-python.execute.showOutput` | true | Bring up the Output log after running the execute command. |
 | `unreal-engine-python.execute.clearOutput` | false | Clear the output log before executing the code. |
 | `unreal-engine-python.remote.multicastGroupEndpoint` | "239.0.0.1:6766" | The multicast group endpoint _(must match the \"Multicast Group Endpoint\" setting in the Python plugin)_ |
