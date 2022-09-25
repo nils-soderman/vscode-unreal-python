@@ -40,7 +40,7 @@ This extension contributes the following settings:
 # Contact
 If you have any questions, feature requests or run into any bugs, don't hesitate to get in contact with me:
 
-[Report an issue](https://github.com/nils-soderman/vscode-motionbuilder/issues "Report a bug on the GitHub repository")<br>
+[Report an issue](https://github.com/nils-soderman/vscode-unreal-python/issues "Report a bug on the GitHub repository")<br>
 [Personal Website](https://nilssoderman.com)<br>
 [Twitter](https://twitter.com/nilssoderman "@nilssoderman")
 
