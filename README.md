@@ -8,6 +8,8 @@ Editor features to assist when writing Python code for Unreal Engine.
 
 ## Features
 
+### Execute Code
+
 Run code in Unreal Engine directly from within the editor
 
 ![execute code in unreal demo](https://github.com/nils-soderman/vscode-unreal-python/blob/main/media/demo/demo-exec.gif?raw=true)
