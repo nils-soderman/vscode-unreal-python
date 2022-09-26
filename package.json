@@ -47,6 +47,12 @@
             "default": false,
             "description": "Clear output log each time somethings new is executed.",
             "scope": "resource"
+          },
+          "ue-python.execute.name": {
+            "type": "string",
+            "default": "__main__",
+            "description": "The value for the Python variable `__name__` whenever executing code through VS Code",
+            "scope": "resource"
           }
         }
       },
