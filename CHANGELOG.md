@@ -7,6 +7,7 @@
 
 - Added configuration `ue-python.execute.name` that set's the python `__name__` variable while executing code, defaults to "\_\_main\_\_".
 - Added configuration `ue-python.execute.enableShortcut` which can be used to disable the `ue-python.execute` shortcut in spesific workspaces
+- Added a help button if it fails to connect with Unreal Engine, that will bring the user to a troubleshooting webpage
 
 ### Changed:
 

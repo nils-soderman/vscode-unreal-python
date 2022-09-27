@@ -5,6 +5,7 @@
 import * as vscode from 'vscode';
 
 import * as remoteExecution from "./remote-execution";
+import * as extensionWiki from "./extension-wiki";
 import * as utils from "./utils";
 
 let gRemoteConnection: remoteExecution.RemoteConnection | null = null;
@@ -44,7 +45,12 @@ export function sendCommand(command: string, callback?: (message: remoteExecutio
         const timeout: number | undefined = utils.getExtensionConfig().get("remote.timeout");
         remoteConnection.start((error?: Error | undefined) => {
             if (error) {
-                vscode.window.showErrorMessage(error.message);
+                vscode.window.showErrorMessage(error.message, "Help").then(((clickedValue?: string) => {
+                    if (clickedValue === "Help") {
+                        extensionWiki.openPageInBrowser(extensionWiki.Pages.failedToConnect);
+                    }
+                }));
+
             }
             else {
                 remoteConnection.runCommand(command, callback);

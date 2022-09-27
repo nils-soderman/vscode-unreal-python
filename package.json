@@ -98,7 +98,7 @@
           "ue-python.remote.timeout": {
             "type": "number",
             "default": 3,
-            "markdownDescription": "How many seconds to wait while trying to connect to Unreal Engine before terminating the command",
+            "markdownDescription": "How many seconds to wait while trying to establish a connection with Unreal Engine before terminating the command",
             "scope": "resource",
             "order": 4
           }
@@ -150,6 +150,7 @@
     "typescript": "^4.4.4"
   },
   "dependencies": {
+    "open": "^8.4.0",
     "uuid": "^8.3.2"
   }
 }

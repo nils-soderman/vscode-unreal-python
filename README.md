@@ -35,7 +35,7 @@ This extension contributes the following settings:
 | `ue-python.remote.multicastBindAdress` | "0.0.0.0" | The adapter address that the UDP multicast socket should bind to, or 0.0.0.0 to bind to all adapters _(must match the \"Multicast Bind Address\" setting in the Python plugin)_ |
 | `ue-python.remote.multicastTTL` | 0 | Multicast TTL _(0 is limited to the local host, 1 is limited to the local subnet)_ |
 | `ue-python.remote.commandEndpoint` | "127.0.0.1:6776" | The endpoint for the TCP command connection hosted by this client _(that the remote client will connect to)_ |
-| `ue-python.remote.timeout` | 3 | How many seconds to wait while trying to connect to Unreal Engine before terminating the command |
+| `ue-python.remote.timeout` | 3 | How many seconds to wait while trying to establish a connection with Unreal Engine before terminating the command |
 
 <br>
 
