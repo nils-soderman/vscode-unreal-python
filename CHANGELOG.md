@@ -6,14 +6,17 @@
 ### Added:
 
 - Added configuration `ue-python.execute.name` that set's the python `__name__` variable while executing code, defaults to "\_\_main\_\_".
+- Added configuration `ue-python.execute.enableShortcut` which can be used to disable the `ue-python.execute` shortcut in spesific workspaces
 
 ### Changed:
 
+- The command `ue-python.execute` is now only enabled when a Python file is open
 - Updated default value of `ue-python.remote.timeout` to be 3 seconds.
 
-
 <br>
+
 ___
+
 
 ## v0.0.1
 [2022-09-25]

@@ -23,13 +23,15 @@
       {
         "category": "Unreal Python",
         "title": "Execute",
-        "command": "ue-python.execute"
+        "command": "ue-python.execute",
+        "enablement": "editorLangId==python"
       }
     ],
     "keybindings": [
       {
         "command": "ue-python.execute",
-        "key": "ctrl+enter"
+        "key": "ctrl+enter",
+        "when": "config.ue-python.execute.enableShortcut"
       }
     ],
     "configuration": [
@@ -52,6 +54,12 @@
             "type": "string",
             "default": "__main__",
             "description": "The value for the Python variable `__name__` whenever executing code through VS Code",
+            "scope": "resource"
+          },
+          "ue-python.execute.enableShortcut": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable the `ue-python.execute` shortcut",
             "scope": "resource"
           }
         }
