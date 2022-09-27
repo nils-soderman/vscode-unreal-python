@@ -89,7 +89,7 @@
           },
           "ue-python.remote.timeout": {
             "type": "number",
-            "default": "2",
+            "default": 3,
             "markdownDescription": "How many seconds to wait while trying to connect to Unreal Engine before terminating the command",
             "scope": "resource",
             "order": 4
