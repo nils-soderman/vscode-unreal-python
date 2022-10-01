@@ -76,9 +76,9 @@ export function executeFile(filepath: string, variables = {}, callback?: (messag
 }
 
 
-export function closeRemoteConnection() {
+export function closeRemoteConnection(callback?: (error?: Error) => void) {
     const remoteConnection = getRemoteConnection(false);
     if (remoteConnection) {
-        remoteConnection.stop();
+        remoteConnection.stop(callback);
     }
 }

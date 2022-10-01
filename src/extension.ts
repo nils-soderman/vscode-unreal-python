@@ -19,5 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() { 
 	// Remove all temp files created by this extension
 	utils.cleanupTempFiles();
+
+	// Close command connection
 	remoteHandler.closeRemoteConnection();
 }

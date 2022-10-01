@@ -192,7 +192,6 @@ class BroadcastSocket {
         this._socket.on('listening', () => this.onListening());
         this._socket.on('message', (message: Buffer, remote: dgram.RemoteInfo) => this.onMessage(message, remote));
         this._socket.on('error', (err: Error) => this.onError(err));
-        // this._socket.on('connect', () => { });
         this._socket.on('close', this.onClose);
 
         this._socket.bind({
@@ -202,6 +201,22 @@ class BroadcastSocket {
     }
 
     public close(callback?: (error?: Error) => void) {
+        if (this._socket) {
+            // Broadcast a close connection message
+            const message = new RemoteExecutionMessage(FCommandTypes.closeConnection, this._nodeId, null);
+            this._socket.send(message.toJsonString(),
+                this._config.multicastGroupEndpoint[1],
+                this._config.multicastGroupEndpoint[0],
+                (error: Error | null, bytes: number) => {
+                    this._close(callback);
+                });
+        }
+        else {
+            this._close(callback);
+        }
+    }
+
+    private _close(callback?: (error?: Error) => void) {
         if (this.commandServer) {
             this.commandServer.close((error?: Error) => {
                 this._socket.close(callback);
@@ -226,9 +241,6 @@ class BroadcastSocket {
     }
 
     private onListening() {
-        // var address = this._socket.address();
-        // console.log('UDP Client listening on ' + address.address + ":" + address.port);
-
         this._socket.setMulticastLoopback(true);
         this._socket.setMulticastTTL(this._config.multicastTTL);
         this._socket.setMulticastInterface(this._config.multicastBindAddress);
@@ -241,9 +253,6 @@ class BroadcastSocket {
 
     private onMessage(message: Buffer, remote: dgram.RemoteInfo) {
         const remoteMessage = RemoteExecutionMessage.fromBuffer(message);
-
-        // console.log("Recived message on broadcast server:");
-        // console.log(remoteMessage);
 
         if (remoteMessage.type === FCommandTypes.openConnection) {
             this.commandServer = new CommandServer(this._nodeId, this._config);
@@ -391,7 +400,6 @@ class CommandServer {
 }
 
 
-// TODO: This class may be redundant?
 class CommandSocket {
     socket;
 
@@ -413,8 +421,19 @@ class CommandSocket {
         this.socket.end(cb);
     }
 
+    public write(buffer: string | Uint8Array, callback?: (message: RemoteExecutionMessage) => void) {
+        if (this.bIsWriting) {
+            this.queCommand(buffer, callback);
+            return;
+        }
+
+        this.bIsWriting = true;
+        this.callbacks.push(callback);
+
+        return this._write(buffer);
+    }
+
     private onClose() {
-        // console.log("Socket closed");
     }
 
     private onData(data: Buffer) {
@@ -429,18 +448,6 @@ class CommandSocket {
 
     private onError(err: Error) {
         // console.log("Error:" + err);
-    }
-
-    public write(buffer: string | Uint8Array, callback?: (message: RemoteExecutionMessage) => void) {
-        if (this.bIsWriting) {
-            this.queCommand(buffer, callback);
-            return;
-        }
-
-        this.bIsWriting = true;
-        this.callbacks.push(callback);
-
-        return this._write(buffer);
     }
 
     private _write(buffer: string | Uint8Array, cb?: (err?: Error | undefined) => void) {
@@ -536,10 +543,10 @@ export class RemoteExecutionMessage {
             throw Error(`"magic" is incorrect (got ${jsonData['magic']}, expected ${PROTOCOL_MAGIC})!`);
         }
 
-        let type = jsonData['type'];
-        let source = jsonData['source'];
-        let dest = jsonData['dest'];
-        let data = jsonData['data'];
+        const type = jsonData['type'];
+        const source = jsonData['source'];
+        const dest = jsonData['dest'];
+        const data = jsonData['data'];
 
         return new RemoteExecutionMessage(type, source, dest, data);
     }
