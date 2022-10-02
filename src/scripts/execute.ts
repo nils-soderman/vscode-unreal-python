@@ -106,12 +106,13 @@ async function cleanUpTempFiles(commandId: string) {
  * @param originalFilepath The abs filepath to the source filepath, will be used to set the python var `__file__`
  * @param additionalPrint Additional text to be printed to the output once the code has been executed
  */
-function writeDataFile(fileToExecute: string, originalFilepath: string, commandId: string, additionalPrint = "", nameVar = "") {
+function writeDataFile(fileToExecute: string, originalFilepath: string, commandId: string, isDebugging: boolean, additionalPrint = "", nameVar = "") {
     let data: any = {
         "file": fileToExecute,
         "__file__": originalFilepath,  // eslint-disable-line @typescript-eslint/naming-convention
         "__name__": nameVar,  // eslint-disable-line @typescript-eslint/naming-convention
-        "id": commandId
+        "id": commandId,
+        "is_debugging": isDebugging  // eslint-disable-line @typescript-eslint/naming-convention
     };
 
     if (additionalPrint) {
@@ -143,9 +144,10 @@ export async function execute() {
     const extensionConfig = utils.getExtensionConfig();
 
     // File an info file telling mb what script to run, etc.
-    const additionalPrint = utils.isDebuggingUnreal() ? ">>>" : "";
+    const bIsDebugging = utils.isDebuggingUnreal();
+    const additionalPrint = bIsDebugging ? ">>>" : "";
     const nameVar: string | undefined = extensionConfig.get("execute.name");
-    const dataFilepath = writeDataFile(fileToExecute, activeDocuemt.uri.fsPath, commandId, additionalPrint, nameVar);
+    const dataFilepath = writeDataFile(fileToExecute, activeDocuemt.uri.fsPath, commandId, bIsDebugging, additionalPrint, nameVar);
 
     // Clear the output channel if enabled in user settings
     if (extensionConfig.get("execute.clearOutput")) {
