@@ -11,6 +11,11 @@ import * as net from 'net';
 const PROTOCOL_VERSION = 1;      // Protocol version number
 const PROTOCOL_MAGIC = 'ue_py';  // Protocol magic identifier
 
+export class FCommandOutputType {
+    static readonly info = "Info";
+    static readonly warning = "Warning";
+    static readonly error = "Error";
+}
 
 export class FExecMode {
     static readonly execFile = 'ExecuteFile';               // Execute the Python command as a file. This allows you to execute either a literal Python script containing multiple statements, or a file with optional arguments
@@ -533,6 +538,14 @@ export class RemoteExecutionMessage {
         }
 
         return JSON.stringify(jsonObj);
+    }
+    
+    public getCommandResultOutput() {
+        if (this.type === FCommandTypes.commandResults) {
+            const outputs: [{ type: string, output: string }] = this.data.output;
+            return outputs;
+        }
+        return [];
     }
 
     static fromJson(jsonData: any) {
