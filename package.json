@@ -15,7 +15,8 @@
     "epic games"
   ],
   "activationEvents": [
-    "onCommand:ue-python.execute"
+    "onCommand:ue-python.execute",
+    "onCommand:ue-python.attach"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -25,6 +26,11 @@
         "title": "Execute",
         "command": "ue-python.execute",
         "enablement": "editorLangId==python"
+      },
+      {
+        "category": "Unreal Python",
+        "title": "Attach",
+        "command": "ue-python.attach"
       }
     ],
     "keybindings": [
@@ -35,6 +41,16 @@
       }
     ],
     "configuration": [
+      {
+        "properties": {
+          "ue-python.debug.port": {
+            "type": "number",
+            "default": 6868,
+            "description": "",
+            "scope": "resource"
+          }
+        }
+      },
       {
         "title": "Execute",
         "properties": {

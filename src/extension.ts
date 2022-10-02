@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import * as remoteHandler from './modules/remote-handler';
 import * as execute from './scripts/execute';
 import * as utils from './modules/utils';
+import * as attach from './scripts/attach';
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -10,6 +11,12 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('ue-python.execute', () => {
 			execute.execute();
+		})
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('ue-python.attach', () => {
+			attach.attachToUnreal();
 		})
 	);
 
