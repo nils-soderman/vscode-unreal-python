@@ -27,7 +27,7 @@ export function getExtensionConfig() {
 
 /** Check if we're currently attached to an Unreal instance */
 export function isDebuggingUnreal() {
-    return vscode.debug.activeDebugSession && vscode.debug.activeDebugSession.name === DEBUG_SESSION_NAME;
+    return vscode.debug.activeDebugSession !== undefined && vscode.debug.activeDebugSession.name === DEBUG_SESSION_NAME;
 }
 
 
