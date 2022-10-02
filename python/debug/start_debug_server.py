@@ -16,11 +16,11 @@ def get_unreal_python_executable():
         return exe_path
 
 
-def is_port_available(prt):
+def is_port_available(port):
     """ Check if a port is avaliable """
     temp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     temp_socket.settimeout(0.05)
-    response = temp_socket.connect_ex(("127.0.0.1", prt))
+    response = temp_socket.connect_ex(("127.0.0.1", port))
     temp_socket.close()
     return response != 0
 
