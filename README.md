@@ -2,8 +2,6 @@
 
 Editor features to assist when writing Python code for Unreal Engine.
 
-**Please note that this extension is currently in pre-release, if you want to wait for a stable version, check back in a month or so!**
-
 <br>
 
 ## Features
@@ -17,25 +15,14 @@ Run code in Unreal Engine directly from within the editor:
 Command: `Unreal Python: Execute` <br>
 Keyboard Shortcut: <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
 
-The selected text will be executed, if nothing is selected the entire document will be executed.
+The selected text will be executed, or if nothing is selected the entire document will be executed.
 
 <br>
 
-## Settings
+### Debugging
+Attach VS Code to Unreal Engine to debug your scripts, set breakpoints and step through the code.
 
-This extension contributes the following settings:
-
-| Setting  | Default | Description |
-| --- | --- | --- |
-| `ue-python.execute.showOutput` | true | Bring up the Output log after running the execute command. |
-| `ue-python.execute.clearOutput` | false | Clear the output log before executing the code. |
-| `ue-python.execute.name` | "\_\_main\_\_" | Sets value of the Python variable `__name__` while executing code |
-| `ue-python.execute.enableShortcut` | true | Can be used to disable `ue-python.execute` in spesific workspaces only |
-| `ue-python.remote.multicastGroupEndpoint` | "239.0.0.1:6766" | The multicast group endpoint _(must match the \"Multicast Group Endpoint\" setting in the Python plugin)_ |
-| `ue-python.remote.multicastBindAdress` | "0.0.0.0" | The adapter address that the UDP multicast socket should bind to, or 0.0.0.0 to bind to all adapters _(must match the \"Multicast Bind Address\" setting in the Python plugin)_ |
-| `ue-python.remote.multicastTTL` | 0 | Multicast TTL _(0 is limited to the local host, 1 is limited to the local subnet)_ |
-| `ue-python.remote.commandEndpoint` | "127.0.0.1:6776" | The endpoint for the TCP command connection hosted by this client _(that the remote client will connect to)_ |
-| `ue-python.remote.timeout` | 3 | How many seconds to wait while trying to establish a connection with Unreal Engine before terminating the command |
+Command: `Unreal Python: Attach`
 
 <br>
 
