@@ -1,5 +1,19 @@
 # Change Log
 
+## v0.1.0
+[2022-10-xx]
+
+### Added: 
+- Added command `ue-python.attach` that attaches VS Code to Unreal Engine.
+- Added configuration `ue-python.debug.port` to set which port to use for the python debugpy server.
+
+### Changed:
+- Removed the 'Settings' section from ReadMe.md
+
+<br>
+
+___
+
 ## v0.0.2
 [2022-10-01]
 
