@@ -1,7 +1,3 @@
-"""
-Module for executing python code in Unreal
-"""
-
 import contextlib
 import traceback
 import tempfile
@@ -10,16 +6,14 @@ import sys
 import os
 import re
 
-
 TEMP_FOLDERPATH = os.path.join(tempfile.gettempdir(), "VSCode-Unreal-Python")
 OUTPUT_FILENAME = "exec-out"
 
 DATA_FILEPATH_GLOBAL_VAR_NAME = "data_filepath"
-
-
-def read_input_data():
+    
+def read_input_data(data_filepath):
     """ Read input data that was written with typescript (`writeDataFile()` in `execute-script.ts`) """
-    filepath = os.path.join(TEMP_FOLDERPATH, globals().get(DATA_FILEPATH_GLOBAL_VAR_NAME))
+    filepath = os.path.join(TEMP_FOLDERPATH, data_filepath)
     if os.path.isfile(filepath):
         with open(filepath, 'r') as vs_code_settings_file:
             return json.load(vs_code_settings_file)
@@ -63,8 +57,8 @@ def execute_code(code, filename, is_vscode_debugging):
         print(traceback_message)
 
 
-def main():
-    vscode_data = read_input_data()
+def main(data_filepath):
+    vscode_data = read_input_data(data_filepath)
     is_vscode_debugging = vscode_data.get("is_debugging", False)
     additional_print_str = vscode_data.get("additionalPrint", "")
 
@@ -82,15 +76,12 @@ def main():
     output_filepath = os.path.join(TEMP_FOLDERPATH, f"{OUTPUT_FILENAME}-{command_id}.txt")
 
     with open(vscode_data["file"], 'r') as vscode_in_file:
-        if not is_vscode_debugging and sys.version_info.major >= 3:
+        if not is_vscode_debugging:
             # Re-direct the output through a text file
             with open(output_filepath, 'w') as vscode_out_file, contextlib.redirect_stdout(vscode_out_file):
-                execute_code(vscode_in_file.read(),
-                                  target_filepath, is_vscode_debugging)
+                execute_code(vscode_in_file.read(), target_filepath, is_vscode_debugging)
         else:
             execute_code(vscode_in_file.read(), target_filepath, is_vscode_debugging)
 
         if additional_print_str:
             print(additional_print_str)
-
-main()

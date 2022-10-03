@@ -11,7 +11,7 @@ import * as vsCodeExec from "../modules/code-exec";
 
 import { RemoteExecutionMessage } from "../modules/remote-execution";
 
-const PYTHON_EXEC_FILE = path.join(utils.EXTENSION_PYTHON_DIR, "execute.py");
+const PYTHON_EXEC_FILE = path.join(utils.EXTENSION_PYTHON_DIR, "vscode_execute_entry.py");
 
 const INPUT_DATA_FILENAME = "exec-in-data";
 const INPUT_TEMP_PYTHON_FILENAME = "exec-in-code";
@@ -158,6 +158,7 @@ export async function execute() {
     }
 
     let globalVariables: any = {};
+    globalVariables["__vscodeExecFile__"] = PYTHON_EXEC_FILE;
     globalVariables[DATA_FILEPATH_GLOBAL_VAR_NAME] = dataFilepath;
 
     remoteHandler.executeFile(PYTHON_EXEC_FILE, globalVariables, (message: RemoteExecutionMessage) => { handleResponse(message, commandId); });
