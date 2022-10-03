@@ -5,14 +5,16 @@
   "description": "Tools to assist when writing Python code for Unreal Engine.",
   "version": "0.0.2",
   "categories": [
-    "Other"
+    "Other",
+    "Debuggers"
   ],
   "keywords": [
     "python",
     "unreal",
     "engine",
     "game",
-    "epic games"
+    "epic games",
+    "debug"
   ],
   "activationEvents": [
     "onCommand:ue-python.execute",
