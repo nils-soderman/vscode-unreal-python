@@ -9,7 +9,7 @@ import { RemoteExecutionMessage, FCommandOutputType } from "../modules/remote-ex
 
 
 const PYTHON_DEBUG_SCRIPTS_DIR = path.join(utils.EXTENSION_PYTHON_DIR, "debug");
-
+const PYTHON_EXEC_MODULE_NAME = "vscode_execute";
 
 class FDebugScriptFiles {
     static readonly isDebugpyInstalled = "is_debugpy_installed";
@@ -97,7 +97,8 @@ function attach() {
                 "type": "python",
                 "request": "attach",
                 "port": port,
-                "host": "localhost"
+                "host": "localhost",
+                "rules": [{ "module": PYTHON_EXEC_MODULE_NAME, "include": false }], // Make sure the execute module isn't debugged
             });
         }
     });
