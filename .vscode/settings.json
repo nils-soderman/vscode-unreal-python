@@ -5,7 +5,9 @@
         "node_modules": true,
         "builds": true,
         ".vscode": true,
-        "LICENSE": true
+        "LICENSE": true,
+        "**/__pycache__": true,
+        "**/**.pyc": true
     },
     "search.exclude": {
         "out": true
