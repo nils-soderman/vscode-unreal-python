@@ -1,7 +1,7 @@
 # Change Log
 
 ## v0.1.0
-[2022-10-xx]
+[2022-10-06]
 
 ### Added: 
 - Added command `ue-python.attach` that attaches VS Code to Unreal Engine.
