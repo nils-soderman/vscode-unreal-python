@@ -48,7 +48,7 @@
           "ue-python.debug.port": {
             "type": "number",
             "default": 6868,
-            "description": "",
+            "description": "Port to use for the debugpy server when attaching VS Code to Unreal",
             "scope": "resource"
           }
         }
