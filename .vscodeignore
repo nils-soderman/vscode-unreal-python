@@ -15,3 +15,5 @@ build-scripts
 **/**.vsix
 builds/**
 media/demo/**
+
+test**
