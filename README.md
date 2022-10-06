@@ -22,6 +22,8 @@ The selected text will be executed, or if nothing is selected the entire documen
 ### Debugging
 Attach VS Code to Unreal Engine to debug your scripts, set breakpoints and step through the code.
 
+![debug unreal python scripts demo](https://github.com/nils-soderman/vscode-unreal-python/blob/main/media/demo/demo-attach.gif?raw=true)
+
 Command: `Unreal Python: Attach`
 
 <br>
