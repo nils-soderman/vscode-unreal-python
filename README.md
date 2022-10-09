@@ -19,6 +19,13 @@ The selected text will be executed, or if nothing is selected the entire documen
 
 <br>
 
+### Setup Code Completion
+Setup code completion for the `unreal` module based on the current project.
+
+Command: `Unreal Python: Setup code completion`
+
+<br>
+
 ### Debugging
 Attach VS Code to Unreal Engine to debug your scripts, set breakpoints and step through the code.
 

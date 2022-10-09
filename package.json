@@ -3,7 +3,7 @@
   "displayName": "Unreal Engine Python",
   "publisher": "NilsSoderman",
   "description": "Tools to assist when writing Python code for Unreal Engine.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "categories": [
     "Other",
     "Debuggers"
@@ -18,7 +18,8 @@
   ],
   "activationEvents": [
     "onCommand:ue-python.execute",
-    "onCommand:ue-python.attach"
+    "onCommand:ue-python.attach",
+    "onCommand:ue-python.setupCodeCompletion"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -33,6 +34,11 @@
         "category": "Unreal Python",
         "title": "Attach",
         "command": "ue-python.attach"
+      },
+      {
+        "category": "Unreal Python",
+        "title": "Setup code completion",
+        "command": "ue-python. "
       }
     ],
     "keybindings": [

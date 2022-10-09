@@ -4,6 +4,7 @@ export const WIKI_URL = "https://github.com/nils-soderman/vscode-unreal-python/w
 
 export class Pages {
     static readonly failedToConnect = "Failed-to-connect-to-Unreal-Engine-%5BTroubleshooting%5D";
+    static readonly enableDevmode = "How-to-enable-Developer-Mode-for-Python-in-Unreal-Engine";
 }
 
 export function getPageUrl(page: string) {

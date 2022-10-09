@@ -1,5 +1,15 @@
 # Change Log
 
+## v0.1.1
+[2022-10-xx]
+
+### Added: 
+- Added command `ue-python.setupCodeCompletion` that adds the '\<PROJECT\>/Intermediate/PythonStub/' path to `python.analysis.extraPaths`.
+
+<br>
+
+___
+
 ## v0.1.0
 [2022-10-06]
 

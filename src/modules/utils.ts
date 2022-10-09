@@ -102,6 +102,14 @@ export function cleanupTempFiles() {
     }
 }
 
+/**
+ * Compare two paths and check if they are pointing to the same file / directory
+ * Regardless of case sensitivity, forward or backward slashes etc. 
+ */
+ export function isPathsSame(a: string, b: string) {
+    return path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
+}
+
 // -----------------------------------------------------------------------------------------
 //                                          Web
 // -----------------------------------------------------------------------------------------
