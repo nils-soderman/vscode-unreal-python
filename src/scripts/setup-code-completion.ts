@@ -10,7 +10,7 @@ import * as utils from '../modules/utils';
 import { RemoteExecutionMessage, FCommandOutputType } from "../modules/remote-execution";
 
 
-const PYTHON_DEBUG_SCRIPTS_DIR = path.join(utils.EXTENSION_PYTHON_DIR, "setup_python_paths");
+const PYTHON_DEBUG_SCRIPTS_DIR = path.join(utils.EXTENSION_PYTHON_DIR, "setup_code_completion");
 const STUB_FILE_NAME = "unreal.py";
 
 const PYTHON_CONFIG = "python";
@@ -21,8 +21,8 @@ const STUB_FILE_RELATIVE_FOLDER = "Intermediate/PythonStub";
 
 class FPythonScriptFiles {
     static readonly isDevmodeEnabled = "is_devmode_enabled";
-    static readonly enableDevmode = "enable_devmode";
-    static readonly getPythonPath = "get_python_path";
+    static readonly getPythonPath = "get_stub_path";
+    // static readonly enableDevmode = "enable_devmode";
 
     static getAbsPath(file: string) {
         return path.join(PYTHON_DEBUG_SCRIPTS_DIR, `${file}.py`);
@@ -167,9 +167,9 @@ export function main() {
             setupPath(stubFolderPath);
         }
         else {
-            // TODO: Ask user to browse to the UE project
+            // Ask user to browse to the UE project
             const value = await vscode.window.showErrorMessage(
-                "Failed to automatically get the unreal project path",
+                "Failed to automatically get the path to current Unreal Engine project",
                 "Browse"
             );
 
