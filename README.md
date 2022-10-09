@@ -22,6 +22,8 @@ The selected text will be executed, or if nothing is selected the entire documen
 ### Setup Code Completion
 Setup code completion for the `unreal` module based on the current project.
 
+![code completion demo](https://github.com/nils-soderman/vscode-unreal-python/blob/main/media/demo/demo-codecompletion.jpg?raw=true)
+
 Command: `Unreal Python: Setup code completion`
 
 <br>
