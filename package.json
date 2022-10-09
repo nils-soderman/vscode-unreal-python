@@ -38,7 +38,7 @@
       {
         "category": "Unreal Python",
         "title": "Setup code completion",
-        "command": "ue-python. "
+        "command": "ue-python.setupCodeCompletion"
       }
     ],
     "keybindings": [
