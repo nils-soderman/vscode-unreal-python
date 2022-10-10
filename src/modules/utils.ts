@@ -5,12 +5,11 @@ import * as open from 'open';
 import * as os from "os";
 import * as fs from 'fs';
 
-const DATA_FOLDER_NAME = "VSCode-Unreal-Python";
-const PYTHON_MODULES_FOLDER_NAME = "python-modules";
-export const DEBUG_SESSION_NAME = "Unreal Python";
-export const EXTENSION_DIR = path.dirname(path.dirname(__dirname));
-export const EXTENSION_PYTHON_DIR = path.join(EXTENSION_DIR, "python");
-export const EXTENSION_RESOURCES_DIR = path.join(EXTENSION_DIR, "resources");
+const DATA_FOLDER_NAME = "VSCode-Unreal-Python";  // Folder name used for Temp & Data directory
+export const DEBUG_SESSION_NAME = "Unreal Python"; // The name of the debug session when debugging Unreal
+
+export const EXTENSION_DIR = path.dirname(path.dirname(__dirname));  // The base directory of where this extension is installed
+export const EXTENSION_PYTHON_DIR = path.join(EXTENSION_DIR, "python");  // The directory where all python scritps provided by this extension can be founnd
 
 
 // -----------------------------------------------------------------------------------------
@@ -37,6 +36,15 @@ export function isDebuggingUnreal() {
 
 
 /**
+ * Compare two paths and check if they are pointing to the same file/directory
+ * Regardless of case sensitivity, forward or backward slashes etc. 
+ */
+export function isPathsSame(a: string, b: string) {
+    return path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
+}
+
+
+/**
  * @param bEnsureExists If folder doesn't exist, create it
  * @returns absolute path to this extensions tempdir
  */
@@ -48,29 +56,33 @@ export function getExtentionTempDir(bEnsureExists = true) {
     return tempDir;
 }
 
-/**
- * @returns The directory path to save application configs 
- */
-function getConfigDir() {
+
+/** 
+ * @param bEnsureExists If folder doesn't exist, create it
+ * @returns The directory where to save extension data 
+ * */
+export function getExtensionConfigDir(bEnsureExists = true) {
+    let configDir: string | undefined;
     if (process.platform === 'win32') {
         // Windows
-        return process.env.APPDATA;
+        configDir = process.env.APPDATA;
     }
-
-    if (process.platform === 'darwin') {
+    else if (process.platform === 'darwin') {
         // Mac OS
-        return path.join(os.homedir(), 'Library');
+        configDir = path.join(os.homedir(), 'Library');
+    }
+    else {
+        // Linux
+        configDir = path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'));
     }
 
-    // Linux
-    return path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'));
-}
-
-
-export function getExtensionConfigDir() {
-    const configDir = getConfigDir();
     if (!configDir) {
         return;
+    }
+
+    // Create folder if it doesn't exists
+    if (bEnsureExists && !fs.existsSync(configDir)) {
+        fs.mkdirSync(configDir);
     }
 
     return path.join(configDir, DATA_FOLDER_NAME);
@@ -88,12 +100,13 @@ export function saveTempFile(filename: string, text: string) {
         filename = path.join(getExtentionTempDir(), filename);
     }
     fs.writeFileSync(filename, text);
+
     return filename;
 }
 
 
 /**
- * Delete the temp folder created by this extension (and all of the files inside of it)
+ * Delete this extension's temp folder (and all of the files inside of it)
  */
 export function cleanupTempFiles() {
     const tempDir = getExtentionTempDir();
@@ -102,18 +115,12 @@ export function cleanupTempFiles() {
     }
 }
 
-/**
- * Compare two paths and check if they are pointing to the same file / directory
- * Regardless of case sensitivity, forward or backward slashes etc. 
- */
- export function isPathsSame(a: string, b: string) {
-    return path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
-}
 
 // -----------------------------------------------------------------------------------------
 //                                          Web
 // -----------------------------------------------------------------------------------------
 
+/** Open a url in the default webbrowser */
 export function openUrl(url: string) {
     open(url);
 }

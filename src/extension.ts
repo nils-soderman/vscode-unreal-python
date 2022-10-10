@@ -1,23 +1,25 @@
 import * as vscode from 'vscode';
 
 import * as remoteHandler from './modules/remote-handler';
-import * as execute from './scripts/execute';
 import * as utils from './modules/utils';
-import * as attach from './scripts/attach';
+
 import * as setupCodeCompletion from './scripts/setup-code-completion';
+import * as execute from './scripts/execute';
+import * as attach from './scripts/attach';
 
 
 export function activate(context: vscode.ExtensionContext) {
 
+	// Register commands
 	context.subscriptions.push(
 		vscode.commands.registerCommand('ue-python.execute', () => {
-			execute.execute();
+			execute.main();
 		})
 	);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('ue-python.attach', () => {
-			attach.attachToUnreal();
+			attach.main();
 		})
 	);
 

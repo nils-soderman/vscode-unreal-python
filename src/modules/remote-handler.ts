@@ -47,7 +47,7 @@ export function sendCommand(command: string, callback?: (message: remoteExecutio
             if (error) {
                 vscode.window.showErrorMessage(error.message, "Help").then(((clickedValue?: string) => {
                     if (clickedValue === "Help") {
-                        extensionWiki.openPageInBrowser(extensionWiki.Pages.failedToConnect);
+                        extensionWiki.openPageInBrowser(extensionWiki.FPages.failedToConnect);
                     }
                 }));
 

@@ -127,7 +127,7 @@ function writeDataFile(fileToExecute: string, originalFilepath: string, commandI
 
 
 
-export async function execute() {
+export async function main() {
     if (!vscode.window.activeTextEditor) {
         return;
     }

@@ -124,7 +124,7 @@ async function setupPath(stubFolderPath: string) {
     else {
         const clickedItem = await vscode.window.showErrorMessage("To setup code completion you first need to enable Developer Mode in Unreal Engine's Python plugin settings.", "Help");
         if (clickedItem === "Help") {
-            extensionWiki.openPageInBrowser(extensionWiki.Pages.enableDevmode);
+            extensionWiki.openPageInBrowser(extensionWiki.FPages.enableDevmode);
         }
 
         /* As of right now enabling the setting automatically is not really possible, since editor preferences will be overriden when engine is closed

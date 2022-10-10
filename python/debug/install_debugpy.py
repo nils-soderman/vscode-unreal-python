@@ -18,12 +18,16 @@ def get_unreal_python_executable():
         return exe_path
 
 
-def install_debugpy(dir=""):
+def install_debugpy(target=""):
     python_exe = get_unreal_python_executable()
     if not python_exe:
         return False
+    
+    args = [python_exe, "-m", "pip", "install", "debugpy"]   
+    if target:
+        args.append(f'--target="{target}"')
 
-    subprocess.call([python_exe, "-m", "pip", "install", "debugpy"])
+    subprocess.call(args)
 
     # Check if installation was sucessfull by trying to import debugpy
     try:
@@ -35,7 +39,7 @@ def install_debugpy(dir=""):
 
 
 def main():
-    install_dir = globals().get("installDir")
+    install_dir = globals().get("install_dir")
     success = install_debugpy(install_dir)
 
     # Output is read by the VS Code extension

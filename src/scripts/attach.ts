@@ -8,14 +8,19 @@ import * as utils from '../modules/utils';
 import { RemoteExecutionMessage, FCommandOutputType } from "../modules/remote-execution";
 
 
-const PYTHON_DEBUG_SCRIPTS_DIR = path.join(utils.EXTENSION_PYTHON_DIR, "debug");
+const PYTHON_DEBUG_SCRIPTS_DIR = path.join(utils.EXTENSION_PYTHON_DIR, "debug"); // The directory with all debug python scripts
 const PYTHON_EXEC_MODULE_NAME = "vscode_execute";
 
+
+/**
+ * Struct containing all python files related to debugging
+ */
 class FDebugScriptFiles {
     static readonly isDebugpyInstalled = "is_debugpy_installed";
     static readonly installDebugPy = "install_debugpy";
     static readonly startDebugServer = "start_debug_server";
 
+    /** Get the absolute path to one of the scripts defined in this struct */
     static getAbsPath(file: string) {
         return path.join(PYTHON_DEBUG_SCRIPTS_DIR, `${file}.py`);
     }
@@ -26,28 +31,44 @@ class FDebugScriptFiles {
 //                               Installation of debugpy
 // ------------------------------------------------------------------------------------------
 
-
+/**
+ * Check if the python module "debugpy" is installed and accessible with the current `sys.paths` in Unreal Engine.  
+ * This function will run a script in Unreal to check.
+ * @param callback The function to call once Unreal has responded
+ */
 function isDebugpyInstalled(callback: (bInstalled: boolean) => void) {
     const isDebugPyInstalledScript = FDebugScriptFiles.getAbsPath(FDebugScriptFiles.isDebugpyInstalled);
+
     remoteHandler.executeFile(isDebugPyInstalledScript, {}, (message: RemoteExecutionMessage) => {
         const outputs = message.getCommandResultOutput();
+
         for (let output of outputs) {
             if (output.type === FCommandOutputType.info) {
                 callback(output.output.toLowerCase() === "true");
                 return;
             }
         }
+
         callback(false);
     });
 }
 
 
-async function installDebugpy(callback: (bSucess: boolean) => void) {
+/**
+ * pip install the "debugpy" python module
+ * @param callback The function to call once the module has been installed
+ * @param target The directory where to install the module, if none is provided it'll be installed in the current Unreal Project
+ */
+function installDebugpy(callback: (bSuccess: boolean) => void, target = "") {
     const installDebugpyScript = FDebugScriptFiles.getAbsPath(FDebugScriptFiles.installDebugPy);
 
-    const globals = { "installDir": "" };
+    // Pass along the target to the python script as a global variable
+    const globals = { "install_dir": target };  // eslint-disable-line @typescript-eslint/naming-convention
+
     remoteHandler.executeFile(installDebugpyScript, globals, (message: RemoteExecutionMessage) => {
         const outputs = message.getCommandResultOutput();
+
+        // We should've recived a response with "True" or "False"
         for (let output of outputs) {
             if (output.type === FCommandOutputType.info) {
                 callback(output.output.toLowerCase() === "true");
@@ -57,7 +78,6 @@ async function installDebugpy(callback: (bSucess: boolean) => void) {
 
         callback(false);
     });
-
 }
 
 
@@ -66,12 +86,19 @@ async function installDebugpy(callback: (bSucess: boolean) => void) {
 //                                  Attach to Unreal Engine
 // ------------------------------------------------------------------------------------------
 
+/**
+ * Start a debugpy server in Unreal Engine.
+ * @param port The port to start the server on
+ * @param callback 
+ */
 function startDebugpyServer(port: number, callback: (bSuccess: boolean) => void) {
     const startDebugServerScript = FDebugScriptFiles.getAbsPath(FDebugScriptFiles.startDebugServer);
 
-    const globals = { "debug_port": port };
+    const globals = { "debug_port": port };  // eslint-disable-line @typescript-eslint/naming-convention
+
     remoteHandler.executeFile(startDebugServerScript, globals, (message: RemoteExecutionMessage) => {
         const outputs = message.getCommandResultOutput();
+
         for (let output of outputs) {
             if (output.type === FCommandOutputType.info) {
                 callback(output.output.toLowerCase() === "true");
@@ -105,7 +132,7 @@ function attach() {
 }
 
 
-export async function attachToUnreal() {
+export async function main() {
 
     // Make sure debugpy is installed
     isDebugpyInstalled((bInstalled: boolean) => {
@@ -121,9 +148,9 @@ export async function attachToUnreal() {
                 if (value === "Install") {
 
                     // Install debugpy
-                    installDebugpy(bSucess => {
+                    installDebugpy(bSuccess => {
 
-                        if (bSucess) {
+                        if (bSuccess) {
                             attach();
                         }
                         else {
