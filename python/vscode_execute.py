@@ -10,14 +10,6 @@ TEMP_FOLDERPATH = os.path.join(tempfile.gettempdir(), "VSCode-Unreal-Python")
 OUTPUT_FILENAME = "exec-out"
 
 DATA_FILEPATH_GLOBAL_VAR_NAME = "data_filepath"
-    
-def read_input_data(data_filepath):
-    """ Read input data that was written with typescript (`writeDataFile()` in `execute-script.ts`) """
-    filepath = os.path.join(TEMP_FOLDERPATH, data_filepath)
-    if os.path.isfile(filepath):
-        with open(filepath, 'r') as vs_code_settings_file:
-            return json.load(vs_code_settings_file)
-    return {}
 
 
 def get_exec_globals():
@@ -57,31 +49,26 @@ def execute_code(code, filename, is_vscode_debugging):
         print(traceback_message)
 
 
-def main(data_filepath):
-    vscode_data = read_input_data(data_filepath)
-    is_vscode_debugging = vscode_data.get("is_debugging", False)
-    additional_print_str = vscode_data.get("additionalPrint", "")
-
+def main(exec_file, exec_origin, command_id, is_debugging, nameVar=None, additional_print=None):
     # Set some global variables
     exec_globals = get_exec_globals()
 
-    target_filepath = vscode_data.get("__file__", "")
-    exec_globals["__file__"] = target_filepath
-    if "__name__" in vscode_data and vscode_data["__name__"]:
-        exec_globals["__name__"] = vscode_data["__name__"]
+    exec_globals["__file__"] = exec_origin
+    if nameVar:
+        exec_globals["__name__"] = nameVar
     elif "__name__" in exec_globals:
         exec_globals.pop("__name__")
 
-    command_id = vscode_data.get("id", "")
-    output_filepath = os.path.join(TEMP_FOLDERPATH, f"{OUTPUT_FILENAME}-{command_id}.txt")
+    output_filepath = os.path.join(
+        TEMP_FOLDERPATH, f"{OUTPUT_FILENAME}-{command_id}.txt")
 
-    with open(vscode_data["file"], 'r') as vscode_in_file:
-        if not is_vscode_debugging:
+    with open(exec_file, 'r') as vscode_in_file:
+        if not is_debugging:
             # Re-direct the output through a text file
             with open(output_filepath, 'w') as vscode_out_file, contextlib.redirect_stdout(vscode_out_file):
-                execute_code(vscode_in_file.read(), target_filepath, is_vscode_debugging)
+                execute_code(vscode_in_file.read(), exec_origin, is_debugging)
         else:
-            execute_code(vscode_in_file.read(), target_filepath, is_vscode_debugging)
+            execute_code(vscode_in_file.read(), exec_origin, is_debugging)
 
-        if additional_print_str:
-            print(additional_print_str)
+        if additional_print:
+            print(additional_print)

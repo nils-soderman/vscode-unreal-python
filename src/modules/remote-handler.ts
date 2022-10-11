@@ -62,7 +62,7 @@ export function sendCommand(command: string, callback?: (message: remoteExecutio
 
 
 export function executeFile(filepath: string, variables = {}, callback?: (message: remoteExecution.RemoteExecutionMessage) => void) {
-    let variableString = "";
+    let variableString = `__file__=r'${filepath}';`;
     for (const [key, value] of Object.entries(variables)) {
         let safeValueStr = value;
         if (typeof value === "string") {

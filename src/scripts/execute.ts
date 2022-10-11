@@ -13,17 +13,10 @@ import { RemoteExecutionMessage } from "../modules/remote-execution";
 
 
 const INPUT_TEMP_PYTHON_FILENAME = "temp_exec";
-const INPUT_DATA_FILENAME = "exec-in-data";
 const OUTPUT_FILENAME = "exec-out";
-
-const DATA_FILEPATH_GLOBAL_VAR_NAME = "data_filepath";
 
 let gOutputChannel: vscode.OutputChannel | undefined;
 
-
-// ------------------------------------------------------------------------------------------
-//                                    Filepaths
-// ------------------------------------------------------------------------------------------
 
 /**
  * Get the output channel for this extension
@@ -36,6 +29,10 @@ function getOutputChannel(bEnsureChannelExists = true) {
     return gOutputChannel;
 }
 
+
+// ------------------------------------------------------------------------------------------
+//                                    Filepaths
+// ------------------------------------------------------------------------------------------
 
 /** 
  * Get the filepath where the output for a spesific command will be saved
@@ -55,16 +52,6 @@ function getTempPythonExecFilepath(commandId: string) {
 }
 
 
-/**
- * Get a filepath where input data can be stored
- * @param commandId 
- * @returns 
- */
-function getInputDataFilepath(commandId: string) {
-    return path.join(utils.getExtentionTempDir(), `${INPUT_DATA_FILENAME}-${commandId}.json`);
-}
-
-
 // ------------------------------------------------------------------------------------------
 //                                     File handlers
 // ------------------------------------------------------------------------------------------
@@ -76,8 +63,7 @@ function getInputDataFilepath(commandId: string) {
 async function cleanUpTempFiles(commandId: string) {
     const filepaths = [
         getTempPythonExecFilepath(commandId),
-        getOutputFilepath(commandId),
-        getInputDataFilepath(commandId)
+        getOutputFilepath(commandId)
     ];
 
     for (const filepath of filepaths) {
@@ -85,32 +71,6 @@ async function cleanUpTempFiles(commandId: string) {
             fs.unlinkSync(filepath);
         }
     }
-}
-
-
-/**
- * Write a json temp file that can be read by execute.py, to know what script to execute etc.
- * @param fileToExecute The abs filepath to the .py file that should be executed
- * @param originalFilepath The abs filepath to the source filepath, will be used to set the python var `__file__`
- * @param additionalPrint Additional text to be printed to the output once the code has been executed
- */
-function writeDataFile(fileToExecute: string, originalFilepath: string, commandId: string, isDebugging: boolean, additionalPrint = "", nameVar = "") {
-    let data: any = {
-        "file": fileToExecute,
-        "__file__": originalFilepath,  // eslint-disable-line @typescript-eslint/naming-convention
-        "__name__": nameVar,  // eslint-disable-line @typescript-eslint/naming-convention
-        "id": commandId,
-        "is_debugging": isDebugging  // eslint-disable-line @typescript-eslint/naming-convention
-    };
-
-    if (additionalPrint) {
-        data["additionalPrint"] = additionalPrint;
-    }
-
-    const outDataFilepath = getInputDataFilepath(commandId);
-    utils.saveTempFile(outDataFilepath, JSON.stringify(data));
-
-    return outDataFilepath;
 }
 
 
@@ -171,14 +131,7 @@ export async function main() {
         return;
     }
 
-    const activeDocuemt = vscode.window.activeTextEditor.document;
     const extensionConfig = utils.getExtensionConfig();
-
-    // Write an info file telling mb what script to run, etc.
-    const bIsDebugging = utils.isDebuggingUnreal();
-    const additionalPrint = bIsDebugging ? ">>>" : "";
-    const nameVar: string | undefined = extensionConfig.get("execute.name");
-    const dataFilepath = writeDataFile(fileToExecute, activeDocuemt.uri.fsPath, commandId, bIsDebugging, additionalPrint, nameVar);
 
     // Clear the output channel if enabled in user settings
     if (extensionConfig.get("execute.clearOutput")) {
@@ -188,15 +141,24 @@ export async function main() {
         }
     }
 
-    const execFile = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.executeEntry);
+    // Write an info file telling mb what script to run, etc.
+    const bIsDebugging = utils.isDebuggingUnreal();
+    const nameVar: string | undefined = extensionConfig.get("execute.name");
 
-    let globalVariables: any = {
+    let vscodeData: any = {
+        "file": fileToExecute,
+        "__file__": vscode.window.activeTextEditor.document.uri.fsPath,  // eslint-disable-line @typescript-eslint/naming-convention
+        "__name__": nameVar,  // eslint-disable-line @typescript-eslint/naming-convention
+        "id": commandId,
+        "isDebugging": bIsDebugging
     };
-    globalVariables["__vscodeExecFile__"] = execFile;
-    globalVariables[DATA_FILEPATH_GLOBAL_VAR_NAME] = dataFilepath;
 
-    // const globals = {"vscode_globals": JSON.stringify(globalVariables)};  // eslint-disable-line @typescript-eslint/naming-convention
-    
+    if (bIsDebugging) {
+        vscodeData["additionalPrint"] = ">>>";
+    }
 
+    const globalVariables = { "vscode_globals": JSON.stringify(vscodeData) };  // eslint-disable-line @typescript-eslint/naming-convention
+
+    const execFile = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.executeEntry);
     remoteHandler.executeFile(execFile, globalVariables, (message: RemoteExecutionMessage) => { handleResponse(message, commandId); });
 }

@@ -1,20 +1,26 @@
 """ 
 This entry script is needed for ignoring the actual module 'vscode_execute' from the debugger
 """
-# import importlib
+import json
 import sys
 import os
 
-
+vscode_globals = globals().get("vscode_globals")
+vscode_globals = json.loads(vscode_globals)
 
 vscode_execute = globals().get("vscode_execute")
 if not vscode_execute:
-    current_filepath = globals().get("__vscodeExecFile__")  # Essentially __file__, but set through 'execute.ts'
-    sys.path.append(os.path.dirname(current_filepath))
+    # current_filepath = globals().get("__vscodeExecFile__")  # Essentially __file__, but set through 'execute.ts'
+    print("__file__: %s" %(__file__))
+    sys.path.append(os.path.dirname(__file__))
     import vscode_execute
-    sys.path.remove(os.path.dirname(current_filepath))
+    sys.path.remove(os.path.dirname(__file__))
 
-# importlib.reload(vscode_execute)
-
-data_filepath = globals().get("data_filepath")
-vscode_execute.main(data_filepath)
+vscode_execute.main(
+    vscode_globals.get("file"),
+    vscode_globals.get("__file__"),
+    vscode_globals.get("id"),
+    vscode_globals.get("isDebugging"),
+    vscode_globals.get("__name__"),
+    vscode_globals.get("additionalPrint")
+)
