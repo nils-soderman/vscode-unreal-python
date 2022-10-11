@@ -12,6 +12,22 @@ export const EXTENSION_DIR = path.dirname(path.dirname(__dirname));  // The base
 export const EXTENSION_PYTHON_DIR = path.join(EXTENSION_DIR, "python");  // The directory where all python scritps provided by this extension can be founnd
 
 
+export class FPythonScriptFiles {
+    static readonly execute = "vscode_execute";
+    static readonly executeEntry = "vscode_execute_entry";
+    static readonly isDebugpyInstalled = "debug/is_debugpy_installed";
+    static readonly installDebugPy = "debug/install_debugpy";
+    static readonly startDebugServer = "debug/start_debug_server";
+    static readonly codeCompletionGetPath = "setup_code_completion/get_stub_path";
+    static readonly isDevmodeEnabled = "setup_code_completion/is_devmode_enabled";
+
+    /** Get the absolute path to one of the scripts defined in this struct */
+    static getAbsPath(file: string) {
+        return path.join(EXTENSION_PYTHON_DIR, `${file}.py`);
+    }
+}
+
+
 // -----------------------------------------------------------------------------------------
 //                                  VS Code Utils
 // -----------------------------------------------------------------------------------------

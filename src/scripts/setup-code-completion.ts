@@ -9,25 +9,12 @@ import * as utils from '../modules/utils';
 
 import { RemoteExecutionMessage, FCommandOutputType } from "../modules/remote-execution";
 
-
-const PYTHON_DEBUG_SCRIPTS_DIR = path.join(utils.EXTENSION_PYTHON_DIR, "setup_code_completion");
 const STUB_FILE_NAME = "unreal.py";
 
 const PYTHON_CONFIG = "python";
 const EXTRA_PATHS_CONFIG = "analysis.extraPaths";
 
 const STUB_FILE_RELATIVE_FOLDER = "Intermediate/PythonStub";
-
-
-class FPythonScriptFiles {
-    static readonly isDevmodeEnabled = "is_devmode_enabled";
-    static readonly getPythonPath = "get_stub_path";
-    // static readonly enableDevmode = "enable_devmode";
-
-    static getAbsPath(file: string) {
-        return path.join(PYTHON_DEBUG_SCRIPTS_DIR, `${file}.py`);
-    }
-}
 
 
 /**
@@ -69,7 +56,7 @@ function enableDevmode(callback: (bEnabled: boolean) => void) {
 */
 
 function getPythonPath(callback: (path?: string) => void) {
-    const getPythonPathScript = FPythonScriptFiles.getAbsPath(FPythonScriptFiles.getPythonPath);
+    const getPythonPathScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.codeCompletionGetPath);
     remoteHandler.executeFile(getPythonPathScript, {}, (message: RemoteExecutionMessage) => {
         const outputs = message.getCommandResultOutput();
         for (let output of outputs) {

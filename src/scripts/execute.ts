@@ -11,16 +11,19 @@ import * as vsCodeExec from "../modules/code-exec";
 
 import { RemoteExecutionMessage } from "../modules/remote-execution";
 
-const PYTHON_EXEC_FILE = path.join(utils.EXTENSION_PYTHON_DIR, "vscode_execute_entry.py");
 
+const INPUT_TEMP_PYTHON_FILENAME = "temp_exec";
 const INPUT_DATA_FILENAME = "exec-in-data";
-const INPUT_TEMP_PYTHON_FILENAME = "exec-in-code";
 const OUTPUT_FILENAME = "exec-out";
 
 const DATA_FILEPATH_GLOBAL_VAR_NAME = "data_filepath";
 
 let gOutputChannel: vscode.OutputChannel | undefined;
 
+
+// ------------------------------------------------------------------------------------------
+//                                    Filepaths
+// ------------------------------------------------------------------------------------------
 
 /**
  * Get the output channel for this extension
@@ -34,60 +37,45 @@ function getOutputChannel(bEnsureChannelExists = true) {
 }
 
 
+/** 
+ * Get the filepath where the output for a spesific command will be saved
+ * @param commandId: The command ID will be appended to the filename
+ */
 function getOutputFilepath(commandId: string) {
     return path.join(utils.getExtentionTempDir(), `${OUTPUT_FILENAME}-${commandId}.txt`);
 }
 
 
-function getTempPythonInputFilepath(commandId: string) {
+/**
+ * Get a filepath where a temp python file can be saved
+ * @param commandId: The command ID will be appended to the filename
+ */
+function getTempPythonExecFilepath(commandId: string) {
     return path.join(utils.getExtentionTempDir(), `${INPUT_TEMP_PYTHON_FILENAME}-${commandId}.py`);
 }
 
+
+/**
+ * Get a filepath where input data can be stored
+ * @param commandId 
+ * @returns 
+ */
 function getInputDataFilepath(commandId: string) {
     return path.join(utils.getExtentionTempDir(), `${INPUT_DATA_FILENAME}-${commandId}.json`);
 }
 
 
-function readResponse(commandId: string) {
-    const outputFilename = getOutputFilepath(commandId);
-    if (fs.existsSync(outputFilename)) {
-        return fs.readFileSync(outputFilename).toString("utf8");
-    }
-    return "";
-}
+// ------------------------------------------------------------------------------------------
+//                                     File handlers
+// ------------------------------------------------------------------------------------------
 
-
-/** Handle data recived from the Unreal python server */
-function handleResponse(message: RemoteExecutionMessage, commandId: string) {
-    // If user is debugging MB, all output will automatically be appended to the debug console
-    if (utils.isDebuggingUnreal()) {
-        return;
-    }
-
-    // Format response
-    const parsedOutputMessage = readResponse(commandId);
-    let outputMessage = `${parsedOutputMessage}>>>`;
-
-    // Format response
-    outputMessage = outputMessage.replace(/\n\r/g, "\n");
-
-    const outputChannel = getOutputChannel();
-    if (outputChannel) {
-        // Add the message to the output channel
-        outputChannel.appendLine(outputMessage);
-
-        // Bring up the output channel on screen
-        if (utils.getExtensionConfig().get("execute.showOutput")) {
-            outputChannel.show(true);
-        }
-    }
-
-    cleanUpTempFiles(commandId);
-}
-
+/**
+ * Clean up all temp files related to a spesific command 
+ * @param commandId 
+ */
 async function cleanUpTempFiles(commandId: string) {
     const filepaths = [
-        getTempPythonInputFilepath(commandId),
+        getTempPythonExecFilepath(commandId),
         getOutputFilepath(commandId),
         getInputDataFilepath(commandId)
     ];
@@ -126,24 +114,67 @@ function writeDataFile(fileToExecute: string, originalFilepath: string, commandI
 }
 
 
+function readResponse(commandId: string) {
+    const outputFilename = getOutputFilepath(commandId);
+    if (fs.existsSync(outputFilename)) {
+        return fs.readFileSync(outputFilename).toString("utf8");
+    }
+    return "";
+}
+
+
+// ------------------------------------------------------------------------------------------
+//                                  Remote Exec
+// ------------------------------------------------------------------------------------------
+
+/** Handle data recived from the Unreal python server */
+function handleResponse(message: RemoteExecutionMessage, commandId: string) {
+    // If user is debugging MB, all output will automatically be appended to the debug console
+    if (utils.isDebuggingUnreal()) {
+        return;
+    }
+
+    // Format response
+    const parsedOutputMessage = readResponse(commandId);
+    let outputMessage = `${parsedOutputMessage}>>>`;
+
+    // Format response
+    outputMessage = outputMessage.replace(/\n\r/g, "\n");
+
+    const outputChannel = getOutputChannel();
+    if (outputChannel) {
+        // Add the message to the output channel
+        outputChannel.appendLine(outputMessage);
+
+        // Bring up the output channel on screen
+        if (utils.getExtensionConfig().get("execute.showOutput")) {
+            outputChannel.show(true);
+        }
+    }
+
+    cleanUpTempFiles(commandId);
+}
+
 
 export async function main() {
     if (!vscode.window.activeTextEditor) {
         return;
     }
-    const activeDocuemt = vscode.window.activeTextEditor.document;
 
-    // Generate a random command id, used to differentiate from other commands run at the same time
+    // Generate a random id, used to differentiate from other commands run at the same time
     const commandId = uuid.v4();
 
-    const fileToExecute = vsCodeExec.getFileToExecute(getTempPythonInputFilepath(commandId));
+    // Get a file to execute
+    const tempExecFilepath = getTempPythonExecFilepath(commandId);
+    const fileToExecute = vsCodeExec.getFileToExecute(tempExecFilepath);
     if (!fileToExecute) {
         return;
     }
 
+    const activeDocuemt = vscode.window.activeTextEditor.document;
     const extensionConfig = utils.getExtensionConfig();
 
-    // File an info file telling mb what script to run, etc.
+    // Write an info file telling mb what script to run, etc.
     const bIsDebugging = utils.isDebuggingUnreal();
     const additionalPrint = bIsDebugging ? ">>>" : "";
     const nameVar: string | undefined = extensionConfig.get("execute.name");
@@ -157,9 +188,15 @@ export async function main() {
         }
     }
 
-    let globalVariables: any = {};
-    globalVariables["__vscodeExecFile__"] = PYTHON_EXEC_FILE;
+    const execFile = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.executeEntry);
+
+    let globalVariables: any = {
+    };
+    globalVariables["__vscodeExecFile__"] = execFile;
     globalVariables[DATA_FILEPATH_GLOBAL_VAR_NAME] = dataFilepath;
 
-    remoteHandler.executeFile(PYTHON_EXEC_FILE, globalVariables, (message: RemoteExecutionMessage) => { handleResponse(message, commandId); });
+    // const globals = {"vscode_globals": JSON.stringify(globalVariables)};  // eslint-disable-line @typescript-eslint/naming-convention
+    
+
+    remoteHandler.executeFile(execFile, globalVariables, (message: RemoteExecutionMessage) => { handleResponse(message, commandId); });
 }

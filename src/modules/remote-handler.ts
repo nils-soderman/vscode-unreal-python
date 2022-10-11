@@ -66,7 +66,7 @@ export function executeFile(filepath: string, variables = {}, callback?: (messag
     for (const [key, value] of Object.entries(variables)) {
         let safeValueStr = value;
         if (typeof value === "string") {
-            safeValueStr = `r"${value}"`;
+            safeValueStr = `r'${value}'`;
         }
         variableString += `${key}=${safeValueStr};`;
     }
