@@ -1,3 +1,7 @@
+/**
+ * Script that executes the selected text in Unreal Engine, if nothing is selected the entire active document will be executed.
+ */
+
 import * as vscode from 'vscode';
 
 import * as path from 'path';
@@ -58,7 +62,7 @@ function getTempPythonExecFilepath(commandId: string) {
 
 /**
  * Clean up all temp files related to a spesific command 
- * @param commandId 
+ * @param commandId The ID of which files to delete
  */
 async function cleanUpTempFiles(commandId: string) {
     const filepaths = [
@@ -73,11 +77,15 @@ async function cleanUpTempFiles(commandId: string) {
     }
 }
 
-
+/** 
+ * Read the output file, written by the 'vscode_execute.py' python module 
+ * @param commandId: The ID of which response to read
+ */
 function readResponse(commandId: string) {
     const outputFilename = getOutputFilepath(commandId);
     if (fs.existsSync(outputFilename)) {
-        return fs.readFileSync(outputFilename).toString("utf8");
+        // Use slice to remove the last '\n' always added
+        return fs.readFileSync(outputFilename).toString("utf8").slice(0, -2);
     }
     return "";
 }
@@ -87,24 +95,25 @@ function readResponse(commandId: string) {
 //                                  Remote Exec
 // ------------------------------------------------------------------------------------------
 
-/** Handle data recived from the Unreal python server */
+/** 
+ * Handle data recived from the Unreal python server  
+ * Because 'vscode_execute.py' re-directs all of the output through a .txt file, `message` will be empty,
+ * instead use `readResponse` to fetch the output. 
+ * */
 function handleResponse(message: RemoteExecutionMessage, commandId: string) {
     // If user is debugging MB, all output will automatically be appended to the debug console
     if (utils.isDebuggingUnreal()) {
         return;
     }
 
-    // Format response
+    // Read the output message
     const parsedOutputMessage = readResponse(commandId);
-    let outputMessage = `${parsedOutputMessage}>>>`;
 
-    // Format response
-    outputMessage = outputMessage.replace(/\n\r/g, "\n");
 
     const outputChannel = getOutputChannel();
     if (outputChannel) {
         // Add the message to the output channel
-        outputChannel.appendLine(outputMessage);
+        outputChannel.appendLine(parsedOutputMessage);
 
         // Bring up the output channel on screen
         if (utils.getExtensionConfig().get("execute.showOutput")) {
@@ -112,6 +121,7 @@ function handleResponse(message: RemoteExecutionMessage, commandId: string) {
         }
     }
 
+    // Cleanup all temp that were written by this command
     cleanUpTempFiles(commandId);
 }
 
@@ -150,13 +160,11 @@ export async function main() {
         "__file__": vscode.window.activeTextEditor.document.uri.fsPath,  // eslint-disable-line @typescript-eslint/naming-convention
         "__name__": nameVar,  // eslint-disable-line @typescript-eslint/naming-convention
         "id": commandId,
-        "isDebugging": bIsDebugging
+        "isDebugging": bIsDebugging,
+        "additionalPrint": ">>>"
     };
 
-    if (bIsDebugging) {
-        vscodeData["additionalPrint"] = ">>>";
-    }
-
+    // Set `vscodeData` as a global dict variable, that can be read by the python script
     const globalVariables = { "vscode_globals": JSON.stringify(vscodeData) };  // eslint-disable-line @typescript-eslint/naming-convention
 
     const execFile = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.executeEntry);

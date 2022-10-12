@@ -1,3 +1,8 @@
+/**
+ * Script to attach VS Code to Unreal Engine by starting a debugpy server
+ * If debugpy is not installed user will be prompted to install it, with an option to automatically install it
+ */
+
 import * as vscode from 'vscode';
 
 import * as remoteHandler from '../modules/remote-handler';

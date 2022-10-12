@@ -5,6 +5,7 @@ import * as open from 'open';
 import * as os from "os";
 import * as fs from 'fs';
 
+
 const DATA_FOLDER_NAME = "VSCode-Unreal-Python";  // Folder name used for Temp & Data directory
 export const DEBUG_SESSION_NAME = "Unreal Python"; // The name of the debug session when debugging Unreal
 
@@ -12,6 +13,10 @@ export const EXTENSION_DIR = path.dirname(path.dirname(__dirname));  // The base
 export const EXTENSION_PYTHON_DIR = path.join(EXTENSION_DIR, "python");  // The directory where all python scritps provided by this extension can be founnd
 
 
+/**
+ * Struct containing all available python script's provided by this extension.  
+ * All variables & methods are static, this class should not be instantiated.
+ */
 export class FPythonScriptFiles {
     static readonly execute = "vscode_execute";
     static readonly executeEntry = "vscode_execute_entry";
@@ -47,7 +52,7 @@ export function isDebuggingUnreal() {
 
 
 // -----------------------------------------------------------------------------------------
-//                              Directories & Files
+//                              Directories, Files & Paths
 // -----------------------------------------------------------------------------------------
 
 
@@ -57,6 +62,14 @@ export function isDebuggingUnreal() {
  */
 export function isPathsSame(a: string, b: string) {
     return path.resolve(a).toLowerCase() === path.resolve(b).toLowerCase();
+}
+
+
+/**
+ * Make sure a path uses forward slashes
+ */
+export function ensureForwardSlashes(inPath: string) {
+    return inPath.replace(/\\/g, "/");;
 }
 
 

@@ -1,3 +1,7 @@
+/**
+ * Script to add the directory where the 'unreal.py' stub file is generated to the `python.analysis.extraPaths` config.
+ */
+
 import * as vscode from 'vscode';
 
 import * as path from 'path';
@@ -18,44 +22,19 @@ const STUB_FILE_RELATIVE_FOLDER = "Intermediate/PythonStub";
 
 
 /**
- * Get the configuration for the python extension
+ * Get the python extension's configuration 
  */
 function getPythonConfig() {
     return vscode.workspace.getConfiguration(PYTHON_CONFIG);
 }
 
-/*
-function isDevmodeEnabled(callback: (bEnabled: boolean) => void) {
-    const isDevmodeEnabledScript = FPythonScriptFiles.getAbsPath(FPythonScriptFiles.isDevmodeEnabled);
-    remoteHandler.executeFile(isDevmodeEnabledScript, {}, (message: RemoteExecutionMessage) => {
-        const outputs = message.getCommandResultOutput();
-        for (let output of outputs) {
-            if (output.type === FCommandOutputType.info) {
-                callback(output.output.toLowerCase() === "true");
-                return;
-            }
-        }
-        callback(false);
-    });
-}
 
-
-function enableDevmode(callback: (bEnabled: boolean) => void) {
-    const enableDevmodeScript = FPythonScriptFiles.getAbsPath(FPythonScriptFiles.enableDevmode);
-    remoteHandler.executeFile(enableDevmodeScript, {}, (message: RemoteExecutionMessage) => {
-        const outputs = message.getCommandResultOutput();
-        for (let output of outputs) {
-            if (output.type === FCommandOutputType.info) {
-                callback(output.output.toLowerCase() === "true");
-                return;
-            }
-        }
-        callback(false);
-    });
-}
-*/
-
-function getPythonPath(callback: (path?: string) => void) {
+/**
+ * Get the path to the directory where the 'unreal.py' stubfile is generated.
+ * The path will be for the currently opened Unreal project, as it'll use remote execution to find out
+ * @param callback The function to call when the Unreal python sever has responded with a path
+ */
+function getUnrealStubDirectory(callback: (path?: string) => void) {
     const getPythonPathScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.codeCompletionGetPath);
     remoteHandler.executeFile(getPythonPathScript, {}, (message: RemoteExecutionMessage) => {
         const outputs = message.getCommandResultOutput();
@@ -70,14 +49,22 @@ function getPythonPath(callback: (path?: string) => void) {
 }
 
 
+/**
+ * Add a path to the `python.analysis.extraPaths` config. 
+ * This function will also remove any current paths that ends w/ 'Intermediate/PythonStub' 
+ * to prevent multiple Unreal stub directories beeing added
+ * @param pathToAdd The path to add
+ */
 function addPythonAnalysisPath(pathToAdd: string) {
-    // Make path use forward slashes
-    pathToAdd = pathToAdd.replace(/\\/gi, "/");
+    // Make path use forward slashes, as it looks cleaner in the config file
+    pathToAdd = utils.ensureForwardSlashes(pathToAdd);
 
     const pythonConfig = getPythonConfig();
     let extraPaths: Array<string> | undefined = pythonConfig.get(EXTRA_PATHS_CONFIG);
+
     if (extraPaths) {
         const pathsToRemove: string[] = [];
+        
         for (const extraPath of extraPaths) {
             // Make sure the path doesn't already exist
             if (utils.isPathsSame(extraPath, pathToAdd)) {
@@ -85,82 +72,58 @@ function addPythonAnalysisPath(pathToAdd: string) {
             }
 
             // Check if any other Unreal python paths exists, and if so remove them (if e.g. switching between projects)
-            const comparePath = path.resolve(extraPath).toLowerCase().replace(/\\/gi, "/");
+            const comparePath = utils.ensureForwardSlashes(path.resolve(extraPath)).toLowerCase();
             if (comparePath.endsWith(STUB_FILE_RELATIVE_FOLDER.toLowerCase())) {
                 pathsToRemove.push(extraPath);
             }
         }
 
-        // Remove any paths
+        // Remove any additional Unreal stub directories found
         extraPaths = extraPaths.filter(e => !pathsToRemove.includes(e));
 
-        // Add the path to extraPaths
+        // Add the path to extraPaths & update the config
         extraPaths.push(pathToAdd);
         pythonConfig.update(EXTRA_PATHS_CONFIG, extraPaths, true);
     }
 }
 
 
-
-async function setupPath(stubFolderPath: string) {
+/**
+ * Validate that a 'unreal.py' stub file exists in given directory, and if so add it to the `python.analysis.extraPaths` config.
+ * If a valid stub file doesn't exist, user will be prompted to enable developer mode and the path will NOT be added to the python config.
+ * @param stubDirectoryPath The directory where the 'unreal.py' stub file is located
+ */
+async function validateStubAndAddToPath(stubDirectoryPath: string) {
     // Check if a generated stub file exists
-    const stubFilepath = path.join(stubFolderPath, STUB_FILE_NAME);
+    const stubFilepath = path.join(stubDirectoryPath, STUB_FILE_NAME);
+    
     if (fs.existsSync(stubFilepath)) {
-        addPythonAnalysisPath(stubFolderPath);
+        addPythonAnalysisPath(stubDirectoryPath);
     }
     else {
+        // A generated stub file could not be found, ask the user to enable developer mode first
         const clickedItem = await vscode.window.showErrorMessage("To setup code completion you first need to enable Developer Mode in Unreal Engine's Python plugin settings.", "Help");
         if (clickedItem === "Help") {
             extensionWiki.openPageInBrowser(extensionWiki.FPages.enableDevmode);
         }
-
-        /* As of right now enabling the setting automatically is not really possible, since editor preferences will be overriden when engine is closed
-        isDevmodeEnabled(async bEnabled => {
-            if (bEnabled) {
-                // No stub file found but devmode is enabled, restarting the engine should generate a file
-                addPythonAnalysisPath(stubFolderPath);
-                vscode.window.showWarningMessage("Please restart both Unreal Engine & Visual Studio Code.");
-            }
-            else {
-                // Ask user to enable dev mode so a stub file will be generated
-                const selectedItem = await vscode.window.showWarningMessage(
-                    "Devmode must be enabled in Unreal to generate python stub file",
-                    "Enable Devmode"
-                );
-    
-                if (selectedItem === "Enable Devmode") {
-                    enableDevmode(bEnabled => {
-                        if (bEnabled) {
-                            addPythonAnalysisPath(stubFolderPath);
-                            vscode.window.showWarningMessage("Devmode Enabled, please restart both Unreal Engine & Visual Studio Code.");
-                        }
-                        else {
-                            // TODO: Add a button that links to a page explaining how to do so
-                            vscode.window.showErrorMessage("Failed to enabled devmode, please enable it manually.");
-                        }
-                    }) ; 
-                }
-            }
-        });
-        */
-
     }
 }
 
 
 export function main() {
-    getPythonPath(async stubFolderPath => {
-        if (stubFolderPath) {
-            setupPath(stubFolderPath);
+    getUnrealStubDirectory(async stubDirectoryPath => {
+        if (stubDirectoryPath) {
+            validateStubAndAddToPath(stubDirectoryPath);
         }
         else {
-            // Ask user to browse to the UE project
-            const value = await vscode.window.showErrorMessage(
+            // Failed to get the path, ask user to manually browse to the UE project
+            const selectedItem = await vscode.window.showErrorMessage(
                 "Failed to automatically get the path to current Unreal Engine project",
                 "Browse"
             );
 
-            if (value === "Browse") {
+            if (selectedItem === "Browse") {
+                // Show a file browser dialog, asking the user to select a '.uproject' file
                 const selectedFiles = await vscode.window.showOpenDialog({
                     "filters": {"Unreal Projects": ["uproject"]},  // eslint-disable-line @typescript-eslint/naming-convention
                     "canSelectMany": false,
@@ -169,11 +132,11 @@ export function main() {
                 });
 
                 if (selectedFiles) {
+                    // `selectedFiles[0]` should now be the .uproject file that the user whish to setup code completion for
                     const projectDirectory = path.dirname(selectedFiles[0].fsPath);
-                    stubFolderPath = path.join(projectDirectory, "Intermediate", "PythonStub");
-                    setupPath(stubFolderPath);
+                    const projectStubDirectoryPath = path.join(projectDirectory, "Intermediate", "PythonStub");
+                    validateStubAndAddToPath(projectStubDirectoryPath);
                 }
-
             }
         }
     });

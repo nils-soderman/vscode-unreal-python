@@ -67,8 +67,9 @@ def main(exec_file, exec_origin, command_id, is_debugging, nameVar=None, additio
             # Re-direct the output through a text file
             with open(output_filepath, 'w') as vscode_out_file, contextlib.redirect_stdout(vscode_out_file):
                 execute_code(vscode_in_file.read(), exec_origin, is_debugging)
+                if additional_print:
+                    print(additional_print)
         else:
             execute_code(vscode_in_file.read(), exec_origin, is_debugging)
-
-        if additional_print:
-            print(additional_print)
+            if additional_print:
+                print(additional_print)
