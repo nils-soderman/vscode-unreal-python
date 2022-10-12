@@ -11,20 +11,27 @@ import * as utils from "./utils";
 let gRemoteConnection: remoteExecution.RemoteConnection | null = null;
 
 
+/**
+ * Get a `RemoteExecutionConfig` based on the extension user settings
+ */
 function getRemoteConfig() {
-    const extConfig = utils.getExtensionConfig();
+    const extensionConfig = utils.getExtensionConfig();
 
-    const multicastTTL: number | undefined = extConfig.get("remote.multicastTTL");
-    const multicastGroupEndpoint: string | undefined = extConfig.get("remote.multicastGroupEndpoint");
-    const multicastBindAddress: string | undefined = extConfig.get("remote.multicastBindAddress");
-    const commandEndpoint: string | undefined = extConfig.get("remote.commandEndpoint");
+    const multicastTTL: number | undefined = extensionConfig.get("remote.multicastTTL");
+    const multicastGroupEndpoint: string | undefined = extensionConfig.get("remote.multicastGroupEndpoint");
+    const multicastBindAddress: string | undefined = extensionConfig.get("remote.multicastBindAddress");
+    const commandEndpoint: string | undefined = extensionConfig.get("remote.commandEndpoint");
 
     return new remoteExecution.RemoteExecutionConfig(multicastTTL, multicastGroupEndpoint, multicastBindAddress, commandEndpoint);
 }
 
+
+/**
+ * Get the global remote connection instance
+ * @param bEnsureConnection If a connection doesn't exists yet, create one.
+ */
 export function getRemoteConnection(bEnsureConnection = true) {
     if (!gRemoteConnection && bEnsureConnection) {
-
         const config = getRemoteConfig();
         gRemoteConnection = new remoteExecution.RemoteConnection(config);
     }
@@ -32,50 +39,73 @@ export function getRemoteConnection(bEnsureConnection = true) {
 }
 
 
+/**
+ * Send a command to the remote connection
+ * @param command The python code as a string
+ * @param callback The function to call with the response from Unreal
+ */
 export function sendCommand(command: string, callback?: (message: remoteExecution.RemoteExecutionMessage) => void) {
     const remoteConnection = getRemoteConnection();
     if (!remoteConnection) {
         return;
     }
 
+    // Check if we have at least once requested to start a remote connection
     if (remoteConnection.hasStartBeenRequested()) {
         remoteConnection.runCommand(command, callback);
     }
     else {
+        // Run the start command with a timeout
         const timeout: number | undefined = utils.getExtensionConfig().get("remote.timeout");
-        remoteConnection.start((error?: Error | undefined) => {
-            if (error) {
-                vscode.window.showErrorMessage(error.message, "Help").then(((clickedValue?: string) => {
-                    if (clickedValue === "Help") {
-                        extensionWiki.openPageInBrowser(extensionWiki.FPages.failedToConnect);
-                    }
-                }));
 
+        remoteConnection.start(async error => {
+            if (error) {
+                const clickedItem = await vscode.window.showErrorMessage(error.message, "Help");
+                if (clickedItem === "Help") {
+                    extensionWiki.openPageInBrowser(extensionWiki.FPages.failedToConnect);
+                }
             }
             else {
+                // If no error was provided the server should've started successfully
                 remoteConnection.runCommand(command, callback);
             }
+
         }, timeout);
     }
 
 }
 
 
+/**
+ * Execute a file in Unreal through the remote exection
+ * @param filepath Absolute filepath to the python file to execute
+ * @param variables Optional dict with global variables to set before executing the file
+ * @param callback Function to call with the response from Unreal
+ */
 export function executeFile(filepath: string, variables = {}, callback?: (message: remoteExecution.RemoteExecutionMessage) => void) {
+    // Construct a string with all of the global variables, e.g: "x=1;y='Hello';"
     let variableString = `__file__=r'${filepath}';`;
+
     for (const [key, value] of Object.entries(variables)) {
         let safeValueStr = value;
         if (typeof value === "string") {
+            // Append single quotes ' to the start & end of the value
             safeValueStr = `r'${value}'`;
         }
+
         variableString += `${key}=${safeValueStr};`;
     }
 
+    // Put together one line of code for settings the global variables, then opening, reading & executing the given filepath
     const command = `${variableString}f=open(r'${filepath}','r');exec(f.read());f.close()`;
     sendCommand(command, callback);
 }
 
 
+/**
+ * Close the global remote connection, if there is one
+ * @param callback Function to call once connection has fully closed
+ */
 export function closeRemoteConnection(callback?: (error?: Error) => void) {
     const remoteConnection = getRemoteConnection(false);
     if (remoteConnection) {
