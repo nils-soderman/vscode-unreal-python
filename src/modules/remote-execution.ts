@@ -11,12 +11,16 @@ import * as net from 'net';
 const PROTOCOL_VERSION = 1;      // Protocol version number
 const PROTOCOL_MAGIC = 'ue_py';  // Protocol magic identifier
 
+
+/** Struct containing all the different output types */
 export class FCommandOutputType {
     static readonly info = "Info";
     static readonly warning = "Warning";
     static readonly error = "Error";
 }
 
+
+/** Struct containing the different execution modes */
 export class FExecMode {
     static readonly execFile = 'ExecuteFile';               // Execute the Python command as a file. This allows you to execute either a literal Python script containing multiple statements, or a file with optional arguments
     static readonly execStatement = 'ExecuteStatement';     // Execute the Python command as a single statement. This will execute a single statement and print the result. This mode cannot run files
@@ -24,6 +28,7 @@ export class FExecMode {
 }
 
 
+/** struct containing the different command types */
 export class FCommandTypes {
     static readonly ping = "ping";                          // Service discovery request (UDP)
     static readonly pong = "pong";                          // Service discovery response (UDP)
@@ -34,12 +39,21 @@ export class FCommandTypes {
 }
 
 
+/**
+ * Configurations for the remote server / connection
+ */
 export class RemoteExecutionConfig {
-    multicastTTL: number;                       // Multicast TTL (0 is limited to the local host, 1 is limited to the local subnet)
-    multicastGroupEndpoint: [string, number];   // The multicast group endpoint tuple that the UDP multicast socket should join (must match the "Multicast Group Endpoint" setting in the Python plugin)
-    multicastBindAddress: string;               // The adapter address that the UDP multicast socket should bind to, or 0.0.0.0 to bind to all adapters (must match the "Multicast Bind Address" setting in the Python plugin)
-    commandEndpoint: [string, number];          // The endpoint tuple for the TCP command connection hosted by this client (that the remote client will connect to)
+    multicastTTL: number;
+    multicastGroupEndpoint: [string, number];
+    multicastBindAddress: string;
+    commandEndpoint: [string, number];
 
+    /**
+     * @param multicastTTL (0 is limited to the local host, 1 is limited to the local subnet)
+     * @param multicastGroupEndpoint The multicast group endpoint tuple that the UDP multicast socket should join (must match the "Multicast Group Endpoint" setting in the Python plugin)
+     * @param multicastBindAddress The adapter address that the UDP multicast socket should bind to, or 0.0.0.0 to bind to all adapters (must match the "Multicast Bind Address" setting in the Python plugin)
+     * @param commandEndpoint The endpoint tuple for the TCP command connection hosted by this client (that the remote client will connect to)
+     */
     constructor
         (
             multicastTTL = 0,
@@ -50,6 +64,7 @@ export class RemoteExecutionConfig {
         this.multicastTTL = multicastTTL;
         this.multicastBindAddress = multicastBindAddress;
 
+        // Split `multicastGroupEndpoint` & `commandEndpoint` into an array with [IP, PORT]
         const multicastGroupEndpointTuple = multicastGroupEndpoint.split(":", 2);
         this.multicastGroupEndpoint = [multicastGroupEndpointTuple[0], Number(multicastGroupEndpointTuple[1])];
 
@@ -60,7 +75,7 @@ export class RemoteExecutionConfig {
 
 
 /**
- * 
+ * Run the function `check` as many times as provided in `itterations`. But wait `interval` seconds between each run.
  * @param itterations How many times to run the 'check' function before returning false.
  * @param interval Seconds to wait between each itteration
  * @param check The function to check, function must return a boolean
@@ -86,32 +101,41 @@ async function timeoutCheck(itterations = 10, interval = 1, check: () => boolean
 }
 
 
+/**
+ * The main class that should be initialized when you want to connect to Unreal Engine
+ */
 export class RemoteConnection {
-    private _config: RemoteExecutionConfig;
-    private _nodeId: string;
-    private _broadcastSocket: BroadcastSocket | null = null;
+    private config: RemoteExecutionConfig;
+    private nodeId: string;
+    private broadcastSocket: BroadcastSocket | null = null;
 
+    /**
+     * @param config Configurations for the connection / server
+     */
     constructor(config = new RemoteExecutionConfig()) {
-        this._config = config;
-        this._nodeId = uuid.v4();
+        this.config = config;
+        this.nodeId = uuid.v4();
+    }
+
+    /** Check if `start()` already has been requested, this does not mean that the server and all sockets has fully started yet. */
+    public hasStartBeenRequested() {
+        return this.broadcastSocket !== null;
     }
 
     /**
-     * Check if start() has already been requested, this does not mean that the server and all sockets has actually fully started yet.
+     * Start a connection with the server
+     * @param callback Function to call once a connection has been established. If it failed to connect function will be called with an error.
+     * @param timeout Number of seconds to wait before timing out
      */
-    public hasStartBeenRequested() {
-        return this._broadcastSocket !== null;
-    }
+    public start(callback?: (error?: Error) => void, timeout = 2) {
+        this.broadcastSocket = new BroadcastSocket(this.config, this.nodeId);
 
-    public start(callback?: ((error?: Error) => void), timeout = 2) {
-        this._broadcastSocket = new BroadcastSocket(this._config, this._nodeId);
-
-        this._broadcastSocket.start((error?: Error) => {
+        this.broadcastSocket.start(error => {
             if (error) {
                 this.stop();
             }
             else {
-                this._broadcastSocket?.onCommandSocket("close", () => { this.onLostConnection(); });
+                this.broadcastSocket?.onCommandSocket("close", () => { this.onLostConnection(); });
             }
 
             if (callback) {
@@ -121,36 +145,53 @@ export class RemoteConnection {
 
     }
 
+    /**
+     * Close the remote connection
+     * @param callback Function to call once connection has been closed, will be called with an Error if something went wrong
+     */
     public stop(callback?: (error?: Error) => void) {
-        if (this._broadcastSocket) {
-            this._broadcastSocket.close(callback);
+        if (this.broadcastSocket) {
+            this.broadcastSocket.close(callback);
         }
-        this._broadcastSocket = null;
+
+        this.broadcastSocket = null;
     }
 
+    /**
+     * Send a python command to the remote execution server
+     * @param command The python command as a executable string
+     * @param callback The function to call with the response from Unreal Engine
+     * @param bUnattended
+     * @param execMode Tell Unreal how the command should be executed
+     * @param bRaiseOnFailure
+     */
     public async runCommand(command: string, callback?: (message: RemoteExecutionMessage) => void, bUnattended = true, execMode = FExecMode.execStatement, bRaiseOnFailure = false) {
-        if (!this._broadcastSocket) {
-            // Start the broadcast socket and re-run this function
-            this.start(() => {
-                this.runCommand(command, callback, bUnattended, execMode, bRaiseOnFailure);
+        if (!this.broadcastSocket) {
+            // If start hasn't manually been requested, start the broadcast socket and re-run this function
+            this.start(error => {
+                if (!error) {
+                    this.runCommand(command, callback, bUnattended, execMode, bRaiseOnFailure);
+                }
             });
+
             return;
         }
 
         // If broadcast socket isn't running yet, wait a few sec for it to start
-        if (!this._broadcastSocket.isRunning()) {
-            if (!(await timeoutCheck(25, 0.2, this._broadcastSocket.isRunning))) {
+        if (!this.broadcastSocket.isRunning()) {
+            if (!(await timeoutCheck(25, 0.2, this.broadcastSocket.isRunning))) {
                 return false;
             }
         }
 
-        const message = new RemoteExecutionMessage(FCommandTypes.command, this._nodeId, null, {
+        // Construct a `RemoteExecutionMessage` and pass it along to the broadcast socket
+        const message = new RemoteExecutionMessage(FCommandTypes.command, this.nodeId, null, {
             'command': command,
             'unattended': bUnattended,
             'exec_mode': execMode,  /* eslint-disable-line  @typescript-eslint/naming-convention */
         });
 
-        return this._broadcastSocket.sendMessage(message, callback);
+        return this.broadcastSocket.sendMessage(message, callback);
     }
 
     private onLostConnection() {
@@ -159,59 +200,78 @@ export class RemoteConnection {
 }
 
 
+/**
+ * The broadcast socket created by the `RemoteConnection`
+ */
 class BroadcastSocket {
-    private _bIsRunning = false;;
-    private _socket;
-    private _nodeId;
-    private _config;
+    private bIsRunning = false;;
+    private socket;
+    private nodeId;
+    private config;
     private commandServer: CommandServer | null = null;
 
     private startCallback?: ((error?: Error) => void);
     private startTimeout = 0;
 
+    /**
+     * @param config Configurations for the connection / server
+     * @param nodeId The unique node ID, must be the same as the one in `RemoteConnection`
+     */
     constructor(config: RemoteExecutionConfig = new RemoteExecutionConfig(), nodeId: string) {
-        this._nodeId = nodeId;
-        this._config = config;
-        this._socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
+        this.nodeId = nodeId;
+        this.config = config;
+        this.socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
     }
 
+    /**
+     * Bind a function to the command socket
+     * @param event The event to bind to
+     * @param listener The function to call when the event is fired
+     */
     public onCommandSocket(event: 'close', listener: Function) {
         if (this.commandServer) {
             this.commandServer.onSocket(event, listener);
         }
     }
 
+    /** Check if this `BroadcastSocket` has started & is listening */
     public isRunning() {
-        return this._bIsRunning;
+        return this.bIsRunning;
     }
 
+    /** Is command server running */
     public isCommandServerRunning() {
-        return this._bIsRunning && this.commandServer && this.commandServer.isRunning();
+        return this.bIsRunning && this.commandServer && this.commandServer.isRunning();
     }
 
-    public start(callback?: ((error?: Error) => void), timeout = 2) {
+    /**
+     * Start the broadcast socket
+     * @param callback Function to call once the `CommandSocket` has fully started
+     * @param timeout Number of seconds to wait before timing out
+     */
+    public start(callback?: (error?: Error) => void, timeout = 2) {
         this.startCallback = callback;
         this.startTimeout = timeout;
 
         // Hook up events
-        this._socket.on('listening', () => this.onListening());
-        this._socket.on('message', (message: Buffer, remote: dgram.RemoteInfo) => this.onMessage(message, remote));
-        this._socket.on('error', (err: Error) => this.onError(err));
-        this._socket.on('close', this.onClose);
+        this.socket.on('listening', () => this.onListening());
+        this.socket.on('message', (message: Buffer, remote: dgram.RemoteInfo) => this.onMessage(message, remote));
+        this.socket.on('error', err => this.onError(err));
+        this.socket.on('close', this.onClose);
 
-        this._socket.bind({
-            address: this._config.multicastBindAddress,
-            port: this._config.multicastGroupEndpoint[1]
+        this.socket.bind({
+            address: this.config.multicastBindAddress,
+            port: this.config.multicastGroupEndpoint[1]
         });
     }
 
     public close(callback?: (error?: Error) => void) {
-        if (this._socket) {
+        if (this.socket) {
             // Broadcast a close connection message
-            const message = new RemoteExecutionMessage(FCommandTypes.closeConnection, this._nodeId, null);
-            this._socket.send(message.toJsonString(),
-                this._config.multicastGroupEndpoint[1],
-                this._config.multicastGroupEndpoint[0],
+            const message = new RemoteExecutionMessage(FCommandTypes.closeConnection, this.nodeId, null);
+            this.socket.send(message.toJsonString(),
+                this.config.multicastGroupEndpoint[1],
+                this.config.multicastGroupEndpoint[0],
                 (error: Error | null, bytes: number) => {
                     this._close(callback);
                 });
@@ -224,11 +284,11 @@ class BroadcastSocket {
     private _close(callback?: (error?: Error) => void) {
         if (this.commandServer) {
             this.commandServer.close((error?: Error) => {
-                this._socket.close(callback);
+                this.socket.close(callback);
             });
         }
-        else if (this._socket) {
-            this._socket.close(callback);
+        else if (this.socket) {
+            this.socket.close(callback);
         }
         else if (callback) {
             callback();
@@ -236,7 +296,7 @@ class BroadcastSocket {
     }
 
     private onClose() {
-        this._bIsRunning = false;
+        this.bIsRunning = false;
     }
 
     private onConnect(err: Error | null, bytes: number) {
@@ -246,12 +306,12 @@ class BroadcastSocket {
     }
 
     private onListening() {
-        this._socket.setMulticastLoopback(true);
-        this._socket.setMulticastTTL(this._config.multicastTTL);
-        this._socket.setMulticastInterface(this._config.multicastBindAddress);
-        this._socket.addMembership(this._config.multicastGroupEndpoint[0]);
+        this.socket.setMulticastLoopback(true);
+        this.socket.setMulticastTTL(this.config.multicastTTL);
+        this.socket.setMulticastInterface(this.config.multicastBindAddress);
+        this.socket.addMembership(this.config.multicastGroupEndpoint[0]);
 
-        this._bIsRunning = true;
+        this.bIsRunning = true;
 
         this._openCommandServer();
     }
@@ -260,22 +320,21 @@ class BroadcastSocket {
         const remoteMessage = RemoteExecutionMessage.fromBuffer(message);
 
         if (remoteMessage.type === FCommandTypes.openConnection) {
-            this.commandServer = new CommandServer(this._nodeId, this._config);
+            this.commandServer = new CommandServer(this.nodeId, this.config);
             this.commandServer.start(this.startCallback, this.startTimeout);
         }
     }
 
     private onError(err: Error) {
-        // console.log("On Error: " + err);
     }
 
     private _openCommandServer() {
-        const message = new RemoteExecutionMessage(FCommandTypes.openConnection, this._nodeId, null, {
-            'command_ip': this._config.commandEndpoint[0],  /* eslint-disable-line  @typescript-eslint/naming-convention */
-            'command_port': this._config.commandEndpoint[1],  /* eslint-disable-line @typescript-eslint/naming-convention */
+        const message = new RemoteExecutionMessage(FCommandTypes.openConnection, this.nodeId, null, {
+            'command_ip': this.config.commandEndpoint[0],  /* eslint-disable-line  @typescript-eslint/naming-convention */
+            'command_port': this.config.commandEndpoint[1],  /* eslint-disable-line @typescript-eslint/naming-convention */
         });
 
-        this._socket.send(message.toJsonString(), this._config.multicastGroupEndpoint[1], this._config.multicastGroupEndpoint[0], this.onConnect);
+        this.socket.send(message.toJsonString(), this.config.multicastGroupEndpoint[1], this.config.multicastGroupEndpoint[0], this.onConnect);
     }
 
     public sendMessage(message: RemoteExecutionMessage, callback?: (message: RemoteExecutionMessage) => void) {
@@ -290,21 +349,20 @@ class BroadcastSocket {
 
 class CommandServer {
     private server;
-    private _config;
-    private _nodeId;
+    private config;
+    private nodeId;
     private startTimeout?: number;
     private commandSocket: CommandSocket | undefined;
-    private startCallback?: ((error?: Error) => void);
+    private startCallback?: (error?: Error) => void;
 
-    private _bIsRunning = false;
+    private bIsRunning = false;
 
     private onSocketClosedEvents: Function[] = [];
-    private commandQue = [];
 
     constructor(nodeId: string, config = new RemoteExecutionConfig()) {
         this.server = net.createServer();
-        this._config = config;
-        this._nodeId = nodeId;
+        this.config = config;
+        this.nodeId = nodeId;
     }
 
     public onSocket(event: "close", listener: Function) {
@@ -314,7 +372,7 @@ class CommandServer {
     }
 
     public isRunning() {
-        return this._bIsRunning;
+        return this.bIsRunning;
     }
 
     public start(cb?: ((error?: Error) => void), timeout = 2) {
@@ -329,7 +387,7 @@ class CommandServer {
         this.server.on('connection', (socket: net.Socket) => this.onConnection(socket));
         this.server.on('close', this.onClose);
 
-        this.server.listen(this._config.commandEndpoint[1], this._config.commandEndpoint[0]);
+        this.server.listen(this.config.commandEndpoint[1], this.config.commandEndpoint[0]);
     }
 
     public sendMessage(message: RemoteExecutionMessage, callback?: (message: RemoteExecutionMessage) => void) {
@@ -357,10 +415,9 @@ class CommandServer {
     }
 
     private async onListening() {
-        // console.log("listening");
         if (this.startTimeout) {
             setTimeout(() => {
-                if (!this._bIsRunning) {
+                if (!this.bIsRunning) {
                     this.onTimeout();
                 }
             }, this.startTimeout * 1000);
@@ -368,7 +425,6 @@ class CommandServer {
     }
 
     private onConnection(socket: net.Socket) {
-        // console.log("CommandServer started, socket recived.");
         this.commandSocket = new CommandSocket(socket);
         this.commandSocket.socket.on('close', (bHadError: boolean) => { this.onSocketClosed(bHadError); });
 
@@ -376,7 +432,7 @@ class CommandServer {
             this.startCallback();
         }
 
-        this._bIsRunning = true;
+        this.bIsRunning = true;
     }
 
     private onTimeout() {
@@ -388,7 +444,7 @@ class CommandServer {
     }
 
     private onClose() {
-        this._bIsRunning = false;
+        this.bIsRunning = false;
     }
 
     private onSocketClosed(bHadError: boolean) {
@@ -480,6 +536,7 @@ class CommandSocket {
 
 }
 
+
 export class RemoteExecutionMessage {
     readonly type;
     readonly source;
@@ -539,7 +596,7 @@ export class RemoteExecutionMessage {
 
         return JSON.stringify(jsonObj);
     }
-    
+
     public getCommandResultOutput() {
         if (this.type === FCommandTypes.commandResults) {
             const outputs: [{ type: string, output: string }] = this.data.output;
