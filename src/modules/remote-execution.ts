@@ -1,5 +1,5 @@
 /**
- * Remote connection between JavaScript & Unreal Engine.
+ * Remote connection between TypeScript & Unreal Engine.
  * Keep this module generic, do not import 'vscode' here!
  */
 
@@ -256,7 +256,7 @@ class BroadcastSocket {
         // Hook up events
         this.socket.on('listening', () => this.onListening());
         this.socket.on('message', (message: Buffer, remote: dgram.RemoteInfo) => this.onMessage(message, remote));
-        this.socket.on('error', err => this.onError(err));
+        this.socket.on('error', error => this.onError(error));
         this.socket.on('close', this.onClose);
 
         this.socket.bind({
@@ -265,6 +265,23 @@ class BroadcastSocket {
         });
     }
 
+    /**
+     * Pass along a message to the command server that will be sent to Unreal
+     * @param message The message to pass along
+     * @param callback Function to call with the response from the server
+     */
+    public sendMessage(message: RemoteExecutionMessage, callback?: (message: RemoteExecutionMessage) => void) {
+        if (!this.commandServer) {
+            throw Error("Command server has not been started yet!");
+        }
+
+        return this.commandServer.sendMessage(message, callback);
+    }
+
+    /**
+     * Close the broadcast socket, this will emit a close connection message
+     * @param callback Function to call once socket has been closed.
+     */
     public close(callback?: (error?: Error) => void) {
         if (this.socket) {
             // Broadcast a close connection message
@@ -272,18 +289,21 @@ class BroadcastSocket {
             this.socket.send(message.toJsonString(),
                 this.config.multicastGroupEndpoint[1],
                 this.config.multicastGroupEndpoint[0],
-                (error: Error | null, bytes: number) => {
-                    this._close(callback);
+                (error, bytes) => {
+                    this.closeCommandServerAndSocket(callback);
                 });
         }
         else {
-            this._close(callback);
+            this.closeCommandServerAndSocket(callback);
         }
     }
 
-    private _close(callback?: (error?: Error) => void) {
+    /**
+     * Close the CommandServer & this socket after 
+     */
+    private closeCommandServerAndSocket(callback?: (error?: Error) => void) {
         if (this.commandServer) {
-            this.commandServer.close((error?: Error) => {
+            this.commandServer.close(error => {
                 this.socket.close(callback);
             });
         }
@@ -295,92 +315,101 @@ class BroadcastSocket {
         }
     }
 
-    private onClose() {
-        this.bIsRunning = false;
-    }
-
-    private onConnect(err: Error | null, bytes: number) {
-        if (err) {
-            throw err;
-        }
-    }
-
+    /** Function is bound to 'listening' on the broadcast socket, called when it first starts listening */
     private onListening() {
+        // Setup some configs
         this.socket.setMulticastLoopback(true);
         this.socket.setMulticastTTL(this.config.multicastTTL);
         this.socket.setMulticastInterface(this.config.multicastBindAddress);
         this.socket.addMembership(this.config.multicastGroupEndpoint[0]);
 
-        this.bIsRunning = true;
+        this.bIsRunning = true;  // This socket is now up and runnnig
 
-        this._openCommandServer();
-    }
-
-    private onMessage(message: Buffer, remote: dgram.RemoteInfo) {
-        const remoteMessage = RemoteExecutionMessage.fromBuffer(message);
-
-        if (remoteMessage.type === FCommandTypes.openConnection) {
-            this.commandServer = new CommandServer(this.nodeId, this.config);
-            this.commandServer.start(this.startCallback, this.startTimeout);
-        }
-    }
-
-    private onError(err: Error) {
-    }
-
-    private _openCommandServer() {
+        // Send a openConnection message to start the command server
         const message = new RemoteExecutionMessage(FCommandTypes.openConnection, this.nodeId, null, {
             'command_ip': this.config.commandEndpoint[0],  /* eslint-disable-line  @typescript-eslint/naming-convention */
             'command_port': this.config.commandEndpoint[1],  /* eslint-disable-line @typescript-eslint/naming-convention */
         });
 
-        this.socket.send(message.toJsonString(), this.config.multicastGroupEndpoint[1], this.config.multicastGroupEndpoint[0], this.onConnect);
+        this.socket.send(
+            message.toJsonString(),
+            this.config.multicastGroupEndpoint[1],
+            this.config.multicastGroupEndpoint[0],
+            (error, bytes) => {
+                if (error) {
+                    throw error;
+                }
+            }
+        );
     }
 
-    public sendMessage(message: RemoteExecutionMessage, callback?: (message: RemoteExecutionMessage) => void) {
-        if (!this.commandServer) {
-            throw Error("Command server has not been started yet!");
+    /** Function is bound to 'message' on the broadcast socket, called whenever a message is recived */
+    private onMessage(message: Buffer, remote: dgram.RemoteInfo) {
+        const remoteMessage = RemoteExecutionMessage.fromBuffer(message);
+
+        // If the message recived was an "open connection", start the command server
+        if (remoteMessage.type === FCommandTypes.openConnection) {
+            this.commandServer = new CommandServer(this.config);
+            this.commandServer.start(this.startCallback, this.startTimeout);
         }
-
-        return this.commandServer.sendMessage(message, callback);
     }
+
+    /** Function is bound to 'error' on the broadcast socket, called whenever an error occurs */
+    private onError(err: Error) {
+    }
+
+    /** Function is bound to 'close' on the broadcast socket, called whenever the socket is closed */
+    private onClose() {
+        this.bIsRunning = false;
+    }
+
 }
 
 
+/**
+ * The command server, mostly just handles the `CommandSocket` which sends/recives data from Unreal Engine
+ */
 class CommandServer {
     private server;
     private config;
-    private nodeId;
     private startTimeout?: number;
-    private commandSocket: CommandSocket | undefined;
+    private commandSocket?: CommandSocket;
     private startCallback?: (error?: Error) => void;
 
     private bIsRunning = false;
 
     private onSocketClosedEvents: Function[] = [];
 
-    constructor(nodeId: string, config = new RemoteExecutionConfig()) {
+    constructor(config = new RemoteExecutionConfig()) {
         this.server = net.createServer();
         this.config = config;
-        this.nodeId = nodeId;
     }
 
+    /**
+     * Bind a function to an event on this socket.
+     * @param event The event to bind to
+     * @param listener Function to call when the event is fired
+     */
     public onSocket(event: "close", listener: Function) {
         if (event === "close") {
             this.onSocketClosedEvents.push(listener);
         }
     }
 
+    /** Check if command server is running */
     public isRunning() {
         return this.bIsRunning;
     }
 
-    public start(cb?: ((error?: Error) => void), timeout = 2) {
-        // console.log("Starting CommandServer...");
-
+    /**
+     * Start the command server
+     * @param callback Function to call once the CommandServer has started & recived a connection
+     * @param timeout Number of seconds to wait before timing out
+     */
+    public start(callback?: ((error?: Error) => void), timeout = 2) {
         this.startTimeout = timeout;
 
-        this.startCallback = cb;
+        this.startCallback = callback;
 
         this.server.on('error', this.onError);
         this.server.on('listening', () => { this.onListening(); });
@@ -390,12 +419,21 @@ class CommandServer {
         this.server.listen(this.config.commandEndpoint[1], this.config.commandEndpoint[0]);
     }
 
+    /**
+     * Pass along a message to the CommandSocket, which in turn sends the message to the Unreal remote server
+     * @param message The message to send
+     * @param callback Function to call with the response from Unreal's remote server
+     */
     public sendMessage(message: RemoteExecutionMessage, callback?: (message: RemoteExecutionMessage) => void) {
         if (this.commandSocket) {
             this.commandSocket.write(message.toJsonString(), callback);
         }
     }
 
+    /**
+     * Close this CommandServer & socket
+     * @param callback Function to call once it's closed
+     */
     public close(callback?: ((err?: Error) => void)) {
         if (this.isRunning() && this.commandSocket) {
             this.commandSocket.close(() => {
@@ -404,13 +442,11 @@ class CommandServer {
                 }
             });
         }
-        else {
-            if (this.server) {
-                this.server.close(callback);
-            }
-            else if (callback) {
-                callback();
-            }
+        else if (this.server) {
+            this.server.close(callback);
+        }
+        else if (callback) {
+            callback();
         }
     }
 
@@ -511,7 +547,7 @@ class CommandSocket {
         // console.log("Error:" + err);
     }
 
-    private _write(buffer: string | Uint8Array, cb?: (err?: Error | undefined) => void) {
+    private _write(buffer: string | Uint8Array, cb?: (err?: Error) => void) {
         return this.socket.write(buffer, cb);
     }
 
