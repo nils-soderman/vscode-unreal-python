@@ -372,7 +372,6 @@ class BroadcastSocket {
 class CommandServer {
     private server;
     private config;
-    private startTimeout?: number;
     private commandSocket?: CommandSocket;
     private startCallback?: (error?: Error) => void;
 
@@ -407,16 +406,23 @@ class CommandServer {
      * @param timeout Number of seconds to wait before timing out
      */
     public start(callback?: ((error?: Error) => void), timeout = 2) {
-        this.startTimeout = timeout;
-
         this.startCallback = callback;
 
         this.server.on('error', this.onError);
-        this.server.on('listening', () => { this.onListening(); });
         this.server.on('connection', (socket: net.Socket) => this.onConnection(socket));
         this.server.on('close', this.onClose);
 
         this.server.listen(this.config.commandEndpoint[1], this.config.commandEndpoint[0]);
+
+        // Start a timeout
+        if (timeout) {
+            setTimeout(() => {
+                // If `bIsRunning` is not true within x seconds, call the timeout function
+                if (!this.bIsRunning) {
+                    this.timeoutStart();
+                }
+            }, timeout * 1000);
+        }
     }
 
     /**
@@ -434,7 +440,7 @@ class CommandServer {
      * Close this CommandServer & socket
      * @param callback Function to call once it's closed
      */
-    public close(callback?: ((err?: Error) => void)) {
+    public close(callback?: (error?: Error) => void) {
         if (this.isRunning() && this.commandSocket) {
             this.commandSocket.close(() => {
                 if (this.server) {
@@ -442,127 +448,133 @@ class CommandServer {
                 }
             });
         }
+
         else if (this.server) {
             this.server.close(callback);
         }
+
         else if (callback) {
             callback();
         }
     }
 
-    private async onListening() {
-        if (this.startTimeout) {
-            setTimeout(() => {
-                if (!this.bIsRunning) {
-                    this.onTimeout();
-                }
-            }, this.startTimeout * 1000);
-        }
-    }
-
+    /**
+     * Called when we've recived a connection with Unreal
+     * @param socket 
+     */
     private onConnection(socket: net.Socket) {
         this.commandSocket = new CommandSocket(socket);
         this.commandSocket.socket.on('close', (bHadError: boolean) => { this.onSocketClosed(bHadError); });
 
+        this.bIsRunning = true;
+
         if (this.startCallback) {
             this.startCallback();
         }
-
-        this.bIsRunning = true;
     }
 
-    private onTimeout() {
+    /**
+     * timeout the start command
+     */
+    private timeoutStart() {
         this.close();
+
         if (this.startCallback) {
             const error = new Error("Timed out while trying to connect to Unreal Engine.");
             this.startCallback(error);
         }
     }
 
+    /** Bound to the 'close' event on the server */
     private onClose() {
         this.bIsRunning = false;
     }
 
+    /** 
+     * Bound to the 'close' event on the CommandSocket
+     * @param bHadError True if there was an error that caused it to close
+    */
     private onSocketClosed(bHadError: boolean) {
         for (const callback of this.onSocketClosedEvents) {
             callback();
         }
     }
 
-    private onError(err: Error) {
-        throw err;
+    /** Bound to the 'error' event on the server */
+    private onError(error: Error) {
+        throw error;
     }
-
 
 }
 
 
+/**
+ * The `CommandSocket` is the socket connected that sends & recives data from Unreal Engine's Remote Execution server
+ */
 class CommandSocket {
-    socket;
+    public socket;
 
     private bIsWriting = false;
-
     private commandQue: any = [];
-
     private callbacks: (Function | undefined)[] = [];
 
+    /**
+     * @param socket The socket provided by the `CommandServer` once it has established a connection w/ Unreal
+     */
     constructor(socket: net.Socket) {
         this.socket = socket;
 
         this.socket.on('error', this.onError);
-        this.socket.on('data', (data: Buffer) => { this.onData(data); });
-        this.socket.on('close', this.onClose);
+        this.socket.on('data', data => { this.onData(data); });
     }
 
-    public close(cb?: (() => void)) {
-        this.socket.end(cb);
+    /**
+     * Close this socket
+     * @param callback Function to call once the socket has closed
+     */
+    public close(callback?: () => void) {
+        this.socket.end(callback);
     }
 
+    /**
+     * Write something to the command server
+     * @param buffer Text to write
+     * @param callback Function to call with the response from the remote server
+     */
     public write(buffer: string | Uint8Array, callback?: (message: RemoteExecutionMessage) => void) {
+        // If we're already writing / waiting for a response, que the command
         if (this.bIsWriting) {
             this.queCommand(buffer, callback);
             return;
         }
 
-        this.bIsWriting = true;
-        this.callbacks.push(callback);
+        this.bIsWriting = true;  // Set writing to true to prevent other more commands from executing until this command is done.
+        this.callbacks.push(callback);  // Store the callback function to call when data has been recived
 
-        return this._write(buffer);
+        this.socket.write(buffer);
     }
 
-    private onClose() {
-    }
-
-    private onData(data: Buffer) {
-        const callback = this.callbacks.shift();
-        if (callback) {
-            const message = RemoteExecutionMessage.fromBuffer(data);
-            callback(message);
-        }
-
-        this.handleNextCommandInQue();
-    }
-
-    private onError(err: Error) {
-        // console.log("Error:" + err);
-    }
-
-    private _write(buffer: string | Uint8Array, cb?: (err?: Error) => void) {
-        return this.socket.write(buffer, cb);
-    }
-
+    /**
+     * Que a command to be executed once current command has completed
+     * @param buffer The command to que
+     * @param callback Function to call with the response from Unreal Engine
+     */
     private queCommand(buffer: string | Uint8Array, callback?: Function) {
         this.commandQue.push([buffer, callback]);
     }
 
+    /**
+     * Look through the command que and if there is a command waiting, send it
+     */
     private handleNextCommandInQue() {
         if (this.commandQue.length > 0) {
+            // Get the next command in line
             const command = this.commandQue.shift();
             const buffer = command[0];
             const callback = command[1];
             this.callbacks.push(callback);
 
-            this._write(buffer);
+            this.socket.write(buffer);
         }
         else {
             // If command que is empty, set writing to false
@@ -570,9 +582,33 @@ class CommandSocket {
         }
     }
 
+    /**
+     * Bound to the 'data' event on the socket, called whenever data is recived from Unreal Engine
+     * @param data The data recived, should be a dictionary that can be parsed into a `RemoteExecutionMessage`
+     */
+    private onData(data: Buffer) {
+        // If we have a callback stored, call it with the parsed message
+        const callback = this.callbacks.shift();
+        if (callback) {
+            const message = RemoteExecutionMessage.fromBuffer(data);
+            callback(message);
+        }
+
+        // Run the next command in que
+        this.handleNextCommandInQue();
+    }
+
+    /** Bound to the 'error' event on the socket */
+    private onError(error: Error) {
+        throw error;
+    }
+
 }
 
 
+/**
+ * The message sent to/from Unreal's remote execution server
+ */
 export class RemoteExecutionMessage {
     readonly type;
     readonly source;
@@ -605,7 +641,7 @@ export class RemoteExecutionMessage {
 
 
     /**
-     * Convert this message to its JSON representation.
+     * Convert this message to its JSON representation. That can be sent to Unreal
      */
     public toJsonString() {
         if (!this.type) {
@@ -633,6 +669,9 @@ export class RemoteExecutionMessage {
         return JSON.stringify(jsonObj);
     }
 
+    /**
+     * @returns A list of command outputs
+     */
     public getCommandResultOutput() {
         if (this.type === FCommandTypes.commandResults) {
             const outputs: [{ type: string, output: string }] = this.data.output;
@@ -641,6 +680,10 @@ export class RemoteExecutionMessage {
         return [];
     }
 
+    /**
+     * Static function to convert json data to a `RemoteExecutionMessage`
+     * @returns a `RemoteExecutionMessage` object
+     */
     static fromJson(jsonData: any) {
         if (jsonData['version'] !== PROTOCOL_VERSION) {
             throw Error(`"version" is incorrect (got ${jsonData['version']}, expected ${PROTOCOL_VERSION})!`);
@@ -657,6 +700,11 @@ export class RemoteExecutionMessage {
         return new RemoteExecutionMessage(type, source, dest, data);
     }
 
+    /**
+     * Static function to convert buffer to a `RemoteExecutionMessage`
+     * @param buffer The buffer recived from the exection server 
+     * @returns a `RemoteExecutionMessage` object
+     */
     static fromBuffer(buffer: Buffer) {
         const jsonString = buffer.toString();
         const jsonData = JSON.parse(jsonString);
