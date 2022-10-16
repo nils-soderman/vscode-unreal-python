@@ -347,6 +347,11 @@ class BroadcastSocket {
     private onMessage(message: Buffer, remote: dgram.RemoteInfo) {
         const remoteMessage = RemoteExecutionMessage.fromBuffer(message);
 
+        // Check if the message was meant for this node
+        if (remoteMessage.source !== this.nodeId) {
+            return;
+        }
+
         // If the message recived was an "open connection", start the command server
         if (remoteMessage.type === FCommandTypes.openConnection) {
             this.commandServer = new CommandServer(this.config);
