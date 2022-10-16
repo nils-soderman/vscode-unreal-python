@@ -5,6 +5,7 @@ import * as open from 'open';
 import * as os from "os";
 import * as fs from 'fs';
 
+import * as net from 'net';
 
 const DATA_FOLDER_NAME = "VSCode-Unreal-Python";  // Folder name used for Temp & Data directory
 export const DEBUG_SESSION_NAME = "Unreal Python"; // The name of the debug session when debugging Unreal
@@ -152,4 +153,39 @@ export function cleanupTempFiles() {
 /** Open a url in the default webbrowser */
 export function openUrl(url: string) {
     open(url);
+}
+
+
+// -----------------------------------------------------------------------------------------
+//                                          Misc
+// -----------------------------------------------------------------------------------------
+
+
+/** 
+ * Check if a port is taken 
+ * @param port The port to check
+ * @param host The ip, will default to localhost
+ */
+export async function isPortAvailable(port: number, host?: string) {
+    const tcpPortUsed = require('tcp-port-used');
+    return !await tcpPortUsed.check(port, host);
+}
+
+
+/**  
+ * Check the ports between `startPort` -> `startPort + num`, and return the first one that's free
+ * @param startPort The port to start itterating from
+ * @param num How many ports to check
+ * @param host The ip, will default to localhost
+ * @returns The port as a number, or `null` if all ports were taken
+ */
+export async function findFreePort(startPort: number, num: number, host?: string) {
+    for (let i = 0; i < num; i++) {
+        const port = startPort + i;
+        if (await isPortAvailable(port, host)) {
+            return port;
+        }
+    }
+
+    return null;
 }

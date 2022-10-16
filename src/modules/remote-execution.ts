@@ -377,12 +377,13 @@ class BroadcastSocket {
 class CommandServer {
     private server;
     private config;
-    private commandSocket?: CommandSocket;
+    private commandSocket: CommandSocket | null = null;
     private startCallback?: (error?: Error) => void;
 
     private bIsRunning = false;
 
     private onSocketClosedEvents: Function[] = [];
+    private bExpectingConnection = false;
 
     constructor(config = new RemoteExecutionConfig()) {
         this.server = net.createServer();
@@ -417,6 +418,7 @@ class CommandServer {
         this.server.on('connection', (socket: net.Socket) => this.onConnection(socket));
         this.server.on('close', this.onClose);
 
+        this.bExpectingConnection = true;
         this.server.listen(this.config.commandEndpoint[1], this.config.commandEndpoint[0]);
 
         // Start a timeout
@@ -468,6 +470,11 @@ class CommandServer {
      * @param socket 
      */
     private onConnection(socket: net.Socket) {
+        if (!this.bExpectingConnection) {
+            // Check if we're expecting a connection at this moment, otherwise it may be something else trying to connect on this port
+            return;
+        }
+
         this.commandSocket = new CommandSocket(socket);
         this.commandSocket.socket.on('close', (bHadError: boolean) => { this.onSocketClosed(bHadError); });
 
@@ -476,6 +483,8 @@ class CommandServer {
         if (this.startCallback) {
             this.startCallback();
         }
+
+        this.bExpectingConnection = false;
     }
 
     /**
@@ -492,6 +501,7 @@ class CommandServer {
 
     /** Bound to the 'close' event on the server */
     private onClose() {
+        this.commandSocket = null;
         this.bIsRunning = false;
     }
 

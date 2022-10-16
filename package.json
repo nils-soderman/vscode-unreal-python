@@ -3,7 +3,7 @@
   "displayName": "Unreal Engine Python",
   "publisher": "NilsSoderman",
   "description": "Tools to assist when writing Python code for Unreal Engine.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "categories": [
     "Other",
     "Debuggers"
@@ -55,6 +55,12 @@
             "type": "number",
             "default": 6868,
             "description": "Port to use for the debugpy server when attaching VS Code to Unreal",
+            "scope": "resource"
+          },
+          "ue-python.strictPort": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "Enable to make sure the ports given assigned in `ue-python.debug.port` & `ue-python.remote.commandEndpoint` are always used. Otherwise it'll search for an avaliable port with those configs as starting point.",
             "scope": "resource"
           }
         }
@@ -176,6 +182,7 @@
   },
   "dependencies": {
     "open": "^8.4.0",
+    "tcp-port-used": "^1.0.2",
     "uuid": "^8.3.2"
   }
 }

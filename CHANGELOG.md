@@ -1,5 +1,18 @@
 # Change Log
 
+## v0.1.2
+[2022-10-x]
+
+### Added: 
+- Added configuration `ue-python.strictPort` that prevents this extension from automatically finding a free port, and will strictly only use the ports assigned in the config.
+
+### Fixed:
+- Support for multiple VS Code instances connecting to the same Unreal Engine instance.
+
+<br>
+
+___
+
 ## v0.1.1
 [2022-10-09]
 

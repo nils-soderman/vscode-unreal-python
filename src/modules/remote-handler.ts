@@ -27,14 +27,56 @@ function getRemoteConfig() {
 
 
 /**
+ * Make sure the command port is avaliable, and if not it'll try to find a port that's free and modify the port in config to use this new port.
+ * @param config The remote execution config
+ * @returns A list with 2 elements, the first one is a boolean depending on if a free port was found/assigned to the config. Second element is a error message.
+ */
+async function ensureCommandPortAvaliable(config: remoteExecution.RemoteExecutionConfig): Promise<[boolean, string]> {
+    const extensionConfig = utils.getExtensionConfig();
+
+    const host = config.commandEndpoint[0];
+    const commandEndpointPort = config.commandEndpoint[1];
+
+    // Check if user has enabled 'strictPort' 
+    if (extensionConfig.get("strictPort")) {
+        if (await utils.isPortAvailable(commandEndpointPort, host)) {
+            return [false, `Port ${commandEndpointPort} is currently busy.  Consider changing the config: 'ue-python.remote.commandEndpoint'.`];
+        }
+    }
+    else {
+        // Check the next 100 ports, one should hopefully be free
+        const freePort = await utils.findFreePort(commandEndpointPort, 101, host);
+        if (!freePort) {
+            return [false, `All ports between ${commandEndpointPort} - ${commandEndpointPort + 100} are busy. Consider changing the config: 'ue-python.remote.commandEndpoint'.`];
+        }
+
+        // If the first found free port wasn't the original port, update it
+        if (commandEndpointPort !== freePort) {
+            config.commandEndpoint[1] = freePort;
+        }
+    }
+
+    return [true, ""];
+}
+
+
+/**
  * Get the global remote connection instance
  * @param bEnsureConnection If a connection doesn't exists yet, create one.
  */
-export function getRemoteConnection(bEnsureConnection = true) {
+export async function getRemoteConnection(bEnsureConnection = true) {
     if (!gRemoteConnection && bEnsureConnection) {
         const config = getRemoteConfig();
-        gRemoteConnection = new remoteExecution.RemoteConnection(config);
+
+        // Make sure the config has a port that isn't taken by something else
+        const response = await ensureCommandPortAvaliable(config);
+        if (response[0]) {
+            gRemoteConnection = new remoteExecution.RemoteConnection(config);
+        } else {
+            vscode.window.showErrorMessage(response[1]);
+        }
     }
+
     return gRemoteConnection;
 }
 
@@ -44,8 +86,8 @@ export function getRemoteConnection(bEnsureConnection = true) {
  * @param command The python code as a string
  * @param callback The function to call with the response from Unreal
  */
-export function sendCommand(command: string, callback?: (message: remoteExecution.RemoteExecutionMessage) => void) {
-    const remoteConnection = getRemoteConnection();
+export async function sendCommand(command: string, callback?: (message: remoteExecution.RemoteExecutionMessage) => void) {
+    const remoteConnection = await getRemoteConnection();
     if (!remoteConnection) {
         return;
     }
@@ -106,8 +148,8 @@ export function executeFile(filepath: string, variables = {}, callback?: (messag
  * Close the global remote connection, if there is one
  * @param callback Function to call once connection has fully closed
  */
-export function closeRemoteConnection(callback?: (error?: Error) => void) {
-    const remoteConnection = getRemoteConnection(false);
+export async function closeRemoteConnection(callback?: (error?: Error) => void) {
+    const remoteConnection = await getRemoteConnection(false);
     if (remoteConnection) {
         remoteConnection.stop(callback);
     }
