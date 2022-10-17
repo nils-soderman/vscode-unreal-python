@@ -24,6 +24,7 @@ export class FPythonScriptFiles {
     static readonly isDebugpyInstalled = "debug/is_debugpy_installed";
     static readonly installDebugPy = "debug/install_debugpy";
     static readonly startDebugServer = "debug/start_debug_server";
+    static readonly getCurrentDebugpyPort = "debug/current_debugy_port";
     static readonly codeCompletionGetPath = "setup_code_completion/get_stub_path";
     static readonly isDevmodeEnabled = "setup_code_completion/is_devmode_enabled";
 

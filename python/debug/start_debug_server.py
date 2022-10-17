@@ -3,7 +3,7 @@ import socket
 import sys
 import os
 
-VSCODE_DEBUG_SERVER_ENV_VAR = "vscode_debugpy_server_enabled"
+VSCODE_DEBUG_SERVER_ENV_VAR = "vscode_debugpy_server_port"
 
 def get_unreal_python_executable():
     exe_path = sys.executable  # This will point to 'UnrealEditor.exe'
@@ -16,35 +16,15 @@ def get_unreal_python_executable():
         return exe_path
 
 
-def is_port_available(port):
-    """ Check if a port is avaliable """
-    temp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    temp_socket.settimeout(0.05)
-    response = temp_socket.connect_ex(("127.0.0.1", port))
-    temp_socket.close()
-    return response != 0
-
-
-def is_debug_server_running():
-    """ Check if a debug server already has been started in this MB instance """
-    return os.environ.get(VSCODE_DEBUG_SERVER_ENV_VAR, "") == str(True)
-
-
-def start_debug_server(port = 6868):
-    if is_debug_server_running():
-        return True
-
+def start_debug_server(port: int):
     python_exe = get_unreal_python_executable()
     if not python_exe:
-        return False
-    
-    if not is_port_available(port):
         return False
 
     debugpy.configure(python=python_exe)
     debugpy.listen(port)
 
-    os.environ[VSCODE_DEBUG_SERVER_ENV_VAR] = str(True)
+    os.environ[VSCODE_DEBUG_SERVER_ENV_VAR] = str(port)
 
     return True
 
@@ -54,7 +34,7 @@ def main():
     if not port:
         return False
     
-    is_server_running = start_debug_server()
+    is_server_running = start_debug_server(port)
     
     return is_server_running
 
