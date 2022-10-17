@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
 
+import * as tcpPortUsed from 'tcp-port-used';
 import * as path from 'path';
 import * as open from 'open';
 import * as os from "os";
 import * as fs from 'fs';
 
-import * as net from 'net';
 
 const DATA_FOLDER_NAME = "VSCode-Unreal-Python";  // Folder name used for Temp & Data directory
 export const DEBUG_SESSION_NAME = "Unreal Python"; // The name of the debug session when debugging Unreal
@@ -168,7 +168,6 @@ export function openUrl(url: string) {
  * @param host The ip, will default to localhost
  */
 export async function isPortAvailable(port: number, host?: string) {
-    const tcpPortUsed = require('tcp-port-used');
     return !await tcpPortUsed.check(port, host);
 }
 
