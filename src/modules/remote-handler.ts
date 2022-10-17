@@ -39,7 +39,7 @@ async function ensureCommandPortAvaliable(config: remoteExecution.RemoteExecutio
 
     // Check if user has enabled 'strictPort' 
     if (extensionConfig.get("strictPort")) {
-        if (await utils.isPortAvailable(commandEndpointPort, host)) {
+        if (!await utils.isPortAvailable(commandEndpointPort, host)) {
             return [false, `Port ${commandEndpointPort} is currently busy.  Consider changing the config: 'ue-python.remote.commandEndpoint'.`];
         }
     }
