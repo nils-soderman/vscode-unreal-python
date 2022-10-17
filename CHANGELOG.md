@@ -1,7 +1,7 @@
 # Change Log
 
 ## v0.1.2
-[2022-10-x]
+[2022-10-17]
 
 ### Added: 
 - Added configuration `ue-python.strictPort` that prevents this extension from automatically finding a free port, and will strictly only use the ports assigned in the config.
