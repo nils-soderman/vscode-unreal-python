@@ -60,7 +60,7 @@
           "ue-python.strictPort": {
             "type": "boolean",
             "default": false,
-            "markdownDescription": "Enable to make sure the ports given assigned in `ue-python.debug.port` & `ue-python.remote.commandEndpoint` are always used. Otherwise it'll search for an avaliable port with those configs as starting point.",
+            "markdownDescription": "Prevent this extension from automatically finding a free port if a port assigned in the config is busy.",
             "scope": "resource"
           }
         }
