@@ -10,8 +10,6 @@ vscode_globals = json.loads(vscode_globals)
 
 vscode_execute = globals().get("vscode_execute")
 if not vscode_execute:
-    # current_filepath = globals().get("__vscodeExecFile__")  # Essentially __file__, but set through 'execute.ts'
-    print("__file__: %s" %(__file__))
     sys.path.append(os.path.dirname(__file__))
     import vscode_execute
     sys.path.remove(os.path.dirname(__file__))
