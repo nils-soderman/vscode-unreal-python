@@ -1,5 +1,15 @@
 # Change Log
 
+## v0.1.3
+[2022-10-x]
+
+### Fixed:
+- Configs not read correctly from the folder settings
+
+<br>
+
+___
+
 ## v0.1.2
 [2022-10-17]
 

@@ -43,7 +43,13 @@ export class FPythonScriptFiles {
  * @returns The workspace configuration for this extension _('ue-python')_
  */
 export function getExtensionConfig() {
-    return vscode.workspace.getConfiguration("ue-python");
+    let workspaceFolder;
+    if (vscode.window.activeTextEditor) {
+        const activeDocumenet = vscode.window.activeTextEditor.document;
+        workspaceFolder = vscode.workspace.getWorkspaceFolder(activeDocumenet.uri);
+    }
+
+    return vscode.workspace.getConfiguration("ue-python", workspaceFolder);
 }
 
 
