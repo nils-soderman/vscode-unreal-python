@@ -6,9 +6,18 @@ import * as utils from './modules/utils';
 import * as setupCodeCompletion from './scripts/setup-code-completion';
 import * as execute from './scripts/execute';
 import * as attach from './scripts/attach';
-
+import { SidebarViewProvier } from './views/documentation-pannel';
 
 export function activate(context: vscode.ExtensionContext) {
+
+
+	// Register views
+	const provider = new SidebarViewProvier(context.extensionUri);
+
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider('ue-python.sidebar', provider)
+	);
+
 
 	// Register commands
 	context.subscriptions.push(
@@ -28,6 +37,8 @@ export function activate(context: vscode.ExtensionContext) {
 			setupCodeCompletion.main();
 		})
 	);
+
+	vscode.commands.executeCommand('setContext', 'test', 'troll');
 
 }
 
