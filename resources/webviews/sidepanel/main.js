@@ -64,8 +64,11 @@ const classSubItemTypes = ["Method", "Class Method", "Property", "Constant"];
 class DocumentationPage {
 
     rawTableOfContents = null;
-    content = [];
+    content = {};
+    contentFilteredCache = null;
     titles = [];
+
+    bLiveFilter = true;
 
     /**
      * 
@@ -73,30 +76,45 @@ class DocumentationPage {
      */
     constructor(tableOfContents) {
         this.rawTableOfContents = tableOfContents;
-    
+
         this._buildPage();
+
+
+        const inputFilter = window.document.getElementById("input-filter");
+
+        inputFilter.addEventListener('input', this.onFilterInput.bind(this));;
+        inputFilter.addEventListener('change', this.onFilterChange.bind(this));
     }
-    
+
     _buildPage() {
         const builder = new DocumentationPageBuilder();
-        
+
         const body = window.document.getElementById("content-body");
-        
+
         for (const [key, value] of Object.entries(this.rawTableOfContents)) {
             const section = builder.createSection(key);
-            
+
             if (Array.isArray(value)) {
                 // Functions, since they are a flat list
                 value.forEach(name => {
-                    builder.addMainItem(name);
+                    if (this.content[name] === undefined) {
+                        this.content[name] = [];
+                    }
+                    this.content[name].push(builder.addMainItem(name));
                 });
             }
             else {
                 for (const [name, data] of Object.entries(value)) {
-                    builder.addMainItem(name);
+                    if (this.content[name] === undefined) {
+                        this.content[name] = [];
+                    }
+                    this.content[name].push(builder.addMainItem(name));
                     classSubItemTypes.forEach(subType => {
                         data[subType].forEach(subName => {
-                            builder.addSubItem(subName, subType);
+                            if (this.content[subName] === undefined) {
+                                this.content[subName] = [];
+                            }
+                            this.content[subName].push(builder.addSubItem(subName, subType));
                         });
                     });
                 }
@@ -106,12 +124,73 @@ class DocumentationPage {
         }
     }
 
+
+
     /**
      * 
-     * @param {string} searchString The search string to filter by
+     * @param {InputEvent} event
      */
-    onFilter(searchString) {
+    onFilterInput(event) {
+        if (this.bLiveFilter) {
+            const filterText = event.target.value;
+            this.filter(filterText);
+        }
+    }
 
+
+    /**
+     * 
+     * @param {InputEvent} evenet
+     */
+    onFilterChange(event) {
+        if (!this.bLiveFilter) {
+            const filterText = event.target.value;
+            this.filter(filterText);
+        }
+    }
+
+    /**
+     * 
+     * @param {string} filterString The string to filter by
+     */
+    filter(filterString) {
+        var startTime = performance.now();
+
+        if (filterString === "") {
+            for (const [key, value] of Object.entries(this.content)) {
+                for (const element of value) {
+                    element.hidden = element.className === "doc-item-sub";
+                }
+            }
+
+            return;
+        }
+
+        /*
+        if (this.contentFilteredCache === null) {
+            this.contentFilteredCache = Object.assign({}, this.content);
+            console.log(this.contentFilteredCache);
+        }*/
+
+        for (const [key, value] of Object.entries(this.content)) {
+
+            const bHidden = !key.includes(filterString);
+            /*if (bHidden) {
+                delete this.contentFilteredCache[key];
+            }*/
+
+            for (const element of value) {
+                // Only trigger a re-draw of the element if the visibility has changed
+                if (element.hidden !== bHidden) {
+                    element.hidden = bHidden;
+                }
+            }
+        }
+
+        // TODO: Only show the first say ~500 results, and load more if needed (either when scrollbar hits bottom, or a 'load 500 more...' btn).
+
+        var execTime = (performance.now() - startTime);
+        console.log(`Filtering took: ${execTime / 1000} seconds.`);
     }
 }
 
@@ -159,12 +238,12 @@ class DocumentationPageBuilder {
 
         const item = document.createElement('div');
         item.append(name);
-        
+
         item.className = "doc-item";
-        
+
         this.currentItemName = name;
         this.currentItemContainer.appendChild(item);
-        
+
         return item;
     }
 
