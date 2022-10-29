@@ -1,55 +1,67 @@
-gTableOfContents = null;
-
 // ---------------------------------------------------------------------
 //                          Utils
 // ---------------------------------------------------------------------
 
-const vscode = acquireVsCodeApi();
+class VSCode {
+    api;
 
+    messageListeners = {};
 
-/**
- * Send a message to the VS Code extension
- * @param {string} command The name of the command 
- * @param {*} data Any data to pass along the command
- */
-function vscodeSendMessage(command, data) {
-    vscode.postMessage({
-        command: command,
-        data: data
-    });
+    constructor() {
+        this.api = acquireVsCodeApi();
+        window.addEventListener('message', this._onDataRecived.bind(this));
+    }
+
+    /**
+     * Send a message to the VS Code extension
+     * @param {string} command The name of the command 
+     * @param {*} data Any data to pass along the command
+     */
+    postMessage(command, data) {
+        this.api.postMessage({
+            command: command,
+            data: data
+        });
+    }
+
+    /**
+     * 
+     * @param {MessageEvent<any>} event 
+     */
+    _onDataRecived(event) {
+        const message = event.data; // The JSON data our extension sent
+
+        if (message.command in this.messageListeners) {
+            for (const callback of this.messageListeners[message.command]) {
+                callback(message.data);
+            }
+        }
+    }
+
+    /**
+     * Start listening for a spesific command
+     * @param {string} command 
+     * @param {Function} callback 
+     */
+    addCommandListener(command, callback) {
+        if (!(command in this.messageListeners)) {
+            this.messageListeners[command] = [];
+        }
+        this.messageListeners[command].push(callback);
+    }
 }
 
-
-// ---------------------------------------------------------------------
-//                          Message Listener
-// ---------------------------------------------------------------------
-
-window.addEventListener('message', event => {
-    const message = event.data; // The JSON data our extension sent
-
-    switch (message.command) {
-        case 'tableOfContents':
-            onRecivedTableOfContents(message.data);
-            break;
-    }
-});
-
-
+const vscode = new VSCode();
 
 
 // ---------------------------------------------------------------------
 //                          Events
 // ---------------------------------------------------------------------
-
-function onRecivedTableOfContents(content) {
-    docPage = new DocumentationPage(content);
-}
-
+var gDocumentationPage = null;
 
 function onDocumentationShown() {
-    // If we do not already have the table of contents, ask VSCode for it
-    if (!gTableOfContents) {
-        vscodeSendMessage("getTableOfContents");
+    if (!gDocumentationPage) {
+        gDocumentationPage = new DocumentationPage();
     }
 }
 
@@ -63,35 +75,61 @@ const classSubItemTypes = ["Method", "Class Method", "Property", "Constant"];
 
 class DocumentationPage {
 
-    rawTableOfContents = null;
     content = {};
     contentFilteredCache = null;
     titles = [];
 
-    bLiveFilter = true;
+    bLiveFilter = false;
 
     /**
      * 
      * @param {Object} gTableOfContents The dictionary containing all of the content 
      */
-    constructor(tableOfContents) {
-        this.rawTableOfContents = tableOfContents;
+    constructor() {
 
-        this._buildPage();
+        // Request table of content
+        vscode.postMessage("getTableOfContents");
+        vscode.addCommandListener("tableOfContents", this.load.bind(this));
+        vscode.addCommandListener("openDocPage", this.onPageDataRecived.bind(this));
 
-
+        // Hook up events to the filter input
         const inputFilter = window.document.getElementById("input-filter");
-
         inputFilter.addEventListener('input', this.onFilterInput.bind(this));;
         inputFilter.addEventListener('change', this.onFilterChange.bind(this));
+
+        // TODO: This body is now fetched twice
+        const body = window.document.getElementById("content-body");
+        body.addEventListener('click', this.onElementClicked.bind(this));
+
     }
 
-    _buildPage() {
+    /**
+     * 
+     * @param {Object} gTableOfContents The dictionary containing all of the content 
+     */
+    load(tableOfContents) {
+        this._buildPage(tableOfContents);
+    }
+
+    /**
+     * 
+     * @param {PointerEvent} event 
+     */
+    onElementClicked(event) {
+        const objectName = event.target.innerText;
+        vscode.postMessage("getDocPage", objectName);
+    }
+
+    onPageDataRecived(data) {
+        console.log(data);
+    }
+
+    _buildPage(tableOfContents) {
         const builder = new DocumentationPageBuilder();
 
         const body = window.document.getElementById("content-body");
 
-        for (const [key, value] of Object.entries(this.rawTableOfContents)) {
+        for (const [key, value] of Object.entries(tableOfContents)) {
             const section = builder.createSection(key);
 
             if (Array.isArray(value)) {

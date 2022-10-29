@@ -36,6 +36,32 @@ function buildDocumentationTableOfContents(filepath: string): Promise<boolean> {
     });
 }
 
+/**
+ *  
+ */
+function buildPageContent(filepath: string, module: string): Promise<boolean> {
+    return new Promise((resolve, reject) => {
+        const getDocPageContentScirpt = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.getDocPageContent);
+
+        const globals = {
+            "object": module,
+            "outFilepath": filepath
+        };
+
+        remoteHandler.executeFile(getDocPageContentScirpt, globals, (message: RemoteExecutionMessage) => {
+            const outputs = message.getCommandResultOutput();
+            for (let output of outputs.reverse()) {
+                if (output.type === FCommandOutputType.info) {
+                    resolve(output.output.toLowerCase() === "true");
+                    return;
+                }
+            }
+
+            resolve(false);
+        });
+    });
+}
+
 
 
 export class SidebarViewProvier implements vscode.WebviewViewProvider {
@@ -77,16 +103,35 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
 
     public async sendTableOfContents() {
         const filepath = path.join(utils.getExtentionTempDir(), "documentation_toc.json");
-        if (await buildDocumentationTableOfContents(filepath)) {
-            const tableOfContentsString = fs.readFileSync(filepath);
-            const data = JSON.parse(tableOfContentsString.toString());
-
-            if (this._view) {
-                // this._view.show?.(true); // `show` is not implemented in 1.49 but is for 1.50 insiders
-                this._view.webview.postMessage({ command: 'tableOfContents', data: data });
+        // Build table of content if it doesn't already exists
+        if (!fs.existsSync(filepath)) {
+            if (!await buildDocumentationTableOfContents(filepath)) {
+                return;
             }
         }
+        const tableOfContentsString = fs.readFileSync(filepath);
+        const data = JSON.parse(tableOfContentsString.toString());
 
+        if (this._view) {
+            // this._view.show?.(true); // `show` is not implemented in 1.49 but is for 1.50 insiders
+            this._view.webview.postMessage({ command: 'tableOfContents', data: data });
+        }
+
+    }
+
+
+    public async openPage(module: string) {
+        const filepath = path.join(utils.getExtentionTempDir(), `docpage_${module}.json`);
+        if (!fs.existsSync(filepath)) {
+            await buildPageContent(filepath, module);
+        }
+        
+        const tableOfContentsString = fs.readFileSync(filepath);
+        const data = JSON.parse(tableOfContentsString.toString());
+
+        if (this._view) {
+            this._view.webview.postMessage({ command: 'openDocPage', data: data });
+        }
     }
 
 
@@ -95,6 +140,11 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
             case 'getTableOfContents':
                 {
                     this.sendTableOfContents();
+                    break;
+                }
+            case 'getDocPage':
+                {
+                    this.openPage(data.data);
                     break;
                 }
             default:

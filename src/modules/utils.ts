@@ -28,6 +28,7 @@ export class FPythonScriptFiles {
     static readonly codeCompletionGetPath = "setup_code_completion/get_stub_path";
     static readonly isDevmodeEnabled = "setup_code_completion/is_devmode_enabled";
     static readonly buildDocumentationToC = "documentation/build_toc";
+    static readonly getDocPageContent = "documentation/get_page_content";
 
     /** Get the absolute path to one of the scripts defined in this struct */
     static getAbsPath(file: string) {
