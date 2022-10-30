@@ -1,0 +1,21 @@
+h1 {
+    text-align: center;
+    
+}
+
+#input-filter {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.doc-item {
+    cursor: pointer;
+}
+
+.doc-item:hover {
+    text-decoration: underline;
+}
+
+#doc-table-of-contents-body h2 {
+    border-bottom: 2px solid var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}

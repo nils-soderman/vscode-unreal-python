@@ -43,7 +43,7 @@ def generate(object_name: str, out_filepath: str):
     object_dict = ue_object.__dict__
 
     inherited_members = {EMemberType.METHOD: [], EMemberType.PROPERTY: []}
-    unique_members = inherited_members.copy()
+    unique_members = {EMemberType.METHOD: [], EMemberType.PROPERTY: []}
 
     for memeber_name, member in inspect.getmembers(ue_object):
         if memeber_name.startswith("_"):
@@ -58,14 +58,15 @@ def generate(object_name: str, out_filepath: str):
             inherited_members[member_type].append(member_data)
         else:
             # Unique
-            inherited_members[member_type].append(member_data)
+            unique_members[member_type].append(member_data)
 
     data = {
+        "name": object_name,
         "doc": doc_string,
         "bases": bases_names,
         "members": {
             "inherited": inherited_members,
-            "uniqe": unique_members
+            "unique": unique_members
         }
     }
 

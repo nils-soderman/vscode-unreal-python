@@ -90,17 +90,21 @@ class DocumentationPage {
         // Request table of content
         vscode.postMessage("getTableOfContents");
         vscode.addCommandListener("tableOfContents", this.load.bind(this));
-        vscode.addCommandListener("openDocPage", this.onPageDataRecived.bind(this));
+        vscode.addCommandListener("openDocPage", this.onOpenPage.bind(this));
 
         // Hook up events to the filter input
         const inputFilter = window.document.getElementById("input-filter");
         inputFilter.addEventListener('input', this.onFilterInput.bind(this));;
         inputFilter.addEventListener('change', this.onFilterChange.bind(this));
 
-        // TODO: This body is now fetched twice
-        const body = window.document.getElementById("content-body");
-        body.addEventListener('click', this.onElementClicked.bind(this));
-
+        // Fetch some elements that this class will need to refer to
+        this.elementTableOfContentsBody = window.document.getElementById("doc-table-of-contents-body");
+        this.elementTableOfContents = window.document.getElementById("doc-table-of-contents");
+        this.elementDocPage = window.document.getElementById("doc-page");
+        this.elementTableOfContentsBody.addEventListener('click', this.onElementClicked.bind(this));
+        
+        const elementDocPageBack = window.document.getElementById("doc-page-back");
+        elementDocPageBack.addEventListener('click', this.onOpenTableOfContents.bind(this));
     }
 
     /**
@@ -120,14 +124,58 @@ class DocumentationPage {
         vscode.postMessage("getDocPage", objectName);
     }
 
-    onPageDataRecived(data) {
+    onOpenTableOfContents() {
+        this.elementTableOfContents.hidden = false;
+        this.elementDocPage.hidden = true;
+    }
+
+    onOpenPage(data) {
         console.log(data);
+
+        const elementDocPageContent = window.document.getElementById("doc-page-content");
+
+        this.elementTableOfContents.hidden = true;
+        this.elementDocPage.hidden = false;
+
+
+        const elementTitle = window.document.getElementById("doc-page-title");
+        elementTitle.innerText = data.name;
+
+        // Class Bases
+        // TODO: Make em clickable
+        const elementBases = window.document.getElementById("doc-page-base");
+        elementBases.innerHTML = `Bases: ${data.bases}`;
+
+        const elementDesc = window.document.getElementById("doc-page-desc");
+        
+        let docString = data.doc;
+        docString = docString.substring(0, docString.toLowerCase().indexOf("**editor properties:**"));
+        elementDesc.innerText = docString;
+        
+
+        const builder = new DocumentationPageBuilder();
+
+
+        [
+            [data.members.unique.property, "Properties", false],
+            [data.members.unique.method, "Methods", true],
+            [data.members.inherited.property, "Inherited Properties", false],
+            [data.members.inherited.method, "Inherited Methods", true],
+        ].forEach((member) => {
+            if (member[0].length > 0) {
+                const section = builder.createSection(member[1]);
+                member[0].forEach(memberData => builder.addDocMember(memberData, member[2]));
+                elementDocPageContent.appendChild(section);
+            }
+        });
+
+        
+
+
     }
 
     _buildPage(tableOfContents) {
         const builder = new DocumentationPageBuilder();
-
-        const body = window.document.getElementById("content-body");
 
         for (const [key, value] of Object.entries(tableOfContents)) {
             const section = builder.createSection(key);
@@ -135,30 +183,30 @@ class DocumentationPage {
             if (Array.isArray(value)) {
                 // Functions, since they are a flat list
                 value.forEach(name => {
-                    if (this.content[name] === undefined) {
-                        this.content[name] = [];
+                    if (this.content[name.toLowerCase()] === undefined) {
+                        this.content[name.toLowerCase()] = [];
                     }
-                    this.content[name].push(builder.addMainItem(name));
+                    this.content[name.toLowerCase()].push(builder.addMainItem(name));
                 });
             }
             else {
                 for (const [name, data] of Object.entries(value)) {
-                    if (this.content[name] === undefined) {
-                        this.content[name] = [];
+                    if (this.content[name.toLowerCase()] === undefined) {
+                        this.content[name.toLowerCase()] = [];
                     }
-                    this.content[name].push(builder.addMainItem(name));
+                    this.content[name.toLowerCase()].push(builder.addMainItem(name));
                     classSubItemTypes.forEach(subType => {
                         data[subType].forEach(subName => {
-                            if (this.content[subName] === undefined) {
-                                this.content[subName] = [];
+                            if (this.content[subName.toLowerCase()] === undefined) {
+                                this.content[subName.toLowerCase()] = [];
                             }
-                            this.content[subName].push(builder.addSubItem(subName, subType));
+                            this.content[subName.toLowerCase()].push(builder.addSubItem(subName, subType));
                         });
                     });
                 }
             }
 
-            body.appendChild(section);
+            this.elementTableOfContentsBody.appendChild(section);
         }
     }
 
@@ -203,6 +251,8 @@ class DocumentationPage {
 
             return;
         }
+
+        filterString = filterString.toLowerCase();
 
         /*
         if (this.contentFilteredCache === null) {
@@ -302,6 +352,38 @@ class DocumentationPageBuilder {
         return subItem;
     }
 
+    addDocMember(data, bMethod) {
+        const item = document.createElement('div');
+
+        let name, docstring, _;
+        if (bMethod) {
+            if (data.doc.includes("--")) {
+                [name, docstring, _] = data.doc.split(/--(.*)/s);
+            } else {
+                [name, docstring, _] = data.doc.split(/\n(.*)/s);
+            }
+        }
+        else {
+            name = data.name;
+            docstring = data.doc;
+        }
+        
+        const itemTitle = document.createElement('h3');
+        if (name.toLowerCase().startsWith("x.")) {
+            name = name.substring(2);
+        }
+        itemTitle.innerText = name;
+
+        const itemDocString = document.createElement('p');
+        itemDocString.innerText = docstring;
+
+        item.appendChild(itemTitle);
+        item.appendChild(itemDocString);
+        
+        this.currentItemContainer.appendChild(item);
+
+        return item;
+    }
 
 }
 
