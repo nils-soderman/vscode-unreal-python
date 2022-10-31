@@ -70,8 +70,8 @@ function onDocumentationShown() {
 //                             Functions
 // ---------------------------------------------------------------------
 
-const classSubItemTypes = ["Method", "Class Method", "Property", "Constant"];
-
+const CLASS_SUB_ITEM_TYPES = ["Method", "Class Method", "Property", "Constant"];
+const UNBROWSABLE_BASES = ["_WrapperBase", "object", "_ObjectBase"];
 
 class DocumentationPage {
 
@@ -101,10 +101,13 @@ class DocumentationPage {
         this.elementTableOfContentsBody = window.document.getElementById("doc-table-of-contents-body");
         this.elementTableOfContents = window.document.getElementById("doc-table-of-contents");
         this.elementDocPage = window.document.getElementById("doc-page");
-        this.elementTableOfContentsBody.addEventListener('click', this.onElementClicked.bind(this));
-        
+        this.elementTableOfContentsBody.addEventListener('click', this.onTableOfContentItemClicked.bind(this));
+
         const elementDocPageBack = window.document.getElementById("doc-page-back");
         elementDocPageBack.addEventListener('click', this.onOpenTableOfContents.bind(this));
+
+        const basesContentElement = window.document.getElementById("doc-page-base-content");
+        basesContentElement.addEventListener('click', this.onBasesClicked.bind(this));
     }
 
     /**
@@ -119,8 +122,21 @@ class DocumentationPage {
      * 
      * @param {PointerEvent} event 
      */
-    onElementClicked(event) {
+    onTableOfContentItemClicked(event) {
         const objectName = event.target.innerText;
+        vscode.postMessage("getDocPage", objectName);
+    }
+
+    /**
+     * 
+     * @param {PointerEvent} event 
+     */
+    onBasesClicked(event) {
+        const objectName = event.target.innerText;
+        if (UNBROWSABLE_BASES.includes(objectName)) {
+            return;
+        }
+
         vscode.postMessage("getDocPage", objectName);
     }
 
@@ -129,8 +145,13 @@ class DocumentationPage {
         this.elementDocPage.hidden = true;
     }
 
+    clearDocPage() {
+        const elementDocPageContent = window.document.getElementById("doc-page-content");
+        elementDocPageContent.innerHTML = "";
+    }
+
     onOpenPage(data) {
-        console.log(data);
+        this.clearDocPage();
 
         const elementDocPageContent = window.document.getElementById("doc-page-content");
 
@@ -143,18 +164,28 @@ class DocumentationPage {
 
         // Class Bases
         // TODO: Make em clickable
-        const elementBases = window.document.getElementById("doc-page-base");
-        elementBases.innerHTML = `Bases: ${data.bases}`;
+        const elementBases = window.document.getElementById("doc-page-base-content");
+        elementBases.innerHTML = "";
+        data.bases.forEach(base => {
+            const spanElement = document.createElement('span');
+
+            if (!UNBROWSABLE_BASES.includes(base)) {
+                console.log("UNBROWSABLE_BASES: " + UNBROWSABLE_BASES);
+                console.log("base: " + base);
+                spanElement.className = "link-style";
+            }
+            spanElement.innerText = base;
+            
+            elementBases.appendChild(spanElement);
+        });
 
         const elementDesc = window.document.getElementById("doc-page-desc");
-        
+
         let docString = data.doc;
         docString = docString.substring(0, docString.toLowerCase().indexOf("**editor properties:**"));
-        elementDesc.innerText = docString;
-        
+        elementDesc.innerText = docString.trim();
 
         const builder = new DocumentationPageBuilder();
-
 
         [
             [data.members.unique.property, "Properties", false],
@@ -169,7 +200,7 @@ class DocumentationPage {
             }
         });
 
-        
+
 
 
     }
@@ -195,7 +226,7 @@ class DocumentationPage {
                         this.content[name.toLowerCase()] = [];
                     }
                     this.content[name.toLowerCase()].push(builder.addMainItem(name));
-                    classSubItemTypes.forEach(subType => {
+                    CLASS_SUB_ITEM_TYPES.forEach(subType => {
                         data[subType].forEach(subName => {
                             if (this.content[subName.toLowerCase()] === undefined) {
                                 this.content[subName.toLowerCase()] = [];
@@ -354,6 +385,7 @@ class DocumentationPageBuilder {
 
     addDocMember(data, bMethod) {
         const item = document.createElement('div');
+        item.className = "doc-page-member";
 
         let name, docstring, _;
         if (bMethod) {
@@ -367,19 +399,23 @@ class DocumentationPageBuilder {
             name = data.name;
             docstring = data.doc;
         }
-        
+
+        // Name
         const itemTitle = document.createElement('h3');
         if (name.toLowerCase().startsWith("x.")) {
             name = name.substring(2);
         }
         itemTitle.innerText = name;
 
+        // Docstring
         const itemDocString = document.createElement('p');
         itemDocString.innerText = docstring;
+        // TODO: <br><br> split by these and make them into <span>'s instead. to have custom line height
+
 
         item.appendChild(itemTitle);
         item.appendChild(itemDocString);
-        
+
         this.currentItemContainer.appendChild(item);
 
         return item;

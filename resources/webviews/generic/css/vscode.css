@@ -7,7 +7,7 @@
 }
 
 h1, h2, h3{
-    color: var(--vscode-sideBarTitle-foreground);
+    color: var(--vscode-foreground);
 }
 
 body {
