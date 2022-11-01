@@ -27,6 +27,8 @@ export class FPythonScriptFiles {
     static readonly getCurrentDebugpyPort = "debug/current_debugy_port";
     static readonly codeCompletionGetPath = "setup_code_completion/get_stub_path";
     static readonly isDevmodeEnabled = "setup_code_completion/is_devmode_enabled";
+    static readonly buildDocumentationToC = "documentation/build_toc";
+    static readonly getDocPageContent = "documentation/get_page_content";
 
     /** Get the absolute path to one of the scripts defined in this struct */
     static getAbsPath(file: string) {
@@ -43,6 +45,7 @@ export class FPythonScriptFiles {
  * @returns The workspace configuration for this extension _('ue-python')_
  */
 export function getExtensionConfig() {
+    // Try to get the active workspace folder first, to have it read Folder Settings
     let workspaceFolder;
     if (vscode.window.activeTextEditor) {
         const activeDocumenet = vscode.window.activeTextEditor.document;

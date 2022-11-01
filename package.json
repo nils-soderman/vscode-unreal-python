@@ -19,7 +19,8 @@
   "activationEvents": [
     "onCommand:ue-python.execute",
     "onCommand:ue-python.attach",
-    "onCommand:ue-python.setupCodeCompletion"
+    "onCommand:ue-python.setupCodeCompletion",
+    "onView:ue-python.sidebar"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -134,7 +135,27 @@
           }
         }
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ue-python-sidebar-view",
+          "title": "Unreal Engine Python",
+          "icon": ""
+        }
+      ]
+    },
+    "views": {
+      "ue-python-sidebar-view": [
+        {
+          "id": "ue-python.sidebar",
+          "name": "Unreal Engine Python",
+          "type": "webview",
+          "icon": "",
+          "contextualTitle": "Unreal Engine Python"
+        }
+      ]
+    }
   },
   "engines": {
     "vscode": "^1.66.0"

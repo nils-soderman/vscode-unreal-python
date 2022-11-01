@@ -1,0 +1,60 @@
+h1 {
+    text-align: center;
+
+}
+
+#input-filter {
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.doc-item {
+    cursor: pointer;
+}
+
+.doc-item:hover {
+    text-decoration: underline;
+}
+
+/* Generic */
+.link-style {
+    cursor: pointer;
+    color: var(--vscode-textLink-foreground)
+}
+.link-style:hover,
+.link-style:active {
+    color: var(--vscode-textLink-activeForeground);
+    text-decoration: underline;
+}
+
+/* Table of contents */
+#doc-table-of-contents-body h2 {
+    border-bottom: 2px solid var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}
+
+
+/* Documentation Page */
+#doc-page-title {
+    text-align: center;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+#doc-page-base {
+}
+
+#doc-page-content h2 {
+    margin-top: 25px;
+    margin-bottom: 10px;
+    border-bottom: 2px solid var(--vscode-sideBarTitle-foreground, var(--vscode-foreground));
+}
+
+.doc-page-member{
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+
+.doc-page-member p { /* Description */
+    opacity: 0.6; /* This screws over themes that has a custom sidebar fore-ground text*/
+}
