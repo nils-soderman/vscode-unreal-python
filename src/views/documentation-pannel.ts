@@ -120,7 +120,7 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
     }
 
 
-    public async openPage(module: string) {
+    public async openPage(module: string, property?: string) {
         const filepath = path.join(utils.getExtentionTempDir(), `docpage_${module}.json`);
         if (!fs.existsSync(filepath)) {
             await buildPageContent(filepath, module);
@@ -130,7 +130,7 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
         const data = JSON.parse(tableOfContentsString.toString());
 
         if (this._view) {
-            this._view.webview.postMessage({ command: 'openDocPage', data: data });
+            this._view.webview.postMessage({ command: 'openDocPage', data: {pageData: data, property: property} });
         }
     }
 
@@ -144,7 +144,7 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
                 }
             case 'getDocPage':
                 {
-                    this.openPage(data.data);
+                    this.openPage(data.data.object, data.data.property);
                     break;
                 }
             default:

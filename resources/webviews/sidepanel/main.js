@@ -123,8 +123,17 @@ class DocumentationPage {
      * @param {PointerEvent} event 
      */
     onTableOfContentItemClicked(event) {
-        const objectName = event.target.innerText;
-        vscode.postMessage("getDocPage", objectName);
+        let objectName = event.target.innerText;
+        let member, _;
+
+        if (objectName.includes(".")) {
+            [objectName, member, _] = objectName.split(/\.(.*)/s);
+            if (member.includes(" ")) {
+                member = member.split(" ")[0];
+            }
+        }
+
+        vscode.postMessage("getDocPage", { "object": objectName, "property": member });
     }
 
     /**
@@ -150,7 +159,9 @@ class DocumentationPage {
         elementDocPageContent.innerHTML = "";
     }
 
-    onOpenPage(data) {
+    onOpenPage(inputData) {
+        const pageData = inputData.pageData;
+
         this.clearDocPage();
 
         const elementDocPageContent = window.document.getElementById("doc-page-content");
@@ -160,42 +171,51 @@ class DocumentationPage {
 
 
         const elementTitle = window.document.getElementById("doc-page-title");
-        elementTitle.innerText = data.name;
+        elementTitle.innerText = pageData.name;
 
         // Class Bases
         // TODO: Make em clickable
         const elementBases = window.document.getElementById("doc-page-base-content");
         elementBases.innerHTML = "";
-        data.bases.forEach(base => {
+        pageData.bases.forEach(base => {
             const spanElement = document.createElement('span');
 
             if (!UNBROWSABLE_BASES.includes(base)) {
-                console.log("UNBROWSABLE_BASES: " + UNBROWSABLE_BASES);
-                console.log("base: " + base);
                 spanElement.className = "link-style";
             }
             spanElement.innerText = base;
-            
+
             elementBases.appendChild(spanElement);
         });
 
         const elementDesc = window.document.getElementById("doc-page-desc");
 
-        let docString = data.doc;
+        let docString = pageData.doc;
         docString = docString.substring(0, docString.toLowerCase().indexOf("**editor properties:**"));
         elementDesc.innerText = docString.trim();
 
+
+        const propertyFocus = inputData.property;
+        let focusElement;
         const builder = new DocumentationPageBuilder();
 
         [
-            [data.members.unique.property, "Properties", false],
-            [data.members.unique.method, "Methods", true],
-            [data.members.inherited.property, "Inherited Properties", false],
-            [data.members.inherited.method, "Inherited Methods", true],
+            [pageData.members.unique.property, "Properties", false],
+            [pageData.members.unique.method, "Methods", true],
+            [pageData.members.inherited.property, "Inherited Properties", false],
+            [pageData.members.inherited.method, "Inherited Methods", true],
         ].forEach((member) => {
             if (member[0].length > 0) {
                 const section = builder.createSection(member[1]);
-                member[0].forEach(memberData => builder.addDocMember(memberData, member[2]));
+                member[0].forEach(memberData => {
+                    const memberElement = builder.addDocMember(memberData, member[2]);
+                    if (memberData.name === propertyFocus) {
+                        memberElement.classList.add("focus");
+                        focusElement = memberElement;
+                    }
+                });
+
+
                 elementDocPageContent.appendChild(section);
             }
         });
