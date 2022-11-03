@@ -170,6 +170,9 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
         scritpUris.push(
             webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, "generic", 'scripts', 'utils.js'))
         );
+        scritpUris.push(
+            webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, "generic", 'scripts', 'drawdown', 'drawdown.js'))
+        );
 
         const pannelStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, this.pannelName, 'main.css'));
         if (fs.existsSync(pannelStyleUri.fsPath)) {

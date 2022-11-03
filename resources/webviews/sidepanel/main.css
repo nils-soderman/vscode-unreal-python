@@ -78,3 +78,20 @@ h1 {
         background: var(--vscode-background);
     }
 }
+
+#doc-page-back {
+    height: 25px;
+}
+
+#doc-page-desc {
+    margin-top: 10px;
+}
+
+.scroll-content {
+    position: absolute;
+    padding-left: 10px;
+    overflow: scroll;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 29px);
+}

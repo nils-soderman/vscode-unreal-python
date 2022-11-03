@@ -146,7 +146,7 @@ class DocumentationPage {
             return;
         }
 
-        vscode.postMessage("getDocPage", objectName);
+        vscode.postMessage("getDocPage", { object: objectName });
     }
 
     onOpenTableOfContents() {
@@ -169,17 +169,14 @@ class DocumentationPage {
         this.elementTableOfContents.hidden = true;
         this.elementDocPage.hidden = false;
 
-
         const elementTitle = window.document.getElementById("doc-page-title");
         elementTitle.innerText = pageData.name;
 
         // Class Bases
-        // TODO: Make em clickable
         const elementBases = window.document.getElementById("doc-page-base-content");
         elementBases.innerHTML = "";
         pageData.bases.forEach(base => {
             const spanElement = document.createElement('span');
-
             if (!UNBROWSABLE_BASES.includes(base)) {
                 spanElement.className = "link-style";
             }
@@ -191,9 +188,9 @@ class DocumentationPage {
         const elementDesc = window.document.getElementById("doc-page-desc");
 
         let docString = pageData.doc;
-        docString = docString.substring(0, docString.toLowerCase().indexOf("**editor properties:**"));
-        elementDesc.innerText = docString.trim();
+        docString = docString.slice(0, docString.toLowerCase().indexOf("**editor properties:**"));
 
+        elementDesc.innerHTML = markdown(docString.trim());
 
         const propertyFocus = inputData.property;
         let focusElement;
@@ -214,7 +211,6 @@ class DocumentationPage {
                         focusElement = memberElement;
                     }
                 });
-
 
                 elementDocPageContent.appendChild(section);
             }
@@ -426,15 +422,16 @@ class DocumentationPageBuilder {
             name = name.substring(2);
         }
         itemTitle.innerText = name;
+        item.appendChild(itemTitle);
+
 
         // Docstring
-        const itemDocString = document.createElement('p');
-        itemDocString.innerText = docstring;
-        // TODO: <br><br> split by these and make them into <span>'s instead. to have custom line height
-
-
-        item.appendChild(itemTitle);
-        item.appendChild(itemDocString);
+        if (docstring) {
+            // TODO: <br><br> split by these and make them into <span>'s instead. to have custom line height
+            const itemDocString = document.createElement('div');
+            itemDocString.innerHTML = markdown(docstring.trim());
+            item.appendChild(itemDocString);
+        }
 
         this.currentItemContainer.appendChild(item);
 
