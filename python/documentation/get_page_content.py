@@ -11,27 +11,30 @@ class EMemberType:
 
 
 def get_member_data(memeber_name: str, member: object):
-
     name = memeber_name
     if inspect.ismethod(member) or inspect.isfunction(member):
         name += ()
 
+    doc = member.__doc__
+
     member_type = None
-    if inspect.isgetsetdescriptor(member):
+    if inspect.isgetsetdescriptor(member) or inspect.ismemberdescriptor(member):
         member_type = EMemberType.PROPERTY
     elif inspect.ismethoddescriptor(member) or inspect.isbuiltin(member):
         member_type = EMemberType.METHOD
-
+    elif issubclass(type(member), unreal.EnumBase):        
+        member_type = EMemberType.PROPERTY
+        doc = str(member.value)
+        
     return member_type, {
         "name": name,
-        "doc": member.__doc__
+        "doc": doc
     }
 
 
-def generate(object_name: str, out_filepath: str):
+def generate(object_name: str):
     if not hasattr(unreal, object_name):
-        print("No")
-        return False
+        return
 
     ue_object = getattr(unreal, object_name)
 
@@ -60,7 +63,7 @@ def generate(object_name: str, out_filepath: str):
             # Unique
             unique_members[member_type].append(member_data)
 
-    data = {
+    return {
         "name": object_name,
         "doc": doc_string,
         "bases": bases_names,
@@ -70,19 +73,20 @@ def generate(object_name: str, out_filepath: str):
         }
     }
 
-    with open(out_filepath, "w") as file:
-        json.dump(data, file)
-
-    return True
-
 
 def main():
     object_name = globals().get("object")
     out_filepath = globals().get("outFilepath")
 
-    return generate(object_name, out_filepath)
+    data = generate(object_name)
+    if data:
+        with open(out_filepath, "w") as file:
+            json.dump(data, file)
+
+        return True
+    return False
 
 
-# generate("CheckBox", "")
+# print(generate("ClampMode"))
 
 print(main())
