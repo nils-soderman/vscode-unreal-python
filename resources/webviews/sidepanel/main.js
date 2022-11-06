@@ -132,6 +132,9 @@ class DocumentationPage {
                 member = member.split(" ")[0];
             }
         }
+        else {
+            member = objectName;
+        }
 
         vscode.postMessage("getDocPage", { "object": objectName, "property": member });
     }
@@ -161,6 +164,7 @@ class DocumentationPage {
 
     onOpenPage(inputData) {
         const pageData = inputData.pageData;
+        console.log(pageData);
 
         this.clearDocPage();
 
@@ -173,24 +177,37 @@ class DocumentationPage {
         elementTitle.innerText = pageData.name;
 
         // Class Bases
-        const elementBases = window.document.getElementById("doc-page-base-content");
-        elementBases.innerHTML = "";
-        pageData.bases.forEach(base => {
-            const spanElement = document.createElement('span');
-            if (!UNBROWSABLE_BASES.includes(base)) {
-                spanElement.className = "link-style";
-            }
-            spanElement.innerText = base;
+        const elementBaseContent = window.document.getElementById("doc-page-base-content");
+        const elementBases = window.document.getElementById("doc-page-base");
+        elementBaseContent.innerHTML = "";
+        if (pageData.bases) {
+            elementBases.hidden = false;
+            pageData.bases.forEach(base => {
+                const spanElement = document.createElement('span');
+                if (!UNBROWSABLE_BASES.includes(base)) {
+                    spanElement.className = "link-style";
+                }
+                spanElement.innerText = base;
 
-            elementBases.appendChild(spanElement);
-        });
+                elementBaseContent.appendChild(spanElement);
+            });
+        } else {
+            elementBases.hidden = true;
+        }
 
         const elementDesc = window.document.getElementById("doc-page-desc");
 
         let docString = pageData.doc;
-        docString = docString.slice(0, docString.toLowerCase().indexOf("**editor properties:**"));
+        if (docString) {
+            const docStringSplitIndex = docString.toLowerCase().indexOf("**editor properties:**");
+            if (docStringSplitIndex) {
+                docString = docString.slice(0, docStringSplitIndex);
+            }
 
-        elementDesc.innerHTML = markdown(docString.trim());
+            elementDesc.innerHTML = markdown(docString.trim());
+        } else {
+            elementDesc.innerHTML = "";
+        }
 
         const propertyFocus = inputData.property;
         let focusElement;
@@ -199,8 +216,10 @@ class DocumentationPage {
         [
             [pageData.members.unique.property, "Properties", false],
             [pageData.members.unique.method, "Methods", true],
+            [pageData.members.unique.decorator, "Decorators", false],
             [pageData.members.inherited.property, "Inherited Properties", false],
             [pageData.members.inherited.method, "Inherited Methods", true],
+            [pageData.members.inherited.decorator, "Inherited Decorators", false],
         ].forEach((member) => {
             if (member[0].length > 0) {
                 const section = builder.createSection(member[1]);
@@ -404,7 +423,7 @@ class DocumentationPageBuilder {
         item.className = "doc-page-member";
 
         let name, docstring, _;
-        if (bMethod) {
+        if (bMethod && (data.doc.includes("--") || data.doc.includes("\\n"))) {
             if (data.doc.includes("--")) {
                 [name, docstring, _] = data.doc.split(/--(.*)/s);
             } else {
