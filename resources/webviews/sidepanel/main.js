@@ -81,6 +81,8 @@ class DocumentationPage {
 
     bLiveFilter = false;
 
+    cachedScrollTopPos = 0;
+
     /**
      * 
      * @param {Object} gTableOfContents The dictionary containing all of the content 
@@ -155,6 +157,8 @@ class DocumentationPage {
     onOpenTableOfContents() {
         this.elementTableOfContents.hidden = false;
         this.elementDocPage.hidden = true;
+
+        window.scrollTo(0, this.cachedScrollTopPos);
     }
 
     clearDocPage() {
@@ -163,6 +167,8 @@ class DocumentationPage {
     }
 
     onOpenPage(inputData) {
+        this.cachedScrollTopPos = document.documentElement.scrollTop;
+
         const pageData = inputData.pageData;
         console.log(pageData);
 
@@ -227,6 +233,7 @@ class DocumentationPage {
                     const memberElement = builder.addDocMember(memberData, member[2]);
                     if (memberData.name === propertyFocus) {
                         memberElement.classList.add("focus");
+
                         focusElement = memberElement;
                     }
                 });
@@ -235,7 +242,11 @@ class DocumentationPage {
             }
         });
 
-
+        if (focusElement) {
+            focusElement.scrollIntoView({ block: "center" });
+        } else {
+            window.scrollTo(0, 0);
+        }
 
 
     }
