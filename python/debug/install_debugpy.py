@@ -1,25 +1,13 @@
 """ 
 Moudle to install Debugpy
 """
+import unreal
 
 import subprocess
-import sys
-import os
-
-
-def get_unreal_python_executable():
-    exe_path = sys.executable  # This will point to 'UnrealEditor.exe'
-    for i in range(2):  # Go back two folders
-        exe_path = os.path.dirname(exe_path)
-
-    exe_path = os.path.join(exe_path, "ThirdParty", "Python3", "Win64", "python.exe")
-
-    if os.path.isfile(exe_path):
-        return exe_path
 
 
 def install_debugpy(target=""):
-    python_exe = get_unreal_python_executable()
+    python_exe = unreal.get_interpreter_executable_path()
     if not python_exe:
         return False
     
