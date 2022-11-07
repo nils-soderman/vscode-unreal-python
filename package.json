@@ -141,7 +141,7 @@
         {
           "id": "ue-python-sidebar-view",
           "title": "Unreal Engine Python",
-          "icon": ""
+          "icon": "./media/icon-sidebar.svg"
         }
       ]
     },
@@ -151,7 +151,7 @@
           "id": "ue-python.sidebar",
           "name": "Unreal Engine Python",
           "type": "webview",
-          "icon": "",
+          "icon": "./media/icon-sidebar.svg",
           "contextualTitle": "Unreal Engine Python"
         }
       ]
