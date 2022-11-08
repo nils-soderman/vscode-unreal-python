@@ -18,12 +18,28 @@ DEFAULT_DICT_LAYOUT = {
 }
 
 
+def patch_docstring(doc_string: str):
+    if "\n" in doc_string:
+        lines = []
+        for line in doc_string.split("\n"):
+            line = line.rstrip()
+            
+            if line.startswith("    "):
+                line = f"- {line.strip().rstrip(':')}"
+                
+            lines.append(line)
+        
+        doc_string = "\n".join(lines)
+        
+    return doc_string
+
+
 def get_member_data(memeber_name: str, member: object):
     name = memeber_name
     # if inspect.ismethod(member) or inspect.isfunction(member):
     #     name += "()"
 
-    doc = member.__doc__
+    doc = patch_docstring(member.__doc__)
 
     member_type = None
     if inspect.isgetsetdescriptor(member) or inspect.ismemberdescriptor(member):
@@ -56,7 +72,7 @@ def generate(object_name: str):
         bases_names = [x.__name__ for x in ue_object.__bases__]
 
         object_dict = ue_object.__dict__
-        doc_string = ue_object.__doc__
+        doc_string = patch_docstring(ue_object.__doc__)
 
         inherited_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
         unique_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
@@ -77,7 +93,7 @@ def generate(object_name: str):
                 unique_members[member_type].append(member_data)
     else:
         object_name = "Unreal Functions"
-        doc_string = unreal.__doc__
+        doc_string = patch_docstring(unreal.__doc__)
         bases_names = None
         inherited_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
         unique_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
@@ -112,6 +128,6 @@ def main():
     return False
 
 
-# generate("is_editor")
+# generate("Object")
 
 print(main())
