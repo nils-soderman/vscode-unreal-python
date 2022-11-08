@@ -434,7 +434,7 @@ class DocumentationPageBuilder {
         item.className = "doc-page-member";
 
         let name, docstring, _;
-        if (bMethod && (data.doc.includes("--") || data.doc.includes("\\n"))) {
+        if (bMethod && (data.doc.includes("--") || data.doc.includes("\n"))) {
             if (data.doc.includes("--")) {
                 [name, docstring, _] = data.doc.split(/--(.*)/s);
             } else {
