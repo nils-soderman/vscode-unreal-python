@@ -37,6 +37,12 @@ Command: `Unreal Python: Attach`
 
 <br>
 
+
+#### Note:
+Commands can be run from VS Code's command palette, `Show All Commands` _(Default shortcut: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>)_
+
+<br>
+
 # Contact
 If you have any questions, feature requests or run into any bugs, don't hesitate to get in contact with me:
 
