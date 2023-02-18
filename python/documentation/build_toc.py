@@ -33,6 +33,10 @@ class TableOfContentsClass():
             # ignore private methods / properties
             if name.startswith("_"):
                 continue
+            
+            # ingore inherited methods / properties
+            if name not in self.cls.__dict__:
+                continue
 
             if inspect.ismethoddescriptor(member):
                 self.methods.append((name, member))
