@@ -1,4 +1,3 @@
-from email.policy import strict
 import unreal
 
 import configparser
