@@ -690,6 +690,10 @@ export class RemoteExecutionMessage {
     public getCommandResultOutput() {
         if (this.type === FCommandTypes.commandResults) {
             const outputs: [{ type: string, output: string }] = this.data.output;
+            // Trim all output strings
+            for (const output of outputs) {
+                output.output = output.output.trim();
+            }
             return outputs;
         }
         return [];
