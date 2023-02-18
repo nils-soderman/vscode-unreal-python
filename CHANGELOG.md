@@ -1,10 +1,18 @@
 # Change Log
 
-## v0.1.3
-[2022-10-x]
+## v0.2.0
+[2023-02-18]
+
+### Added:
+- Documentation sidebar
 
 ### Fixed:
 - Configs not read correctly from the folder settings
+- Fixed bug that would cause `Setup Code Completion` to continue asking the user to enable Developer Mode even if it was already enabled.
+
+### Changed:
+- Updated README.md to clarify that commands can be executed through the command palette. Closes [#2](https://github.com/nils-soderman/vscode-unreal-python/issues/2)
+
 
 <br>
 
