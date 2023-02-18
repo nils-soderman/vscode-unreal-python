@@ -16,12 +16,6 @@
     "epic games",
     "debug"
   ],
-  "activationEvents": [
-    "onCommand:ue-python.execute",
-    "onCommand:ue-python.attach",
-    "onCommand:ue-python.setupCodeCompletion",
-    "onView:ue-python.sidebar"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
@@ -157,9 +151,6 @@
       ]
     }
   },
-  "engines": {
-    "vscode": "^1.66.0"
-  },
   "galleryBanner": {
     "color": "#0f0f0f",
     "theme": "dark"
@@ -206,5 +197,8 @@
     "open": "^8.4.0",
     "tcp-port-used": "^1.0.2",
     "uuid": "^8.3.2"
+  },
+  "engines": {
+    "vscode": "^1.74.0"
   }
 }
