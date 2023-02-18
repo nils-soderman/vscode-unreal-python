@@ -43,8 +43,6 @@ h1 {
     margin-bottom: 5px;
 }
 
-#doc-page-base {}
-
 #doc-page-content h2 {
     margin-top: 25px;
     margin-bottom: 10px;
@@ -57,10 +55,8 @@ h1 {
 }
 
 
-.doc-page-member p {
-    /* Description */
+.doc-page-member p, .doc-page-member li {
     opacity: 0.6;
-    /* This screws over themes that has a custom sidebar fore-ground text*/
 }
 
 .focus {
