@@ -1,5 +1,16 @@
 # Change Log
 
+## v0.2.1
+[2023-x]
+
+# Fixed:
+- Output not showing up in Unreal Engine's "Output Log" if not attached.
+
+
+<br>
+
+___
+
 ## v0.2.0
 [2023-02-18]
 

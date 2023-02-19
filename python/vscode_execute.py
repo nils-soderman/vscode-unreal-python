@@ -9,10 +9,33 @@ import sys
 import os
 import re
 
+from io import StringIO
+
 TEMP_FOLDERPATH = os.path.join(tempfile.gettempdir(), "VSCode-Unreal-Python")
 OUTPUT_FILENAME = "exec-out"
 
 DATA_FILEPATH_GLOBAL_VAR_NAME = "data_filepath"
+
+
+class StdOutRedirection:
+    """ Re-direct the output to a text file while still printing it to the console, should be used with a 'with' statement. """
+    def __init__(self, output_filepath: str):
+        self.output_filepath = output_filepath
+        self.stringio = StringIO()
+        self.stdout = None
+
+    def __enter__(self):
+        self.stdout = sys.stdout
+        sys.stdout = self.stringio
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.stringio.seek(0)
+        output = self.stringio.read()
+        with open(self.output_filepath, 'w', encoding="utf-8") as f:
+            f.write(output)
+        self.stdout.write(output)
+        self.stdout.flush()
+        sys.stdout = self.stdout
 
 
 def get_exec_globals():
@@ -68,7 +91,7 @@ def main(exec_file, exec_origin, command_id, is_debugging, name_var=None, additi
     with open(exec_file, 'r', encoding="utf-8") as vscode_in_file:
         if not is_debugging:
             # Re-direct the output through a text file
-            with open(output_filepath, 'w', encoding="utf-8") as vscode_out_file, contextlib.redirect_stdout(vscode_out_file):
+            with StdOutRedirection(output_filepath):
                 execute_code(vscode_in_file.read(), exec_origin, is_debugging)
                 if additional_print:
                     print(additional_print)
