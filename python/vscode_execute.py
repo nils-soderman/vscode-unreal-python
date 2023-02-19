@@ -2,7 +2,6 @@
 This script will be called from 'vscode_execute_entry.py' and will execute the user script
 """
 
-import contextlib
 import traceback
 import tempfile
 import sys
