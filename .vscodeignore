@@ -3,6 +3,7 @@
 src/**
 .gitignore
 .yarnrc
+.pylintrc
 vsc-extension-quickstart.md
 **/tsconfig.json
 **/.eslintrc.json
