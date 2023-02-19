@@ -2,8 +2,9 @@
 Module to get the directory to where the 'unreal.py' stub file is located. 
 """
 
-import unreal
 import os
+
+import unreal
 
 FOLDER_NAME = "PythonStub"
 

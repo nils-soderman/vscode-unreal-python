@@ -1,17 +1,15 @@
-""" 
-Moudle to install Debugpy
-"""
-import unreal
-
+""" Moudle to install Debugpy """
 import subprocess
+
+import unreal
 
 
 def install_debugpy(target=""):
     python_exe = unreal.get_interpreter_executable_path()
     if not python_exe:
         return False
-    
-    args = [python_exe, "-m", "pip", "install", "debugpy"]   
+
+    args = [python_exe, "-m", "pip", "install", "debugpy"]
     if target:
         args.append(f'--target="{target}"')
 
@@ -20,7 +18,7 @@ def install_debugpy(target=""):
     # Check if installation was sucessfull by trying to import debugpy
     try:
         import debugpy
-    except:
+    except ModuleNotFoundError:
         return False
 
     return True

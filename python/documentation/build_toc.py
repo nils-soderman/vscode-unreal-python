@@ -1,9 +1,11 @@
-import inspect
+""" Build a json file with the table of contents for the Unreal Engine python API. """
 
-import unreal
+import inspect
 import types
 import time
 import json
+
+import unreal
 
 
 def issubclass_strict(__cls: type, __class_or_tuple):
@@ -17,6 +19,10 @@ def issubclass_strict(__cls: type, __class_or_tuple):
 
 
 class TableOfContentsClass():
+    """ 
+    Each class in the unreal API will be represented by an instance of this class. (e.g. Enums, Structs, Classes)
+    This class contains all methods, properties, constants, etc. of the class it represents.
+    """
     def __init__(self, name: str, cls):
         self.name = name
         self.cls = cls
@@ -33,7 +39,7 @@ class TableOfContentsClass():
             # ignore private methods / properties
             if name.startswith("_"):
                 continue
-            
+
             # ingore inherited methods / properties
             if name not in self.cls.__dict__:
                 continue
@@ -70,6 +76,7 @@ class TableOfContentsClass():
 
 
 class UnrealTableOfContents():
+    """ Main class used for generating the table of contents. """
     def __init__(self):
         self.classes = []
         self.enums = []
@@ -100,14 +107,6 @@ class UnrealTableOfContents():
                 print(f"Skip adding {object_name}: {obj} to the toc.")
 
     def get_dict(self):
-        example = {
-            "struct": {},
-            "enum": {},
-            "delegate": {},
-            "class": {},
-            "native": {}
-        }
-
         data = {}
         for name, object_list, in (("Native", self.natives),
                                    ("Struct", self.struct),
@@ -134,7 +133,7 @@ def main():
     table_of_contents = UnrealTableOfContents()
     table_of_contents.load()
 
-    with open(filepath, "w") as file:
+    with open(filepath, "w", encoding="utf-8") as file:
         json.dump(table_of_contents.get_dict(), file)
 
     print(f"Took {time.perf_counter() - start_time:.2}s")

@@ -1,6 +1,4 @@
-""" 
-Module to get the port of the current debugpy server
-"""
+""" Module to get the port of the current debugpy server """
 
 import os
 

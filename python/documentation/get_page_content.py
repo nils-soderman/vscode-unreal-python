@@ -1,9 +1,11 @@
+""" Generates a JSON file with an indepth documentation for a given object """
+
 import inspect
-import unreal
 import types
 import copy
 import json
 
+import unreal
 
 class EMemberType:
     PROPERTY = "property"
@@ -23,14 +25,14 @@ def patch_docstring(doc_string: str):
         lines = []
         for line in doc_string.split("\n"):
             line = line.rstrip()
-            
+
             if line.startswith("    "):
                 line = f"- {line.strip().rstrip(':')}"
-                
+
             lines.append(line)
-        
+
         doc_string = "\n".join(lines)
-        
+
     return doc_string
 
 
@@ -62,13 +64,13 @@ def get_member_data(memeber_name: str, member: object):
 
 def generate(object_name: str):
     if not hasattr(unreal, object_name):
-        return
+        return None
 
     ue_object = getattr(unreal, object_name)
 
     is_class = inspect.isclass(ue_object)
 
-    if (is_class):
+    if is_class:
         bases_names = [x.__name__ for x in ue_object.__bases__]
 
         object_dict = ue_object.__dict__
@@ -121,7 +123,7 @@ def main():
 
     data = generate(object_name)
     if data:
-        with open(out_filepath, "w") as file:
+        with open(out_filepath, "w", encoding="utf-8") as file:
             json.dump(data, file)
 
         return True

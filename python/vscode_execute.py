@@ -1,7 +1,10 @@
+"""
+This script will be called from 'vscode_execute_entry.py' and will execute the user script
+"""
+
 import contextlib
 import traceback
 import tempfile
-import json
 import sys
 import os
 import re
@@ -49,23 +52,23 @@ def execute_code(code, filename, is_vscode_debugging):
         print(traceback_message)
 
 
-def main(exec_file, exec_origin, command_id, is_debugging, nameVar=None, additional_print=None):
+def main(exec_file, exec_origin, command_id, is_debugging, name_var=None, additional_print=None):
     # Set some global variables
     exec_globals = get_exec_globals()
 
     exec_globals["__file__"] = exec_origin
-    if nameVar:
-        exec_globals["__name__"] = nameVar
+    if name_var:
+        exec_globals["__name__"] = name_var
     elif "__name__" in exec_globals:
         exec_globals.pop("__name__")
 
     output_filepath = os.path.join(
         TEMP_FOLDERPATH, f"{OUTPUT_FILENAME}-{command_id}.txt")
 
-    with open(exec_file, 'r') as vscode_in_file:
+    with open(exec_file, 'r', encoding="utf-8") as vscode_in_file:
         if not is_debugging:
             # Re-direct the output through a text file
-            with open(output_filepath, 'w') as vscode_out_file, contextlib.redirect_stdout(vscode_out_file):
+            with open(output_filepath, 'w', encoding="utf-8") as vscode_out_file, contextlib.redirect_stdout(vscode_out_file):
                 execute_code(vscode_in_file.read(), exec_origin, is_debugging)
                 if additional_print:
                     print(additional_print)
