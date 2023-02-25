@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"name": "==== Extension Source ====",
+			"path": "."
+		},
+		{
+			"name": "====== Sidebar UI ======",
+			"path": "./webview-ui"
+		}
+	],
+	"settings": {
+		"typescript.tsc.autoDetect": "off"
+	}
+}

@@ -17,4 +17,13 @@ build-scripts
 builds/**
 media/demo/**
 
-test**
+test.py
+
+webview-ui/src/**
+webview-ui/public/**
+webview-ui/scripts/**
+webview-ui/index.html
+webview-ui/README.md
+webview-ui/package.json
+webview-ui/package-lock.json
+webview-ui/node_modules/**
