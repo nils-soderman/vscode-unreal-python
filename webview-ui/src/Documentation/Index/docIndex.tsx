@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { Component } from 'react';
 import DocHeader from './Header/docHeader';
 
 export default class DocIndex extends Component {

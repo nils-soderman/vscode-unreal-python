@@ -1,6 +1,6 @@
 import "./docHeader.scss"
 
-import React, { Component } from 'react';
+import { Component } from 'react';
 import { VSCodeTextField } from '@vscode/webview-ui-toolkit/react';
 
 

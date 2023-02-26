@@ -1,5 +1,6 @@
+
 import './App.scss';
-import DocIndex from './Documentation/Index/docIndex.jsx';
+import DocIndex from './Documentation/Index/docIndex';
 
 function App() {
   return (
