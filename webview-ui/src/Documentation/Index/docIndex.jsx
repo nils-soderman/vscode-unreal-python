@@ -1,12 +1,17 @@
-// Setup a basic react component module
-
 import React, { Component } from 'react';
+import DocHeader from './Header/docHeader';
 
 export default class DocIndex extends Component {
-    state = {  } 
-    render() { 
+    state = {}
+
+    
+
+    render() {
         return (
-            <h1>Documentation</h1>
+            <div>
+                <DocHeader />
+
+            </div>
         );
     }
 }
