@@ -1,11 +1,10 @@
-
 import './App.scss';
-import DocIndex from './Documentation/Index/docIndex';
+import DocPage from './Documentation/DocPage';
 
 function App() {
   return (
     <div className="App">
-      <DocIndex />
+      <DocPage />
     </div>
   );
 }

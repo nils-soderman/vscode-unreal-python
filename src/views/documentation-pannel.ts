@@ -114,7 +114,7 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
 
         if (this._view) {
             // this._view.show?.(true); // `show` is not implemented in 1.49 but is for 1.50 insiders
-            this._view.webview.postMessage({ command: 'tableOfContents', data: data });
+            this._view.webview.postMessage({ command: 'getTableOfContents', data: data });
         }
 
     }
