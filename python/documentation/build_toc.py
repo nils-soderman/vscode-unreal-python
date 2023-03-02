@@ -118,7 +118,7 @@ class UnrealTableOfContents():
             data[name] = {x.name: x.get_dict() for x in object_list}
 
         # Functions are just a flat list
-        data["Function"] = [name for name, cls in self.functions]
+        data["Function"] = {name: {} for name, cls in self.functions}
 
         return data
 

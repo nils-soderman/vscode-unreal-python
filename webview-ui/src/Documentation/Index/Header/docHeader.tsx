@@ -6,10 +6,10 @@ import { VSCodeTextField } from '@vscode/webview-ui-toolkit/react';
 
 class DocHeader extends Component {
     state = {}
+    
     render() {
         return (
-            <div>
-                <h1 className="header">Documentation</h1>
+            <div className="header">
                 <VSCodeTextField id='searchbar' placeholder='Search...' />
             </div>
         );
