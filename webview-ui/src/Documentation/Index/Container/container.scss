@@ -1,7 +1,9 @@
 .category-header {
     background-color: var(--vscode-sideBarSectionHeader-background);
+    border-top: 1px solid var(--vscode-sideBarSectionHeader-border);
     height: 22px;
-    
+    cursor: pointer;
+
     h2 {
         line-height: 22px;
         color: var(--vscode-sideBarSectionHeader-foreground);
@@ -9,12 +11,36 @@
         font-weight: 700;
         font-size: 11px;
         
-        cursor: pointer;
-        
         margin: 0;
+        margin-left: 5px;
+        float: left;
+
+        user-select: none;
+    }
+
+    .count-badge-wrapper {
+        float: right;
+        margin: auto;
+        margin-right: 12px;
+        height: 100%;
+
+        .count-badge {
+            background-color: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+            border: 1px solid var(--vscode-contrastBorder);
+
+            border-radius: 11px;
+            padding: 3px 6px;
+            font-size: 11px;
+            min-width: 18px;
+            min-height: 18px;
+            line-height: 11px;
+            display: inline-block;
+            text-align: center;
+            box-sizing: border-box;
+        }
     }
 }
-
 
 .arrow {
     border-style: solid;
@@ -25,6 +51,10 @@
     width: fit-content;
     width: fit-content;
     float: left;
+
+    
+    margin-left: 8px;
+    margin-top: 6px;
 }
 
 .right {
@@ -35,4 +65,23 @@
 .down {
     transform: rotate(45deg);
     -webkit-transform: rotate(45deg);
+}
+
+.content {
+    padding: 0 22px;
+    margin-bottom: 10px;
+    overflow: hidden;
+
+    span {
+        font-weight: 500;
+        font-size: 13px;
+        cursor: pointer;
+        margin: 0;
+        width: fit-content;
+        display: block;
+    }
+
+    span:hover {
+        opacity: 0.7;
+    }
 }
