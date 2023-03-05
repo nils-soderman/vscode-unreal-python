@@ -18,6 +18,8 @@ interface RawTableOfContents {
     };
 }
 
+
+
 // We should convert toc into this format on mounted
 interface TableOfContents {
     [Type: string]: {
@@ -25,9 +27,13 @@ interface TableOfContents {
     };
 }
 
+interface DocIndexProps {
+    onItemClicked: (name: string) => void;
+}
 
-export default class DocIndex extends Component {
-    state = { bLoading: true, tableOfContents: {} };
+
+export default class DocIndex extends Component<DocIndexProps> {
+    state = { bLoading: true, tableOfContents: {}, filter: "" };
 
 
     async componentDidMount() {
@@ -69,21 +75,21 @@ export default class DocIndex extends Component {
     }
 
     onSearchInput(searchText: string) {
-        console.log(searchText);
+        this.setState({ filter: searchText });
     }
 
 
     render() {
         return (
             <div>
-                <DocHeader handleSearchInput={this.onSearchInput} />
+                <DocHeader handleSearchInput={(text: string) => this.onSearchInput(text)} />
 
                 {this.renderProgressRing()}
 
                 <div id="content">
                     {
                         Object.keys(this.state.tableOfContents).map((key, index) => {
-                            return <Container key={key} name={key} contents={this.state.tableOfContents[key]}/>;
+                            return <Container key={key} name={key} contents={this.state.tableOfContents[key]} onItemClicked={this.props.onItemClicked} filter={this.state.filter} />;
                         })
                     }
                 </div>

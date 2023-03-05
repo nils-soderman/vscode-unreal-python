@@ -1,14 +1,26 @@
 import { Component } from 'react';
+import DetailsPage from './Details/detailsPage';
 import DocIndex from './Index/docIndex';
 
+
 export default class DocPage extends Component {
-    state = {}
+    state = { detailsPageItem: null }
+
+    browseItem(name: string) {
+        this.setState({ detailsPageItem: name });
+    }
+
+    backToIndex() {
+        this.setState({ detailsPageItem: null });
+    }
 
     render() {
+        if (this.state.detailsPageItem) {
+            return (<DetailsPage item={this.state.detailsPageItem} onBackClicked={() => this.backToIndex()}></DetailsPage>);
+        }
+
         return (
-            <div>
-                <DocIndex />
-            </div>
+            <DocIndex onItemClicked={(item: string) => this.browseItem(item)} />
         );
     }
 }

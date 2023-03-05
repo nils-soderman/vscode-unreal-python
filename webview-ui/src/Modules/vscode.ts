@@ -3,7 +3,7 @@ const vscode = acquireVsCodeApi();
 
 export enum EInOutCommands {
     getTableOfContents = "getTableOfContents",
-
+    getDocPage = "getDocPage",
 }
 
 export enum EOutCommands {

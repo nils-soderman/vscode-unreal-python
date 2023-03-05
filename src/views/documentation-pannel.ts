@@ -130,7 +130,7 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
         const data = JSON.parse(tableOfContentsString.toString());
 
         if (this._view) {
-            this._view.webview.postMessage({ command: 'openDocPage', data: {pageData: data, property: property} });
+            this._view.webview.postMessage({ command: 'getDocPage', data: {pageData: data, property: property} });
         }
     }
 

@@ -6,6 +6,7 @@ interface Props {
     contents: {
         [name: string]: string[];
     },
+    filter: string,
     
     onItemClicked?: (name: string) => void;
 }
@@ -30,7 +31,7 @@ class Container extends Component<Props, State> {
             <div className="content">
                 {Object.keys(this.props.contents).map((key) => {
                     return (
-                        <span>
+                        <span onClick={() => this.props.onItemClicked(key)}>
                             {key}
                         </span>
                     )
