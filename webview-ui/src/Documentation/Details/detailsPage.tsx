@@ -2,7 +2,7 @@ import "./detailsPage.scss";
 import { VSCodeProgressRing } from "@vscode/webview-ui-toolkit/react";
 import { Component } from "react";
 import DropDownArea from "../../Components/dropDownArea";
-
+import ReactMarkdown from 'react-markdown'
 import * as vscode from '../../Modules/vscode';
 
 const NONE_CLICKABLE_BASES = [
@@ -134,9 +134,9 @@ class DetailsPage extends Component<DetailsPageProps, DetailsPageState> {
                     </div>
 
                     <p id="doc">
-                        {data.doc}
+                        <ReactMarkdown>{data.doc}</ReactMarkdown>
                     </p>
-                
+
                 </div>
 
                 <div>

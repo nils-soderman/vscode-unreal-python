@@ -7,10 +7,11 @@ import json
 
 import unreal
 
+
 class EMemberType:
-    PROPERTY = "property"
-    METHOD = "method"
-    DECORATOR = "decorator"
+    PROPERTY = "properties"
+    METHOD = "methods"
+    DECORATOR = "decorators"
 
 
 DEFAULT_DICT_LAYOUT = {
@@ -20,28 +21,40 @@ DEFAULT_DICT_LAYOUT = {
 }
 
 
-def patch_docstring(doc_string: str):
+def get_docstring(obj: object, object_name: str):
+    doc_string = obj.__doc__
+
+    is_class = inspect.isclass(obj)
+
     if "\n" in doc_string:
         lines = []
-        for line in doc_string.split("\n"):
+        for index, line in enumerate(doc_string.split("\n")):
             line = line.rstrip()
+
+            if index == 0:
+                if line == object_name or line[1:] == object_name:
+                    continue
 
             if line.startswith("    "):
                 line = f"- {line.strip().rstrip(':')}"
 
             lines.append(line)
 
+            # Break before it list's all each class member
+            if is_class and line.startswith("**Editor Properties"):
+                break
+
         doc_string = "\n".join(lines)
 
     return doc_string
 
 
-def get_member_data(memeber_name: str, member: object):
+def get_member_data(member: object, memeber_name: str):
     name = memeber_name
     # if inspect.ismethod(member) or inspect.isfunction(member):
     #     name += "()"
 
-    doc = patch_docstring(member.__doc__)
+    doc = get_docstring(member, memeber_name)
 
     member_type = None
     if inspect.isgetsetdescriptor(member) or inspect.ismemberdescriptor(member):
@@ -74,7 +87,7 @@ def generate(object_name: str):
         bases_names = [x.__name__ for x in ue_object.__bases__]
 
         object_dict = ue_object.__dict__
-        doc_string = patch_docstring(ue_object.__doc__)
+        doc_string = get_docstring(ue_object, object_name)
 
         inherited_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
         unique_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
@@ -83,7 +96,7 @@ def generate(object_name: str):
             if memeber_name.startswith("_"):
                 continue
 
-            member_type, member_data = get_member_data(memeber_name, member)
+            member_type, member_data = get_member_data(member, memeber_name)
 
             # Check where the method/property originates from
             #  Inherited                          Overriden
@@ -95,7 +108,7 @@ def generate(object_name: str):
                 unique_members[member_type].append(member_data)
     else:
         object_name = "Unreal Functions"
-        doc_string = patch_docstring(unreal.__doc__)
+        doc_string = get_docstring(unreal, object_name)
         bases_names = None
         inherited_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
         unique_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
@@ -103,7 +116,7 @@ def generate(object_name: str):
             if not isinstance(function, (types.BuiltinFunctionType, types.FunctionType)):
                 continue
 
-            member_type, member_data = get_member_data(function_name, function)
+            member_type, member_data = get_member_data(function, function_name)
             unique_members[member_type].append(member_data)
 
     return {
