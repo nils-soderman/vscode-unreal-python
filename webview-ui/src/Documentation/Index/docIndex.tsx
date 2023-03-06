@@ -1,10 +1,10 @@
 import "./docIndex.scss";
-import { Component } from 'react';
+import { Component, Fragment } from 'react';
 import * as vscode from '../../Modules/vscode';
 import DocHeader from './Header/docHeader';
 
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react';
-import Container from "./Container/container";
+import DropDownArea from "../../Components/dropDownArea";
 
 
 interface RawTableOfContents {
@@ -79,6 +79,32 @@ export default class DocIndex extends Component<DocIndexProps> {
     }
 
 
+    renderContent() {
+        return (
+            <Fragment>
+                {
+                    Object.keys(this.state.tableOfContents).map((key, index) => {
+                        return (
+                            <DropDownArea key={index} title={key} badgeCount={Object.keys(this.state.tableOfContents[key]).length}>
+                                {
+                                    Object.entries(this.state.tableOfContents[key]).map(([name, contents], index) => {
+                                        return (
+                                            <span key={index} onClick={() => this.props.onItemClicked(name)}>
+                                                {name}
+                                            </span>
+                                        );
+                                    })
+                                }
+                            </DropDownArea>
+                        );
+                    })
+
+                }
+            </Fragment>
+        );
+    }
+
+
     render() {
         return (
             <div>
@@ -86,12 +112,8 @@ export default class DocIndex extends Component<DocIndexProps> {
 
                 {this.renderProgressRing()}
 
-                <div id="content">
-                    {
-                        Object.keys(this.state.tableOfContents).map((key, index) => {
-                            return <Container key={key} name={key} contents={this.state.tableOfContents[key]} onItemClicked={this.props.onItemClicked} filter={this.state.filter} />;
-                        })
-                    }
+                <div id="doc-index-content">
+                    {this.renderContent()}
                 </div>
 
             </div>
