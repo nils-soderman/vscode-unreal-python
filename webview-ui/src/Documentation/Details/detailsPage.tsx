@@ -1,6 +1,6 @@
 import "./detailsPage.scss";
 import { VSCodeProgressRing } from "@vscode/webview-ui-toolkit/react";
-import { Component } from "react";
+import { Component, Fragment } from "react";
 import DropDownArea from "../../Components/dropDownArea";
 import ReactMarkdown from 'react-markdown'
 import * as vscode from '../../Modules/vscode';
@@ -11,24 +11,21 @@ const NONE_CLICKABLE_BASES = [
     "_ObjectBase",
 ]
 
+interface PageTypeData {
+    [type: string]: {
+        name: string,
+        doc: string,
+    }[]
+};
+
 export interface PageData {
     pageData: {
         name: string,
         bases: string[],
         doc: string,
         members: {
-            inherited: {
-                [type: string]: {
-                    name: string,
-                    doc: string,
-                }[]
-            },
-            unique: {
-                [type: string]: {
-                    name: string,
-                    doc: string,
-                }[]
-            }
+            inherited: PageTypeData,
+            unique: PageTypeData
         };
         property?: string;
     }
@@ -64,37 +61,33 @@ class DetailsPage extends Component<DetailsPageProps, DetailsPageState> {
         this.setState({ data });
     }
 
-    renderContent() {
-        const data: PageData = this.state.data;
-        const pageData = data.pageData;
+    renderContent(data: PageTypeData, prefix = "") {
         return (
-            <div>
+            <Fragment>
                 {
-                    Object.keys(pageData.members.unique).map((type: string) => {
-                        if (pageData.members.unique[type].length === 0)
+                    Object.keys(data).map((type: string) => {
+                        if (data[type].length === 0)
                             return null;
 
                         return (
-                            <DropDownArea key={type} title={type}>
-                                <ul>
-                                    {
-                                        pageData.members.unique[type].map((member: any, index: number) => {
-                                            return (
-                                                <li key={index}>
-                                                    <h4>{member.name}</h4>
-                                                    <p className="doc">
-                                                        {member.doc}
-                                                    </p>
-                                                </li>
-                                            );
-                                        })
-                                    }
-                                </ul>
+                            <DropDownArea key={type} title={prefix + type}>
+                                {
+                                    data[type].map((member: any, index: number) => {
+                                        return (
+                                            <div key={index} className="doc-details-member">
+                                                <h4>{member.name}</h4>
+                                                <div className="doc-details-doc">
+                                                    <ReactMarkdown>{member.doc}</ReactMarkdown>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                }
                             </DropDownArea>
                         );
                     })
                 }
-            </div>
+            </Fragment>
         );
 
     }
@@ -133,14 +126,15 @@ class DetailsPage extends Component<DetailsPageProps, DetailsPageState> {
                         }
                     </div>
 
-                    <p id="doc">
+                    <div className="doc-details-doc">
                         <ReactMarkdown>{data.doc}</ReactMarkdown>
-                    </p>
+                    </div>
 
                 </div>
 
                 <div>
-                    {this.renderContent()}
+                    {this.renderContent(this.state.data.pageData.members.unique)}
+                    {this.renderContent(this.state.data.pageData.members.inherited, "Inherited ")}
                 </div>
             </div>
         );

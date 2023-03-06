@@ -9,14 +9,14 @@ import unreal
 
 
 class EMemberType:
-    PROPERTY = "properties"
-    METHOD = "methods"
-    DECORATOR = "decorators"
+    PROPERTY = "Properties"
+    METHOD = "Methods"
+    DECORATOR = "Decorators"
 
 
 DEFAULT_DICT_LAYOUT = {
-    EMemberType.METHOD: [],
     EMemberType.PROPERTY: [],
+    EMemberType.METHOD: [],
     EMemberType.DECORATOR: []
 }
 
@@ -26,23 +26,26 @@ def get_docstring(obj: object, object_name: str):
 
     is_class = inspect.isclass(obj)
 
+    # In docstrings, underscores are replaced with spaces
+    name_comparison = object_name.replace("_", " ")
+
     if "\n" in doc_string:
         lines = []
         for index, line in enumerate(doc_string.split("\n")):
             line = line.rstrip()
 
+            # Break before it list's all each class member
+            if is_class and line.startswith("**Editor Properties"):
+                break
+
             if index == 0:
-                if line == object_name or line[1:] == object_name:
+                if line == name_comparison or line[1:] == name_comparison:
                     continue
 
             if line.startswith("    "):
                 line = f"- {line.strip().rstrip(':')}"
 
             lines.append(line)
-
-            # Break before it list's all each class member
-            if is_class and line.startswith("**Editor Properties"):
-                break
 
         doc_string = "\n".join(lines)
 
