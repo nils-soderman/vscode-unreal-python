@@ -4,7 +4,6 @@
 }
 
 #doc-index-content {
-    padding: 0 22px;
     margin-bottom: 10px;
     overflow: hidden;
 
@@ -19,5 +18,9 @@
 
     span:hover {
         opacity: 0.7;
+    }
+
+    .doc-index-dd-content {
+        padding: 0 11px;
     }
 }

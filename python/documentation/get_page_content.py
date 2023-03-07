@@ -4,6 +4,7 @@ import inspect
 import types
 import copy
 import json
+import re
 
 import unreal
 
@@ -20,14 +21,13 @@ DEFAULT_DICT_LAYOUT = {
     EMemberType.DECORATOR: []
 }
 
+# Regex pattern that matches "(X): [X] X:", used for property docstrings
+PROPERTY_DOCSTRING_PATTERN = re.compile(r"\([^\)]+\): \[[^\]]+\] [^\)]+\:")
 
 def get_docstring(obj: object, object_name: str):
     doc_string = obj.__doc__
 
     is_class = inspect.isclass(obj)
-
-    # In docstrings, underscores are replaced with spaces
-    name_comparison = object_name.replace("_", " ")
 
     if "\n" in doc_string:
         lines = []
@@ -38,9 +38,19 @@ def get_docstring(obj: object, object_name: str):
             if is_class and line.startswith("**Editor Properties"):
                 break
 
+            # Special cases for the first line
             if index == 0:
-                if line == name_comparison or line[1:] == name_comparison:
-                    continue
+
+                # For classes, if docstring starts with just the class name, remove it
+                if is_class:
+                    name_comparison = object_name.replace("_", "").lower()
+                    line_comparison = line.replace(" ", "").lower()
+                    if line_comparison == name_comparison or line_comparison[1:] == name_comparison:
+                        continue
+
+                    else:  # TODO: Spesifically check function/property
+                        found = PROPERTY_DOCSTRING_PATTERN.search(line)
+                        print("found: %s" %(found))
 
             if line.startswith("    "):
                 line = f"- {line.strip().rstrip(':')}"
@@ -54,8 +64,6 @@ def get_docstring(obj: object, object_name: str):
 
 def get_member_data(member: object, memeber_name: str):
     name = memeber_name
-    # if inspect.ismethod(member) or inspect.isfunction(member):
-    #     name += "()"
 
     doc = get_docstring(member, memeber_name)
 
@@ -145,7 +153,5 @@ def main():
         return True
     return False
 
-
-# generate("Object")
 
 print(main())

@@ -1,10 +1,29 @@
 #doc-details-header {
     padding: 0 11px;
-
+    margin-bottom: 30px;
+    overflow: hidden;
+    
     #doc-details-title {
         // Center text
         text-align: center;
         margin: 5px;
     }
-    
+}
+
+
+.doc-details-member {
+    padding: 0 11px;
+
+    h4{
+        margin-bottom: 5px;
+    }
+
+    .doc-details-doc {
+        margin: 0px;
+
+        p {
+            margin: 0px;
+        }
+    }
+
 }

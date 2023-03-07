@@ -86,15 +86,18 @@ export default class DocIndex extends Component<DocIndexProps> {
                     Object.keys(this.state.tableOfContents).map((key, index) => {
                         return (
                             <DropDownArea key={index} title={key} badgeCount={Object.keys(this.state.tableOfContents[key]).length}>
-                                {
-                                    Object.entries(this.state.tableOfContents[key]).map(([name, contents], index) => {
-                                        return (
-                                            <span key={index} onClick={() => this.props.onItemClicked(name)}>
-                                                {name}
-                                            </span>
-                                        );
-                                    })
-                                }
+                                <div className="doc-index-dd-content">
+                                    {
+
+                                        Object.entries(this.state.tableOfContents[key]).map(([name, contents], index) => {
+                                            return (
+                                                <span key={index} onClick={() => this.props.onItemClicked(name)}>
+                                                    {name}
+                                                </span>
+                                            );
+                                        })
+                                    }
+                                </div>
                             </DropDownArea>
                         );
                     })
