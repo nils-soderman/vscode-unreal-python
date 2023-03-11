@@ -15,6 +15,7 @@ interface PageTypeData {
     [type: string]: {
         name: string,
         doc: string,
+        name_hints: string
     }[]
 };
 
@@ -75,7 +76,7 @@ class DetailsPage extends Component<DetailsPageProps, DetailsPageState> {
                                     data[type].map((member: any, index: number) => {
                                         return (
                                             <div key={index} className="doc-details-member">
-                                                <h4>{member.name}</h4>
+                                                <h4>{member.name} <span className="doc-details-name-hint">{member.name_hints}</span></h4>
                                                 <div className="doc-details-doc">
                                                     <ReactMarkdown>{member.doc}</ReactMarkdown>
                                                 </div>
