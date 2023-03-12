@@ -3,13 +3,19 @@
 ## v0.2.1
 [2023-x]
 
-# Fixed:
+### Added: 
+
+- Added command "Unreal Python: Open Documentation" _(`ue-python.openDocumentation`)_ that opens the uedocumentation in a new tab.
+
+### Changed:
+- Removed the sidebar documentation pannel
+
+### Fixed:
 - Output not showing up in Unreal Engine's "Output Log" if not attached.
 
 
 <br>
 
-___
 
 ## v0.2.0
 [2023-02-18]
@@ -17,17 +23,16 @@ ___
 ### Added:
 - Documentation sidebar
 
-### Fixed:
-- Configs not read correctly from the folder settings
-- Fixed bug that would cause `Setup Code Completion` to continue asking the user to enable Developer Mode even if it was already enabled.
-
 ### Changed:
 - Updated README.md to clarify that commands can be executed through the command palette. Closes [#2](https://github.com/nils-soderman/vscode-unreal-python/issues/2)
+
+### Fixed:
+- Configs not read correctly from the folder settings
+- Fixed bug that would cause `Setup Code Completion` to continue asking the user to enable Developer Mode even if it was already enabled
 
 
 <br>
 
-___
 
 ## v0.1.2
 [2022-10-17]
@@ -40,7 +45,6 @@ ___
 
 <br>
 
-___
 
 ## v0.1.1
 [2022-10-09]
@@ -50,7 +54,6 @@ ___
 
 <br>
 
-___
 
 ## v0.1.0
 [2022-10-06]
@@ -64,7 +67,6 @@ ___
 
 <br>
 
-___
 
 ## v0.0.2
 [2022-10-01]
@@ -81,8 +83,6 @@ ___
 - Updated default value of `ue-python.remote.timeout` to be 3 seconds.
 
 <br>
-
-___
 
 
 ## v0.0.1
