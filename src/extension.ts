@@ -6,17 +6,17 @@ import * as utils from './modules/utils';
 import * as setupCodeCompletion from './scripts/setup-code-completion';
 import * as execute from './scripts/execute';
 import * as attach from './scripts/attach';
-import { SidebarViewProvier } from './views/documentation-pannel';
+import { DocumentationPannel } from './views/documentation-pannel';
 
 export function activate(context: vscode.ExtensionContext) {
 
 
 	// Register views
-	const provider = new SidebarViewProvier(context.extensionUri);
+	// const provider = new SidebarViewProvier(context.extensionUri);
 
-	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider('ue-python.sidebar', provider)
-	);
+	// context.subscriptions.push(
+	// 	vscode.window.registerWebviewViewProvider('ue-python.documentation', provider)
+	// );
 
 
 	// Register commands
@@ -38,7 +38,11 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-	vscode.commands.executeCommand('setContext', 'test', 'troll');
+	context.subscriptions.push(
+		vscode.commands.registerCommand('ue-python.openDocumentation', (url: string) => {
+			new DocumentationPannel(context.extensionUri).open();
+		})
+	);
 
 }
 

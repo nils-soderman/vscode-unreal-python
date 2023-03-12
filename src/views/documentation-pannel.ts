@@ -64,14 +64,14 @@ function buildPageContent(filepath: string, module: string): Promise<boolean> {
 
 
 
-export class SidebarViewProvier implements vscode.WebviewViewProvider {
+export class DocumentationPannel {
 
     readonly title = "Unreal Engine Python";
 
-    private _view?: vscode.WebviewView;
-
     private readonly webviewDirectory;
     private readonly pannelName = "sidepanel";
+    
+    pannel?: vscode.WebviewPanel;
 
     constructor(
         private readonly _extensionUri: vscode.Uri
@@ -79,25 +79,16 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
         this.webviewDirectory = vscode.Uri.joinPath(_extensionUri, 'webview-ui', "build");
     }
 
-    public resolveWebviewView(
-        webviewView: vscode.WebviewView,
-        context: vscode.WebviewViewResolveContext,
-        _token: vscode.CancellationToken,
-    ) {
-        this._view = webviewView;
-
-        webviewView.webview.options = {
-            // Allow scripts in the webview
+    public open(viewColumn = vscode.ViewColumn.Two) {
+        this.pannel = vscode.window.createWebviewPanel(this.pannelName, this.title, viewColumn, {
             enableScripts: true,
-
             localResourceRoots: [
                 this._extensionUri
             ]
-        };
+        });
 
-        webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
-
-        webviewView.webview.onDidReceiveMessage(data => { this.onDidReceiveMessage(data); });
+        this.pannel.webview.onDidReceiveMessage(data => { this.onDidReceiveMessage(data); });
+        this.pannel.webview.html = this.getHtmlForWebview(this.pannel.webview);
     }
 
 
@@ -112,9 +103,9 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
         const tableOfContentsString = fs.readFileSync(filepath);
         const data = JSON.parse(tableOfContentsString.toString());
 
-        if (this._view) {
+        if (this.pannel) {
             // this._view.show?.(true); // `show` is not implemented in 1.49 but is for 1.50 insiders
-            this._view.webview.postMessage({ command: 'getTableOfContents', data: data });
+            this.pannel.webview.postMessage({ command: 'getTableOfContents', data: data });
         }
 
     }
@@ -129,8 +120,8 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
         const tableOfContentsString = fs.readFileSync(filepath);
         const data = JSON.parse(tableOfContentsString.toString());
 
-        if (this._view) {
-            this._view.webview.postMessage({ command: 'getDocPage', data: {pageData: data, property: property} });
+        if (this.pannel) {
+            this.pannel.webview.postMessage({ command: 'getDocPage', data: {pageData: data, property: property} });
         }
     }
 

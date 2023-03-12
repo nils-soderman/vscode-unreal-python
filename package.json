@@ -36,6 +36,11 @@
         "category": "Unreal Python",
         "title": "Setup code completion",
         "command": "ue-python.setupCodeCompletion"
+      },
+      {
+        "category": "Unreal Python",
+        "title": "Open Documentation",
+        "command": "ue-python.openDocumentation"
       }
     ],
     "keybindings": [
@@ -131,27 +136,7 @@
           }
         }
       }
-    ],
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "ue-python-sidebar-view",
-          "title": "Unreal Engine Python",
-          "icon": "./media/icon-sidebar.svg"
-        }
-      ]
-    },
-    "views": {
-      "ue-python-sidebar-view": [
-        {
-          "id": "ue-python.sidebar",
-          "name": "Unreal Engine Python",
-          "type": "webview",
-          "icon": "./media/icon-sidebar.svg",
-          "contextualTitle": "Unreal Engine Python"
-        }
-      ]
-    }
+    ]
   },
   "galleryBanner": {
     "color": "#0f0f0f",
