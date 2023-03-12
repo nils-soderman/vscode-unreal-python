@@ -51,7 +51,8 @@ class DetailsPage extends Component<DetailsPageProps, DetailsPageState> {
 
     componentDidUpdate() {
         const element = document.getElementById("doc-details-highlight");
-        element.scrollIntoView({inline: "center"});
+        if (element)
+            element.scrollIntoView({inline: "center"});
     }
 
     async browseItem(name: string) {
