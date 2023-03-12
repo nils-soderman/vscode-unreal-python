@@ -27,6 +27,10 @@ interface TableOfContents {
     };
 }
 
+interface FilteredTableOfContents {
+    [Type: string]: string[]
+}
+
 interface DocIndexProps {
     onItemClicked: (name: string) => void;
 }
@@ -78,21 +82,59 @@ export default class DocIndex extends Component<DocIndexProps> {
         this.setState({ filter: searchText });
     }
 
+    private passesFilter(itemName: string, includes: string[]) {
+        for (let include of includes) {
+            if (!itemName.toLowerCase().includes(include)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
 
     renderContent() {
+        let content: FilteredTableOfContents = {};
+        if (this.state.filter) {
+            for (let [type, items] of Object.entries(this.state.tableOfContents)) {
+                content[type] = [];
+                const filterLower = this.state.filter.toLowerCase();
+                const includes = filterLower.split(/[\s,]+/);
+
+                for (let [className, memberName] of Object.entries(items)) {
+                    if (this.passesFilter(className, includes)) {
+                        content[type].push(className);
+                    }
+
+                    for (let member of memberName) {
+                        if (this.passesFilter(member, includes)) {
+                            content[type].push(`${className}.${member}`);
+                        }
+                    }
+                }
+                
+                
+            }
+        } 
+        else {
+            for (let type in this.state.tableOfContents) {
+                content[type] = Object.keys(this.state.tableOfContents[type]);
+            }
+        }
+
+
         return (
             <Fragment>
                 {
-                    Object.keys(this.state.tableOfContents).map((key, index) => {
+                    Object.entries(content).map(([typeName, items], index) => {
                         return (
-                            <DropDownArea key={index} title={key} badgeCount={Object.keys(this.state.tableOfContents[key]).length}>
+                            <DropDownArea key={index} title={typeName} badgeCount={items.length}>
                                 <div className="doc-index-dd-content">
                                     {
-
-                                        Object.entries(this.state.tableOfContents[key]).map(([name, contents], index) => {
+                                        items.map((itemName, index) => {
                                             return (
-                                                <span key={index} onClick={() => this.props.onItemClicked(name)}>
-                                                    {name}
+                                                <span key={index} onClick={() => this.props.onItemClicked(itemName)}>
+                                                    {itemName}
                                                 </span>
                                             );
                                         })
