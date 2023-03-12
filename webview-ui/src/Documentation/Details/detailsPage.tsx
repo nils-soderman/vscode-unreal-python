@@ -28,8 +28,8 @@ export interface PageData {
             inherited: PageTypeData,
             unique: PageTypeData
         };
-        property?: string;
-    }
+    },
+    property?: string; // This is the property that was clicked when page was requested
 }
 
 interface DetailsPageProps {
@@ -49,6 +49,11 @@ class DetailsPage extends Component<DetailsPageProps, DetailsPageState> {
         this.browseItem(this.props.item);
     }
 
+    componentDidUpdate() {
+        const element = document.getElementById("doc-details-highlight");
+        element.scrollIntoView({inline: "center"});
+    }
+
     async browseItem(name: string) {
         // Split by dot to get the object name and the member name
         let objectName = name;
@@ -58,7 +63,6 @@ class DetailsPage extends Component<DetailsPageProps, DetailsPageState> {
         }
 
         const data = await vscode.sendMessageAndWaitForResponse(vscode.EInOutCommands.getDocPage, { "object": objectName, "property": memberName });
-        console.log(data);
         this.setState({ data });
     }
 
@@ -75,7 +79,7 @@ class DetailsPage extends Component<DetailsPageProps, DetailsPageState> {
                                 {
                                     data[type].map((member: any, index: number) => {
                                         return (
-                                            <div key={index} className="doc-details-member">
+                                            <div key={index} className="doc-details-member" id={(this.state.data?.property === member.name ? "doc-details-highlight" : null)}>
                                                 <h4>{member.name} <span className="doc-details-name-hint">{member.name_hints}</span></h4>
                                                 <div className="doc-details-doc">
                                                     <ReactMarkdown>{member.doc}</ReactMarkdown>
