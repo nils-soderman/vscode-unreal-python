@@ -76,7 +76,7 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
     constructor(
         private readonly _extensionUri: vscode.Uri
     ) {
-        this.webviewDirectory = vscode.Uri.joinPath(_extensionUri, 'resources', "webviews");
+        this.webviewDirectory = vscode.Uri.joinPath(_extensionUri, 'webview-ui', "build");
     }
 
     public resolveWebviewView(
@@ -114,7 +114,7 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
 
         if (this._view) {
             // this._view.show?.(true); // `show` is not implemented in 1.49 but is for 1.50 insiders
-            this._view.webview.postMessage({ command: 'tableOfContents', data: data });
+            this._view.webview.postMessage({ command: 'getTableOfContents', data: data });
         }
 
     }
@@ -130,7 +130,7 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
         const data = JSON.parse(tableOfContentsString.toString());
 
         if (this._view) {
-            this._view.webview.postMessage({ command: 'openDocPage', data: {pageData: data, property: property} });
+            this._view.webview.postMessage({ command: 'getDocPage', data: {pageData: data, property: property} });
         }
     }
 
@@ -157,40 +157,20 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
         // const nonce = getNonce();
         const nonce = uuid.v4().replace(/-/g, "");
 
+        const manifest = require(path.join(this.webviewDirectory.fsPath, 'asset-manifest.json'));
+        const mainScript = manifest['files']['main.js'];
+		const mainStyle = manifest['files']['main.css'];
+
         // Get default stylesheet
         let stylesheetUris = [];
         stylesheetUris.push(
-            webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, "generic", "css", 'reset.css'))
-        );
-        stylesheetUris.push(
-            webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, "generic", "css", 'vscode.css'))
+            webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, mainStyle))
         );
 
         let scritpUris = [];
         scritpUris.push(
-            webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, "generic", 'scripts', 'utils.js'))
+            webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, mainScript))
         );
-        scritpUris.push(
-            webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, "generic", 'scripts', 'drawdown', 'drawdown.js'))
-        );
-
-        const pannelStyleUri = webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, this.pannelName, 'main.css'));
-        if (fs.existsSync(pannelStyleUri.fsPath)) {
-            stylesheetUris.push(pannelStyleUri);
-        }
-
-        const pannelScriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, this.pannelName, 'main.js'));
-        if (fs.existsSync(pannelScriptUri.fsPath)) {
-            scritpUris.push(pannelScriptUri);
-        }
-
-        // Get the HTML content
-        const htmlFilepath = webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, this.pannelName, 'index.html'));
-        if (!fs.existsSync(htmlFilepath.fsPath)) {
-            throw Error(`Could not find a valid index.html file at: ${htmlFilepath}`);
-        }
-
-        const htmlContent = fs.readFileSync(htmlFilepath.fsPath);
 
         // Convert style & script Uri's to code
         let styleSheetString = "";
@@ -204,20 +184,19 @@ export class SidebarViewProvier implements vscode.WebviewViewProvider {
         }
 
         return `<!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource}; script-src 'nonce-${nonce}';">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>${this.title}</title>
-
-                ${styleSheetString}
-
-            </head>
-            <body>
-                ${htmlContent}
-                ${scriptsString}
-            </body>
-            </html>`;
+			<html lang="en">
+			<head>
+				<meta charset="utf-8">
+				<meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
+				${styleSheetString}
+				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src vscode-resource: https:; script-src 'nonce-${nonce}';style-src vscode-resource: 'unsafe-inline' http: https: data:;">
+				<base href="${webview.asWebviewUri(this.webviewDirectory)}/">
+			</head>
+			<body>
+				<noscript>You need to enable JavaScript to run this app.</noscript>
+				<div id="root"></div>
+				${scriptsString}
+			</body>
+			</html>`;
     }
 }

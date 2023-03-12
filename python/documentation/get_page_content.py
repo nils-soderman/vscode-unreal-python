@@ -4,51 +4,118 @@ import inspect
 import types
 import copy
 import json
+import re
 
 import unreal
 
+
 class EMemberType:
-    PROPERTY = "property"
-    METHOD = "method"
-    DECORATOR = "decorator"
+    PROPERTY = "Properties"
+    METHOD = "Methods"
+    DECORATOR = "Decorators"
 
 
 DEFAULT_DICT_LAYOUT = {
-    EMemberType.METHOD: [],
     EMemberType.PROPERTY: [],
+    EMemberType.METHOD: [],
     EMemberType.DECORATOR: []
 }
 
+# Regex pattern that matches "(X): [X] X:", used for property docstrings
+PROPERTY_DOCSTRING_PATTERN = re.compile(r"\(*.+\):  \[[^\]]+\] [^\)]+[\:]?")
 
-def patch_docstring(doc_string: str):
+# Regex pattern that matches "abc.X(X) -> X ", where X is any character, used for function docstrings
+FUNCTION_DOCSTRING_PATTERN = re.compile(r"[Xx].+\(*\)\s*->\s*[\w\,]*\s*(or None)?")
+
+
+def get_docstring(obj: object, object_name: str):
+    is_class = inspect.isclass(obj)
+
+    def _patch_line(line: str, index: int):
+        line = line.rstrip()
+
+        # Special cases for the first line
+        if index == 0:
+
+            # For classes, if docstring starts with just the class name, remove it
+            if is_class:
+                name_comparison = object_name.replace("_", "").lower()
+                line_comparison = line.replace(" ", "").lower()
+                if line_comparison == name_comparison or line_comparison[1:] == name_comparison:
+                    return ""
+
+            else:  # TODO: Spesifically check function/property
+                matches = PROPERTY_DOCSTRING_PATTERN.findall(line)
+                if matches:
+                    matching_text: str = matches[0]
+                    var_type, _, permission = matching_text.partition(":")
+                    permission = permission.rpartition("]")[0].strip("[ ")
+                    end_sign = ":" if matching_text.endswith(":") else ""
+                    line = f"{var_type} [_{permission}_]{end_sign} {line.replace(matching_text, '')}"
+
+        # Add a new line before the C++ Source
+        if is_class and "**C++ Source:" in line:
+            line = line.replace("**C++ Source:", "\n**C++ Source:")
+
+        if line.startswith("    "):
+            line = f"- {line.strip().rstrip(':')}"
+
+        return line
+
+    doc_string = obj.__doc__
+
     if "\n" in doc_string:
         lines = []
-        for line in doc_string.split("\n"):
-            line = line.rstrip()
+        for index, line in enumerate(doc_string.split("\n")):
+            line = _patch_line(line, index)
+            if not line:
+                continue
 
-            if line.startswith("    "):
-                line = f"- {line.strip().rstrip(':')}"
+            # Break before it list's all each class member
+            if is_class and line.startswith("**Editor Properties"):
+                break
 
             lines.append(line)
 
         doc_string = "\n".join(lines)
 
+    else:
+        doc_string = _patch_line(doc_string, 0).strip()
+
     return doc_string
 
 
-def get_member_data(memeber_name: str, member: object):
-    name = memeber_name
-    # if inspect.ismethod(member) or inspect.isfunction(member):
-    #     name += "()"
+def patch_method_name_and_doc(name: str, doc: str):
+    name_hints = ""
 
-    doc = patch_docstring(member.__doc__)
+    if "--" in doc:
+        name, _, doc = doc.partition("--")
+        if "(" in name:
+            name, delimiter, name_hints = name.partition("(")
+            name_hints = delimiter + name_hints  # re-append the delimiter
+    else:
+        matches = FUNCTION_DOCSTRING_PATTERN.findall(doc)
+        if matches:
+            matching_text: str = matches[0]
+            _, delimiter, name_hints = matching_text.partition("(")
+            name_hints = delimiter + name_hints
+            doc = doc.replace(matching_text, "")
+
+    return name, name_hints, doc
+
+
+def get_member_data(member: object, memeber_name: str):
+    name = memeber_name
+
+    doc = get_docstring(member, memeber_name)
 
     member_type = None
+    name_hints = ""
     if inspect.isgetsetdescriptor(member) or inspect.ismemberdescriptor(member):
         member_type = EMemberType.PROPERTY
     elif inspect.ismethoddescriptor(member) or inspect.isbuiltin(member):
         member_type = EMemberType.METHOD
-
+        name, name_hints, doc = patch_method_name_and_doc(name, doc)
     elif issubclass(type(member), unreal.EnumBase):
         member_type = EMemberType.PROPERTY
         doc = str(member.value)
@@ -57,8 +124,9 @@ def get_member_data(memeber_name: str, member: object):
         name += "()"
 
     return member_type, {
-        "name": name,
-        "doc": doc
+        "name": name.strip(),
+        "doc": doc.strip(),
+        "name_hints": name_hints.strip()
     }
 
 
@@ -74,7 +142,7 @@ def generate(object_name: str):
         bases_names = [x.__name__ for x in ue_object.__bases__]
 
         object_dict = ue_object.__dict__
-        doc_string = patch_docstring(ue_object.__doc__)
+        doc_string = get_docstring(ue_object, object_name)
 
         inherited_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
         unique_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
@@ -83,7 +151,7 @@ def generate(object_name: str):
             if memeber_name.startswith("_"):
                 continue
 
-            member_type, member_data = get_member_data(memeber_name, member)
+            member_type, member_data = get_member_data(member, memeber_name)
 
             # Check where the method/property originates from
             #  Inherited                          Overriden
@@ -95,7 +163,7 @@ def generate(object_name: str):
                 unique_members[member_type].append(member_data)
     else:
         object_name = "Unreal Functions"
-        doc_string = patch_docstring(unreal.__doc__)
+        doc_string = get_docstring(unreal, object_name)
         bases_names = None
         inherited_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
         unique_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
@@ -103,7 +171,7 @@ def generate(object_name: str):
             if not isinstance(function, (types.BuiltinFunctionType, types.FunctionType)):
                 continue
 
-            member_type, member_data = get_member_data(function_name, function)
+            member_type, member_data = get_member_data(function, function_name)
             unique_members[member_type].append(member_data)
 
     return {
@@ -129,7 +197,5 @@ def main():
         return True
     return False
 
-
-# generate("Object")
 
 print(main())
