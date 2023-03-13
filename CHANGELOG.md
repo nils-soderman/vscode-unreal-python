@@ -1,14 +1,14 @@
 # Change Log
 
 ## v0.2.1
-[2023-x]
+[2023-03-13]
 
 ### Added: 
 
-- Added command "Unreal Python: Open Documentation" _(`ue-python.openDocumentation`)_ that opens the uedocumentation in a new tab.
+- Added command "Unreal Python: Open Documentation" _(`ue-python.openDocumentation`)_ that opens the UE python documentation in a new tab.
 
 ### Changed:
-- Removed the sidebar documentation pannel
+- Removed documentation pannel from the sidebar.
 
 ### Fixed:
 - Output not showing up in Unreal Engine's "Output Log" if not attached.
