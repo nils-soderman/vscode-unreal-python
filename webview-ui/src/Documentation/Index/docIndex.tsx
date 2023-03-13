@@ -112,10 +112,10 @@ export default class DocIndex extends Component<DocIndexProps> {
                         }
                     }
                 }
-                
-                
+
+
             }
-        } 
+        }
         else {
             for (let type in this.state.tableOfContents) {
                 content[type] = Object.keys(this.state.tableOfContents[type]);
@@ -129,17 +129,20 @@ export default class DocIndex extends Component<DocIndexProps> {
                     Object.entries(content).map(([typeName, items], index) => {
                         return (
                             <DropDownArea key={index} title={typeName} badgeCount={items.length}>
-                                <div className="doc-index-dd-content">
-                                    {
-                                        items.map((itemName, index) => {
-                                            return (
-                                                <span key={index} onClick={() => this.props.onItemClicked(itemName)}>
-                                                    {itemName}
-                                                </span>
-                                            );
-                                        })
-                                    }
-                                </div>
+                                {
+                                    items.length > 0 &&
+                                    <div className="doc-index-dd-content">
+                                        {
+                                            items.map((itemName, index) => {
+                                                return (
+                                                    <span key={index} onClick={() => this.props.onItemClicked(itemName)}>
+                                                        {itemName}
+                                                    </span>
+                                                );
+                                            })
+                                        }
+                                    </div>
+                                }
                             </DropDownArea>
                         );
                     })

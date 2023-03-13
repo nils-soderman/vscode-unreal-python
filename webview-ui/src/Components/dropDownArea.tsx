@@ -39,7 +39,7 @@ class DropDownArea extends Component<DropDownAreaProps, DropDownAreaState> {
                     <h2>{this.props.title}</h2>
 
                     {
-                        this.props.badgeCount &&
+                        this.props.badgeCount !== undefined &&
                         <div className="dd-area-badge-wrapper">
                             <div className="dd-area-badge">
                                 {this.props.badgeCount}
@@ -49,7 +49,7 @@ class DropDownArea extends Component<DropDownAreaProps, DropDownAreaState> {
 
                 </div>
                 {
-                    this.state.bOpen &&
+                    this.state.bOpen && this.props.children &&
                     <div className="dd-content">
                         {this.props.children}
                     </div>
