@@ -1,5 +1,12 @@
 # Change Log
 
+## v0.2.2
+[2023-x]
+
+### Fixed:
+- Some broken UI styling for the documentation
+
+
 ## v0.2.1
 [2023-03-13]
 
@@ -12,6 +19,7 @@
 
 ### Fixed:
 - Output not showing up in Unreal Engine's "Output Log" if not attached.
+- Use UTF-8 to decode the files in Python
 
 
 <br>
