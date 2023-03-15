@@ -16,7 +16,7 @@ class DocHeader extends Component<Props, State> {
 
     render() {
         return (
-            <div className="header">
+            <div className="doc-index-header">
                 {/* Callback OnInput: typehint variable e */}
                 <VSCodeTextField id='searchbar' placeholder='Search documentation...' onInput={(e) => { if (this.props.handleSearchInput) this.props.handleSearchInput(e.target.value) }} />
             </div>
