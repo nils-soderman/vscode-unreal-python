@@ -31,23 +31,32 @@ interface FilteredTableOfContents {
     [Type: string]: string[]
 }
 
+
+
 interface DocIndexProps {
     onItemClicked: (name: string) => void;
+    onFilterChanged: (filter: string) => void;
+    filter: string;
 }
 
 
 export default class DocIndex extends Component<DocIndexProps> {
     state = { bLoading: true, tableOfContents: {}, filter: "" };
 
+    constructor(props: DocIndexProps) {
+        super(props);
+
+        this.state.filter = props.filter;
+    }
 
     async componentDidMount() {
         // Request the table of contents from the extension
         const tableOfContents: RawTableOfContents = await vscode.sendMessageAndWaitForResponse(vscode.EInOutCommands.getTableOfContents);
 
-        this.setState({ tableOfContents: this.parseTableOfContents(tableOfContents) });
-
-        // Hide the loading div
-        this.setState({ bLoading: false });
+        this.setState({
+            tableOfContents: this.parseTableOfContents(tableOfContents),
+            bLoading: false
+        });
     }
 
     parseTableOfContents(tableOfContents: RawTableOfContents) {
@@ -80,6 +89,7 @@ export default class DocIndex extends Component<DocIndexProps> {
 
     onSearchInput(searchText: string) {
         this.setState({ filter: searchText });
+        this.props.onFilterChanged(searchText);
     }
 
     private passesFilter(itemName: string, includes: string[]) {
@@ -157,6 +167,7 @@ export default class DocIndex extends Component<DocIndexProps> {
         return (
             <div>
                 <DocHeader handleSearchInput={(text: string) => this.onSearchInput(text)} />
+                <DocHeader handleSearchInput={(text: string) => this.onSearchInput(text)} filter={this.state.filter} />
 
                 {this.renderProgressRing()}
 

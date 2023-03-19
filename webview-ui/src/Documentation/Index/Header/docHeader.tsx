@@ -6,6 +6,7 @@ import { VSCodeTextField } from '@vscode/webview-ui-toolkit/react';
 interface Props {
     handleSearchChanged?: CallableFunction,
     handleSearchInput?: CallableFunction
+    filter?: string
 }
 
 interface State {
@@ -32,7 +33,7 @@ class DocHeader extends Component<Props, State> {
         return (
             <div className="doc-index-header">
                 {/* Callback OnInput: typehint variable e */}
-                <VSCodeTextField autofocus id='searchbar' placeholder='Search documentation...' onInput={(e) => { if (this.props.handleSearchInput) this.props.handleSearchInput(e.target.value) }} ref={this.textField}/>
+                <VSCodeTextField autofocus id='searchbar' placeholder='Search documentation...' onInput={(e) => { if (this.props.handleSearchInput) this.props.handleSearchInput(e.target.value) }} ref={this.textField} value={this.props.filter}/>
             </div>
         );
     }
