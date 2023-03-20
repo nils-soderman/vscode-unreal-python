@@ -3,15 +3,20 @@
 ## v0.2.2
 [2023-x]
 
+### Changed:
+- Documentation now caches the open states of the dropdowns
+
 ### Fixed:
+- A bug where selecting a single indented line of code would fail to execute. Closes [#6](https://github.com/nils-soderman/vscode-unreal-python/issues/6)
+- Documentation now remembers the applied filter when going back to the index page
 - Some broken UI styling for the documentation
 
+<br>
 
 ## v0.2.1
 [2023-03-13]
 
 ### Added: 
-
 - Added command "Unreal Python: Open Documentation" _(`ue-python.openDocumentation`)_ that opens the UE python documentation in a new tab.
 
 ### Changed:
