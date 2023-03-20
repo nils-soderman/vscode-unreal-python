@@ -52,7 +52,7 @@ class DetailsPage extends Component<DetailsPageProps, DetailsPageState> {
     componentDidUpdate() {
         const element = document.getElementById("doc-details-highlight");
         if (element)
-            element.scrollIntoView({inline: "center"});
+            element.scrollIntoView({ inline: "center" });
     }
 
     async browseItem(name: string) {
@@ -76,7 +76,7 @@ class DetailsPage extends Component<DetailsPageProps, DetailsPageState> {
                             return null;
 
                         return (
-                            <DropDownArea key={type} title={prefix + type}>
+                            <DropDownArea key={type} id={`doc-details-${prefix + type}`} title={prefix + type}>
                                 {
                                     data[type].map((member: any, index: number) => {
                                         return (

@@ -138,7 +138,7 @@ export default class DocIndex extends Component<DocIndexProps> {
                 {
                     Object.entries(content).map(([typeName, items], index) => {
                         return (
-                            <DropDownArea key={index} title={typeName} badgeCount={items.length}>
+                            <DropDownArea key={index} id={`doc-index-${typeName}`} title={typeName} badgeCount={items.length}>
                                 {
                                     items.length > 0 &&
                                     <div className="doc-index-dd-content">
@@ -166,7 +166,6 @@ export default class DocIndex extends Component<DocIndexProps> {
     render() {
         return (
             <div>
-                <DocHeader handleSearchInput={(text: string) => this.onSearchInput(text)} />
                 <DocHeader handleSearchInput={(text: string) => this.onSearchInput(text)} filter={this.state.filter} />
 
                 {this.renderProgressRing()}

@@ -1,12 +1,14 @@
 import "./dropDownArea.scss";
+import * as vscode from "../Modules/vscode";
 
 import { Component } from "react";
 
 interface DropDownAreaProps {
     title: string;
     children: any;
+    id: string;
     badgeCount?: number;
-    onHeaderClicked?: (bOpen: boolean) => void;
+    onHeaderClicked?: (id: string, bOpen: boolean) => void;
 }
 
 interface DropDownAreaState {
@@ -14,17 +16,30 @@ interface DropDownAreaState {
 }
 
 class DropDownArea extends Component<DropDownAreaProps, DropDownAreaState> {
-    state = { bOpen: true }
+    state = { bOpen: false }
 
     onHeaderClicked() {
         const bOpen = !this.state.bOpen;
 
         this.setState({ bOpen });
 
+        vscode.sendMessage(vscode.EOutCommands.storeDropDownAreaOpenState, { id: this.props.id, value: bOpen });
+
         if (this.props.onHeaderClicked) {
-            this.props.onHeaderClicked(bOpen);
+            this.props.onHeaderClicked(this.props.id, bOpen);
         }
     }
+
+    async componentDidMount() {
+        const data = await vscode.sendMessageAndWaitForResponse(vscode.EInOutCommands.getDropDownAreaOpenStates, this.props.id);
+
+        let bOpen = data[this.props.id];
+        if (bOpen === undefined)
+            bOpen = true;
+
+        this.setState({ bOpen });
+    }
+
 
     getArrowClass() {
         return "arrow " + (this.state.bOpen ? "down" : "right");

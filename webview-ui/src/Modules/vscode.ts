@@ -4,9 +4,11 @@ const vscode = acquireVsCodeApi();
 export enum EInOutCommands {
     getTableOfContents = "getTableOfContents",
     getDocPage = "getDocPage",
+    getDropDownAreaOpenStates = "getDropDownAreaOpenStates"
 }
 
 export enum EOutCommands {
+    storeDropDownAreaOpenState = "storeDropDownAreaOpenState"
 }
 
 export enum EInCommands {

@@ -10,6 +10,25 @@ import * as utils from '../modules/utils';
 
 import { RemoteExecutionMessage, FCommandOutputType } from "../modules/remote-execution";
 
+enum EInOutCommands {
+    getTableOfContents = "getTableOfContents",
+    getDocPage = "getDocPage",
+    getDropDownAreaOpenStates = "getDropDownAreaOpenStates"
+}
+
+enum EOutCommands {
+}
+
+enum EInCommands {
+    storeDropDownAreaOpenState = "storeDropDownAreaOpenState"
+}
+
+enum EConfigFiles {
+    dropDownAreaStates = "documentation_dropDownArea_states.json"
+}
+
+
+
 
 /**
  *  
@@ -70,7 +89,9 @@ export class DocumentationPannel {
 
     private readonly webviewDirectory;
     private readonly pannelName = "sidepanel";
-    
+
+    private _dropDownAreaStates: { [id: string]: boolean } = {};
+
     pannel?: vscode.WebviewPanel;
 
     constructor(
@@ -86,6 +107,8 @@ export class DocumentationPannel {
                 this._extensionUri
             ]
         });
+
+        this._dropDownAreaStates = utils.loadConfigFile(EConfigFiles.dropDownAreaStates, true, {});
 
         this.pannel.webview.onDidReceiveMessage(data => { this.onDidReceiveMessage(data); });
         this.pannel.webview.html = this.getHtmlForWebview(this.pannel.webview);
@@ -104,8 +127,7 @@ export class DocumentationPannel {
         const data = JSON.parse(tableOfContentsString.toString());
 
         if (this.pannel) {
-            // this._view.show?.(true); // `show` is not implemented in 1.49 but is for 1.50 insiders
-            this.pannel.webview.postMessage({ command: 'getTableOfContents', data: data });
+            this.pannel.webview.postMessage({ command: EInOutCommands.getTableOfContents, data: data });
         }
 
     }
@@ -116,31 +138,47 @@ export class DocumentationPannel {
         if (!fs.existsSync(filepath)) {
             await buildPageContent(filepath, module);
         }
-        
+
         const tableOfContentsString = fs.readFileSync(filepath);
         const data = JSON.parse(tableOfContentsString.toString());
 
         if (this.pannel) {
-            this.pannel.webview.postMessage({ command: 'getDocPage', data: {pageData: data, property: property} });
+            this.pannel.webview.postMessage({ command: EInOutCommands.getDocPage, data: { pageData: data, property: property } });
         }
     }
 
 
     private onDidReceiveMessage(data: any) {
         switch (data.command) {
-            case 'getTableOfContents':
+            case EInOutCommands.getTableOfContents:
                 {
                     this.sendTableOfContents();
                     break;
                 }
-            case 'getDocPage':
+            case EInOutCommands.getDocPage:
                 {
                     this.openPage(data.data.object, data.data.property);
+                    break;
+                }
+            case EInCommands.storeDropDownAreaOpenState:
+                {
+                    this.storeDropDownAreaOpenState(data.data.id, data.data.value);
+                    break;
+                }
+            case EInOutCommands.getDropDownAreaOpenStates:
+                {
+                    this.pannel?.webview.postMessage({ command: EInOutCommands.getDropDownAreaOpenStates, data: this._dropDownAreaStates });
                     break;
                 }
             default:
                 throw new Error(`Not implemented: ${this.pannelName} recived an unknown command: '${data.command}'`);
         }
+    }
+
+    private storeDropDownAreaOpenState(id: string, value: boolean) {
+        this._dropDownAreaStates[id] = value;
+
+        utils.saveConfigFile(EConfigFiles.dropDownAreaStates, this._dropDownAreaStates);
     }
 
     private getHtmlForWebview(webview: vscode.Webview) {
@@ -150,7 +188,7 @@ export class DocumentationPannel {
 
         const manifest = require(path.join(this.webviewDirectory.fsPath, 'asset-manifest.json'));
         const mainScript = manifest['files']['main.js'];
-		const mainStyle = manifest['files']['main.css'];
+        const mainStyle = manifest['files']['main.css'];
 
         // Get default stylesheet
         let stylesheetUris = [];

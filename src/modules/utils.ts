@@ -120,12 +120,14 @@ export function getExtensionConfigDir(bEnsureExists = true) {
         return;
     }
 
+    configDir = path.join(configDir, DATA_FOLDER_NAME);
+
     // Create folder if it doesn't exists
     if (bEnsureExists && !fs.existsSync(configDir)) {
         fs.mkdirSync(configDir);
     }
 
-    return path.join(configDir, DATA_FOLDER_NAME);
+    return configDir;
 }
 
 
@@ -135,15 +137,60 @@ export function getExtensionConfigDir(bEnsureExists = true) {
  * @param text Text to write to the file
  * @returns the absolute filepath of the file
  */
-export function saveTempFile(filename: string, text: string) {
+export function saveTempFile(filename: string, text: string | object) {
     if (!path.isAbsolute(filename)) {
         filename = path.join(getExtentionTempDir(), filename);
     }
+
+    if (typeof text === "object") {
+        text = JSON.stringify(text);
+    }
+
     fs.writeFileSync(filename, text);
 
     return filename;
 }
 
+
+export function saveConfigFile(filename: string, text: string | object) {
+    if (!path.isAbsolute(filename)) {
+        const configDir = getExtensionConfigDir(true);
+        if (!configDir) {
+            return;
+        }
+
+        filename = path.join(configDir, filename);
+    }
+
+    if (typeof text === "object") {
+        text = JSON.stringify(text);
+    }
+
+    fs.writeFileSync(filename, text);
+
+    return filename;
+}
+
+
+export function loadConfigFile(filename: string, bParseJson = false, defaultValue: any = undefined) {
+    if (!path.isAbsolute(filename)) {
+        const configDir = getExtensionConfigDir(true);
+        if (!configDir) {
+            return defaultValue;
+        }
+        filename = path.join(configDir, filename);
+    }
+
+    if (!fs.existsSync(filename)) {
+        return defaultValue;
+    }
+
+    const content = fs.readFileSync(filename, { encoding: "utf-8" });
+    if (bParseJson) {
+        return JSON.parse(content);
+    }
+    return content;
+}
 
 /**
  * Delete this extension's temp folder (and all of the files inside of it)
