@@ -38,7 +38,7 @@ export function getSelectedTextAsExecutableString() {
 
             // Get the character index of the first character that's not whitespace (on the first line that's not whitespace)
             let firstCharIndex = -1;
-            for (let i = 0; i < (selection.end.line + 1) - selection.start.line; i++) {
+            for (let i = 0; i <= (selection.end.line - selection.start.line); i++) {
                 const line = activeDocumenet.lineAt(selection.start.line + i);
                 if (!line.isEmptyOrWhitespace) {
                     firstCharIndex = line.firstNonWhitespaceCharacterIndex;
