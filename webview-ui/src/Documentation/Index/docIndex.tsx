@@ -92,9 +92,12 @@ export default class DocIndex extends Component<DocIndexProps> {
         this.props.onFilterChanged(searchText);
     }
 
-    private passesFilter(itemName: string, includes: string[]) {
+    private passesFilter(itemName: string, includes: string[], alternativeIncludes?: string[]) {
         for (let include of includes) {
             if (!itemName.toLowerCase().includes(include)) {
+                if (alternativeIncludes)
+                    return this.passesFilter(itemName, alternativeIncludes);
+
                 return false;
             }
         }
@@ -106,18 +109,34 @@ export default class DocIndex extends Component<DocIndexProps> {
     renderContent() {
         let content: FilteredTableOfContents = {};
         if (this.state.filter) {
+
+            let includes = [];
+            let alternativeIncludes: string[] | undefined = [];
+            for (let part of this.state.filter.split(/[\s,]+/)) {
+                const partLower = part.toLocaleLowerCase();
+                includes.push(partLower);
+
+                // Convert PascalCase to snake_case and use as alternatives, since the original C++ names are in PascalCase
+                const partSnakeCase = part.replace(/([a-z])([A-Z])/g, (m, p1, p2) => `${p1}_${p2}`).toLowerCase();
+                if (partSnakeCase !== partLower) {
+                    alternativeIncludes.push(partSnakeCase);
+                }
+            }
+
+            if (alternativeIncludes.length === 0) {
+                alternativeIncludes = undefined;
+            }
+
             for (let [type, items] of Object.entries(this.state.tableOfContents)) {
                 content[type] = [];
-                const filterLower = this.state.filter.toLowerCase();
-                const includes = filterLower.split(/[\s,]+/);
 
                 for (let [className, memberName] of Object.entries(items)) {
-                    if (this.passesFilter(className, includes)) {
+                    if (this.passesFilter(className, includes, alternativeIncludes)) {
                         content[type].push(className);
                     }
 
                     for (let member of memberName) {
-                        if (this.passesFilter(member, includes)) {
+                        if (this.passesFilter(member, includes, alternativeIncludes)) {
                             content[type].push(`${className}.${member}`);
                         }
                     }
