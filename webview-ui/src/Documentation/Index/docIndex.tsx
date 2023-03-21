@@ -28,7 +28,10 @@ interface TableOfContents {
 }
 
 interface FilteredTableOfContents {
-    [Type: string]: string[]
+    [Type: string]: {
+        prioritizedMatch: string[],
+        items: string[]
+    }
 }
 
 
@@ -107,6 +110,8 @@ export default class DocIndex extends Component<DocIndexProps> {
 
 
     renderContent() {
+        var startTime = performance.now()
+
         let content: FilteredTableOfContents = {};
         if (this.state.filter) {
 
@@ -128,16 +133,23 @@ export default class DocIndex extends Component<DocIndexProps> {
             }
 
             for (let [type, items] of Object.entries(this.state.tableOfContents)) {
-                content[type] = [];
+                content[type] = { items: [], prioritizedMatch: [] };
 
                 for (let [className, memberName] of Object.entries(items)) {
                     if (this.passesFilter(className, includes, alternativeIncludes)) {
-                        content[type].push(className);
+                        // Check if it's a perfect match
+                        if (className.startsWith(this.state.filter))
+                            content[type].prioritizedMatch.push(className);
+                        else
+                            content[type].items.push(className);
                     }
 
                     for (let member of memberName) {
                         if (this.passesFilter(member, includes, alternativeIncludes)) {
-                            content[type].push(`${className}.${member}`);
+                            if (member.startsWith(this.state.filter))
+                                content[type].prioritizedMatch.push(member);
+                            else
+                                content[type].items.push(`${className}.${member}`);
                         }
                     }
                 }
@@ -147,22 +159,28 @@ export default class DocIndex extends Component<DocIndexProps> {
         }
         else {
             for (let type in this.state.tableOfContents) {
-                content[type] = Object.keys(this.state.tableOfContents[type]);
+                content[type] = {
+                    items: Object.keys(this.state.tableOfContents[type]),
+                    prioritizedMatch: []
+                };
             }
         }
 
+        var endTime = performance.now()
+        console.log(`filtering took: ${endTime - startTime} milliseconds`)
 
         return (
             <Fragment>
                 {
-                    Object.entries(content).map(([typeName, items], index) => {
+                    Object.entries(content).map(([typeName, itemData], index) => {
                         return (
-                            <DropDownArea key={index} id={`doc-index-${typeName}`} title={typeName} badgeCount={items.length}>
+                            <DropDownArea key={index} id={`doc-index-${typeName}`} title={typeName} badgeCount={itemData.items.length + itemData.prioritizedMatch.length}>
                                 {
-                                    items.length > 0 &&
+                                    itemData.items.length > 0 &&
                                     <div className="doc-index-dd-content">
                                         {
-                                            items.map((itemName, index) => {
+                                            [...itemData.prioritizedMatch, ...itemData.items].map((itemName, index) => {
+                                            // itemData.items.map((itemName, index) => {
                                                 return (
                                                     <span key={index} onClick={() => this.props.onItemClicked(itemName)}>
                                                         {itemName}
