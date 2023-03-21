@@ -97,7 +97,7 @@ export default class DocIndex extends Component<DocIndexProps> {
 
     private passesFilter(itemName: string, includes: string[], alternativeIncludes?: string[]) {
         for (let include of includes) {
-            if (!itemName.toLowerCase().includes(include)) {
+            if (!itemName.includes(include)) {
                 if (alternativeIncludes)
                     return this.passesFilter(itemName, alternativeIncludes);
 
@@ -114,6 +114,7 @@ export default class DocIndex extends Component<DocIndexProps> {
 
         let content: FilteredTableOfContents = {};
         if (this.state.filter) {
+            const filterLower = this.state.filter.toLocaleLowerCase();
 
             let includes = [];
             let alternativeIncludes: string[] | undefined = [];
@@ -136,26 +137,39 @@ export default class DocIndex extends Component<DocIndexProps> {
                 content[type] = { items: [], prioritizedMatch: [] };
 
                 for (let [className, memberName] of Object.entries(items)) {
-                    if (this.passesFilter(className, includes, alternativeIncludes)) {
+                    const classNameLower = className.toLocaleLowerCase();
+                    if (this.passesFilter(classNameLower, includes, alternativeIncludes)) {
                         // Check if it's a perfect match
-                        if (className.startsWith(this.state.filter))
+                        if (classNameLower.startsWith(filterLower)) {
                             content[type].prioritizedMatch.push(className);
-                        else
+                        }
+                        else {
                             content[type].items.push(className);
+                        }
                     }
 
                     for (let member of memberName) {
-                        if (this.passesFilter(member, includes, alternativeIncludes)) {
-                            if (member.startsWith(this.state.filter))
-                                content[type].prioritizedMatch.push(member);
-                            else
-                                content[type].items.push(`${className}.${member}`);
+                        const memberLower = member.toLocaleLowerCase();
+                        if (this.passesFilter(memberLower, includes, alternativeIncludes)) {
+                            const fullname = `${className}.${member}`;
+                            if (memberLower.startsWith(filterLower)) {
+                                content[type].prioritizedMatch.push(fullname);
+                            }
+                            else {
+                                content[type].items.push(fullname);
+                            }
                         }
                     }
                 }
 
+                content[type].prioritizedMatch.sort(function (a, b) {
+                    return a.length - b.length;
+                });
 
             }
+
+
+
         }
         else {
             for (let type in this.state.tableOfContents) {
@@ -167,7 +181,9 @@ export default class DocIndex extends Component<DocIndexProps> {
         }
 
         var endTime = performance.now()
-        console.log(`filtering took: ${endTime - startTime} milliseconds`)
+        console.log(`filtering took: ${endTime - startTime} milliseconds`);
+
+        console.log(content);
 
         return (
             <Fragment>
@@ -180,7 +196,7 @@ export default class DocIndex extends Component<DocIndexProps> {
                                     <div className="doc-index-dd-content">
                                         {
                                             [...itemData.prioritizedMatch, ...itemData.items].map((itemName, index) => {
-                                            // itemData.items.map((itemName, index) => {
+                                                // itemData.items.map((itemName, index) => {
                                                 return (
                                                     <span key={index} onClick={() => this.props.onItemClicked(itemName)}>
                                                         {itemName}

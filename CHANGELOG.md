@@ -5,6 +5,7 @@
 
 ### Changed:
 - Documentation now caches the open states of the dropdowns
+- Improved filtering for the Documentation
 
 ### Fixed:
 - A bug where selecting a single indented line of code would fail to execute. Closes [#6](https://github.com/nils-soderman/vscode-unreal-python/issues/6)
