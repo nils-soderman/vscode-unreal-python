@@ -59,8 +59,8 @@ class TableOfContentsClass():
                 self.properties.append((name, member))
             elif isinstance(member, int):
                 self.constants.append((name, member))
-            else:
-                print(f"{name}: {member} -> {type(member)}")
+            # else:
+            #     print(f"{name}: {member} -> {type(member)}")
 
     def get_dict(self):
         data = {}
@@ -103,8 +103,8 @@ class UnrealTableOfContents():
             elif inspect.isfunction(obj) or isinstance(obj, types.BuiltinFunctionType):
                 self.functions.append((object_name, obj))
 
-            else:
-                print(f"Skip adding {object_name}: {obj} to the toc.")
+            # else:
+            #     print(f"Skip adding {object_name}: {obj} to the toc.")
 
     def get_dict(self):
         data = {}
@@ -129,14 +129,14 @@ def main():
     if not filepath:
         return False
 
-    start_time = time.perf_counter()
+    # start_time = time.perf_counter()
     table_of_contents = UnrealTableOfContents()
     table_of_contents.load()
 
     with open(filepath, "w", encoding="utf-8") as file:
         json.dump(table_of_contents.get_dict(), file)
 
-    print(f"Took {time.perf_counter() - start_time:.2}s")
+    # print(f"Took {time.perf_counter() - start_time:.2}s")
 
     return True
 
