@@ -110,39 +110,43 @@ class DetailsPage extends Component<DetailsPageProps, DetailsPageState> {
         const data = this.state.data.pageData;
 
         return (
-            <div>
-                <div id="doc-details-header">
+            <Fragment>
+                <div className="vscode-header">
                     <div className="link" onClick={this.props.onBackClicked}>&lt; Back</div>
+                </div>
+                <div className="main-content">
+                    <div id="doc-details-header">
 
-                    <h1 id="doc-details-title">
-                        {data.name}
-                    </h1>
+                        <h1 id="doc-details-title">
+                            {data.name}
+                        </h1>
 
-                    <div id="bases">
-                        <span>Bases: </span>
-                        {
-                            data.bases.map((base: string, index: number) => {
-                                return (
-                                    <span key={index}>
-                                        <span className={NONE_CLICKABLE_BASES.includes(base) ? "" : "link"} onClick={() => this.browseItem(base)}>{base}</span>
-                                        {index !== data.bases.length - 1 ? "> " : ""}
-                                    </span>
-                                );
-                            })
-                        }
+                        <div id="bases">
+                            <span>Bases: </span>
+                            {
+                                data.bases.map((base: string, index: number) => {
+                                    return (
+                                        <span key={index}>
+                                            <span className={NONE_CLICKABLE_BASES.includes(base) ? "" : "link"} onClick={() => this.browseItem(base)}>{base}</span>
+                                            {index !== data.bases.length - 1 ? "> " : ""}
+                                        </span>
+                                    );
+                                })
+                            }
+                        </div>
+
+                        <div className="doc-details-doc">
+                            <ReactMarkdown>{data.doc}</ReactMarkdown>
+                        </div>
+
                     </div>
 
-                    <div className="doc-details-doc">
-                        <ReactMarkdown>{data.doc}</ReactMarkdown>
+                    <div>
+                        {this.renderContent(this.state.data.pageData.members.unique)}
+                        {this.renderContent(this.state.data.pageData.members.inherited, "Inherited ")}
                     </div>
-
                 </div>
-
-                <div>
-                    {this.renderContent(this.state.data.pageData.members.unique)}
-                    {this.renderContent(this.state.data.pageData.members.inherited, "Inherited ")}
-                </div>
-            </div>
+            </Fragment>
         );
     }
 }

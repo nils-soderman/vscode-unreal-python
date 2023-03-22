@@ -17,3 +17,16 @@
     color: inherit;
     text-decoration: underline;
 }
+
+html, body, #root, .App {
+    height: 100%;
+}
+
+.vscode-header {
+    height: 22px;
+    line-height: 22px;
+    overflow: hidden;
+    width: 100%;
+    background-color: var(--vscode-breadcrumb-background);
+    padding-left: 11px;
+}

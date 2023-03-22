@@ -39,3 +39,9 @@
 #doc-details-highlight {
     background-color: var(--vscode-list-inactiveSelectionBackground);
 }
+
+.main-content {
+    height: calc(100% - 22px);
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
