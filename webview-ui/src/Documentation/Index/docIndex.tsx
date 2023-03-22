@@ -185,7 +185,7 @@ export default class DocIndex extends Component<DocIndexProps> {
                         return (
                             <DropDownArea key={index} id={`doc-index-${typeName}`} title={typeName} badgeCount={itemData.items.length + itemData.prioritizedMatch.length}>
                                 {
-                                    itemData.items.length > 0 &&
+                                    (itemData.items.length + itemData.prioritizedMatch.length > 0) &&
                                     <div className="doc-index-dd-content">
                                         {
                                             [...itemData.prioritizedMatch, ...itemData.items].map((itemName, index) => {
