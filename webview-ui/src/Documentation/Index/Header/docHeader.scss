@@ -1,8 +1,12 @@
 .doc-index-header {
-    padding: 0 11px;
-    margin: 10px 0;
+    padding: 0;
+    height: 46px;
 }
 
 #searchbar {
     width: 100%;
+}
+
+#doc-index-searchbar-wrapper {
+    padding: 10px 11px;
 }

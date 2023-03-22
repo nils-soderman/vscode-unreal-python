@@ -189,7 +189,6 @@ export default class DocIndex extends Component<DocIndexProps> {
                                     <div className="doc-index-dd-content">
                                         {
                                             [...itemData.prioritizedMatch, ...itemData.items].map((itemName, index) => {
-                                                // itemData.items.map((itemName, index) => {
                                                 return (
                                                     <span key={index} onClick={() => this.props.onItemClicked(itemName)}>
                                                         {itemName}
@@ -211,16 +210,16 @@ export default class DocIndex extends Component<DocIndexProps> {
 
     render() {
         return (
-            <div>
+            <Fragment>
                 <DocHeader handleSearchInput={(text: string) => this.onSearchInput(text)} filter={this.state.filter} />
+                
+                <div className="main-content" id="doc-index-content">
+                    {this.renderProgressRing()}
 
-                {this.renderProgressRing()}
-
-                <div id="doc-index-content">
                     {this.renderContent()}
                 </div>
 
-            </div>
+            </Fragment>
         );
     }
 }

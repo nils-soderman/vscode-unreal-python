@@ -4,8 +4,7 @@
 }
 
 #doc-index-content {
-    margin-bottom: 10px;
-    overflow: hidden;
+    height: calc(100% - 46px);
 
     span {
         font-weight: 500;

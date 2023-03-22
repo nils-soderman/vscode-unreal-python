@@ -30,3 +30,9 @@ html, body, #root, .App {
     background-color: var(--vscode-breadcrumb-background);
     padding-left: 11px;
 }
+
+.main-content {
+    height: calc(100% - 22px);
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
