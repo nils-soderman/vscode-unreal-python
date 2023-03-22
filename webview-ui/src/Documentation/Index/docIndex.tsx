@@ -110,8 +110,6 @@ export default class DocIndex extends Component<DocIndexProps> {
 
 
     renderContent() {
-        var startTime = performance.now()
-
         let content: FilteredTableOfContents = {};
         if (this.state.filter) {
             const filterLower = this.state.filter.toLocaleLowerCase();
@@ -179,11 +177,6 @@ export default class DocIndex extends Component<DocIndexProps> {
                 };
             }
         }
-
-        var endTime = performance.now()
-        console.log(`filtering took: ${endTime - startTime} milliseconds`);
-
-        console.log(content);
 
         return (
             <Fragment>
