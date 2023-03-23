@@ -1,5 +1,5 @@
 import "./docIndex.scss";
-import { Component, Fragment } from 'react';
+import { Component, createRef, Fragment } from 'react';
 import * as vscode from '../../Modules/vscode';
 import DocHeader from './Header/docHeader';
 
@@ -40,16 +40,21 @@ interface DocIndexProps {
     onItemClicked: (name: string) => void;
     onFilterChanged: (filter: string) => void;
     filter: string;
+    scrollPosY: number;
 }
 
 
 export default class DocIndex extends Component<DocIndexProps> {
     state = { bLoading: true, tableOfContents: {}, filter: "" };
 
+    contentRef: React.RefObject<HTMLDivElement>;
+    numberOfDDAUpdates = 0;
+
     constructor(props: DocIndexProps) {
         super(props);
 
         this.state.filter = props.filter;
+        this.contentRef = createRef();
     }
 
     async componentDidMount() {
@@ -60,6 +65,16 @@ export default class DocIndex extends Component<DocIndexProps> {
             tableOfContents: this.parseTableOfContents(tableOfContents),
             bLoading: false
         });
+    }
+
+    onDropDownAreaUpdated(id: string) {
+        if (this.numberOfDDAUpdates >= Object.keys(this.state.tableOfContents).length) {
+            return;
+        }
+        this.numberOfDDAUpdates++;
+
+        this.contentRef.current.scrollTo(0, this.props.scrollPosY);
+        this.contentRef.current.scrollTop = this.props.scrollPosY;
     }
 
     parseTableOfContents(tableOfContents: RawTableOfContents) {
@@ -183,7 +198,7 @@ export default class DocIndex extends Component<DocIndexProps> {
                 {
                     Object.entries(content).map(([typeName, itemData], index) => {
                         return (
-                            <DropDownArea key={index} id={`doc-index-${typeName}`} title={typeName} badgeCount={itemData.items.length + itemData.prioritizedMatch.length}>
+                            <DropDownArea key={index} id={`doc-index-${typeName}`} title={typeName} badgeCount={itemData.items.length + itemData.prioritizedMatch.length} onComponentUpdated={(id: string) => this.onDropDownAreaUpdated(id)}>
                                 {
                                     (itemData.items.length + itemData.prioritizedMatch.length > 0) &&
                                     <div className="doc-index-dd-content">
@@ -213,7 +228,7 @@ export default class DocIndex extends Component<DocIndexProps> {
             <Fragment>
                 <DocHeader handleSearchInput={(text: string) => this.onSearchInput(text)} filter={this.state.filter} />
                 
-                <div className="main-content" id="doc-index-content">
+                <div ref={this.contentRef} className="main-content" id="doc-index-content">
                     {this.renderProgressRing()}
 
                     {this.renderContent()}

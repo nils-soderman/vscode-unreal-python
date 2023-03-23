@@ -7,9 +7,15 @@ export default class DocPage extends Component {
     state = { detailsPageItem: null }
 
     cachedFilter = "";
+    cachedScrollPosY = 0;
 
     browseItem(name: string) {
         this.setState({ detailsPageItem: name });
+
+        const scrollElement = document.getElementById("doc-index-content");
+        if (scrollElement) {
+            this.cachedScrollPosY = scrollElement.scrollTop;
+        }
     }
 
     backToIndex() {
@@ -26,7 +32,7 @@ export default class DocPage extends Component {
         }
 
         return (
-            <DocIndex filter={this.cachedFilter} onItemClicked={(item: string) => this.browseItem(item)}  onFilterChanged={(filter: string) => this.onFilterChanged(filter)} />
+            <DocIndex filter={this.cachedFilter} onItemClicked={(item: string) => this.browseItem(item)}  onFilterChanged={(filter: string) => this.onFilterChanged(filter)} scrollPosY={this.cachedScrollPosY} />
         );
     }
 }

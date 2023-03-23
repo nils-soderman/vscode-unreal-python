@@ -10,6 +10,7 @@ interface DropDownAreaProps {
     badgeCount?: number;
     onHeaderClicked?: (id: string, bOpen: boolean) => void;
     bForceOpenState?: boolean;
+    onComponentUpdated?: (id: string) => void;
 }
 
 interface DropDownAreaState {
@@ -48,6 +49,11 @@ class DropDownArea extends Component<DropDownAreaProps, DropDownAreaState> {
             bOpen = true;
 
         this.setState({ bOpen });
+    }
+
+    componentDidUpdate(prevProps: DropDownAreaProps) {
+        if (this.props.onComponentUpdated)
+            this.props.onComponentUpdated(this.props.id);
     }
 
 
