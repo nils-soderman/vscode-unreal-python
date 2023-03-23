@@ -74,9 +74,16 @@ class DetailsPage extends Component<DetailsPageProps, DetailsPageState> {
                     Object.keys(data).map((type: string) => {
                         if (data[type].length === 0)
                             return null;
+                        
+                        // Check if DropDownArea needs to be forced open (if the focused property is in this type)
+                        let bForceOpenState: boolean = undefined;
+                        if (this.state.data?.property) {
+                            if (data[type].find((member: any) => member.name === this.state.data?.property))
+                                bForceOpenState = true;
+                        }
 
                         return (
-                            <DropDownArea key={type} id={`doc-details-${prefix + type}`} title={prefix + type}>
+                            <DropDownArea key={type} id={`doc-details-${prefix + type}`} title={prefix + type} bForceOpenState={bForceOpenState}>
                                 {
                                     data[type].map((member: any, index: number) => {
                                         return (

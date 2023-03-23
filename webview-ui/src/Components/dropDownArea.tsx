@@ -9,6 +9,7 @@ interface DropDownAreaProps {
     id: string;
     badgeCount?: number;
     onHeaderClicked?: (id: string, bOpen: boolean) => void;
+    bForceOpenState?: boolean;
 }
 
 interface DropDownAreaState {
@@ -17,6 +18,12 @@ interface DropDownAreaState {
 
 class DropDownArea extends Component<DropDownAreaProps, DropDownAreaState> {
     state = { bOpen: false }
+
+    constructor(props: DropDownAreaProps) {
+        super(props);
+        if (props.bForceOpenState !== undefined)
+            this.state.bOpen = props.bForceOpenState;
+    }
 
     onHeaderClicked() {
         const bOpen = !this.state.bOpen;
@@ -31,6 +38,9 @@ class DropDownArea extends Component<DropDownAreaProps, DropDownAreaState> {
     }
 
     async componentDidMount() {
+        if (this.props.bForceOpenState !== undefined)
+            return;
+
         const data = await vscode.sendMessageAndWaitForResponse(vscode.EInOutCommands.getDropDownAreaOpenStates, this.props.id);
 
         let bOpen = data[this.props.id];
