@@ -4,7 +4,8 @@ import * as vscode from '../../Modules/vscode';
 import DocHeader from './Header/docHeader';
 
 import { VSCodeProgressRing } from '@vscode/webview-ui-toolkit/react';
-import DropDownArea from "../../Components/dropDownArea";
+import DropDownArea from "../../Components/DropDownArea/dropDownArea";
+import DynamicList from "../../Components/DynamicList/dynamicList";
 
 
 interface RawTableOfContents {
@@ -202,6 +203,7 @@ export default class DocIndex extends Component<DocIndexProps> {
                                 {
                                     (itemData.items.length + itemData.prioritizedMatch.length > 0) &&
                                     <div className="doc-index-dd-content">
+                                        <DynamicList key={`dynamicList-${index}`} startingMaxChildren={50} increaseMaxChildrenStep={500}>
                                         {
                                             [...itemData.prioritizedMatch, ...itemData.items].map((itemName, index) => {
                                                 return (
@@ -211,6 +213,7 @@ export default class DocIndex extends Component<DocIndexProps> {
                                                 );
                                             })
                                         }
+                                        </DynamicList>
                                     </div>
                                 }
                             </DropDownArea>

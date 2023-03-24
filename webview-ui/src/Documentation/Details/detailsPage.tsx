@@ -1,7 +1,7 @@
 import "./detailsPage.scss";
 import { VSCodeProgressRing } from "@vscode/webview-ui-toolkit/react";
 import { Component, Fragment } from "react";
-import DropDownArea from "../../Components/dropDownArea";
+import DropDownArea from "../../Components/DropDownArea/dropDownArea";
 import ReactMarkdown from 'react-markdown'
 import * as vscode from '../../Modules/vscode';
 

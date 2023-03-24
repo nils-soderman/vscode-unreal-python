@@ -1,5 +1,5 @@
 import "./dropDownArea.scss";
-import * as vscode from "../Modules/vscode";
+import * as vscode from "../../Modules/vscode";
 
 import { Component } from "react";
 

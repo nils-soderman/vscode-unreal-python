@@ -1,0 +1,11 @@
+.dynamic-list-show-more-button {
+    cursor: pointer;
+    opacity: 0.8;
+    margin-top: 5px;
+    margin-bottom: 10px;
+
+    &:hover {
+        opacity: 0.9;
+        text-decoration: underline;
+    }
+}
