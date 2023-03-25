@@ -6,6 +6,8 @@ interface DynamicListProps {
     children: any[];
     startingMaxChildren: number;
     increaseMaxChildrenStep: number;
+    id: string;
+    onListExpanded?: (id: string, maxItems: number) => void;
 }
 
 interface DynamicListState {
@@ -22,8 +24,13 @@ class DynamicList extends Component<DynamicListProps, DynamicListState> {
     }
 
     onShowMoreClicked() {
-        console.log("onShowMoreClicked");
-        this.setState({ maxChildren: this.state.maxChildren + this.props.increaseMaxChildrenStep });
+        const maxChildren = this.state.maxChildren + this.props.increaseMaxChildrenStep;
+        
+        this.setState({ maxChildren });
+
+        if (this.props.onListExpanded) {
+            this.props.onListExpanded(this.props.id, maxChildren);
+        }
     }
 
     render(): ReactNode {

@@ -4,11 +4,13 @@ const vscode = acquireVsCodeApi();
 export enum EInOutCommands {
     getTableOfContents = "getTableOfContents",
     getDocPage = "getDocPage",
-    getDropDownAreaOpenStates = "getDropDownAreaOpenStates"
+    getDropDownAreaOpenStates = "getDropDownAreaOpenStates",
+    getMaxListItems = "getMaxListItems"
 }
 
 export enum EOutCommands {
-    storeDropDownAreaOpenState = "storeDropDownAreaOpenState"
+    storeDropDownAreaOpenState = "storeDropDownAreaOpenState",
+    storeMaxListItems = "storeMaxListItems"
 }
 
 export enum EInCommands {

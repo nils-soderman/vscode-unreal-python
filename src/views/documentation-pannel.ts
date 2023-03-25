@@ -13,14 +13,16 @@ import { RemoteExecutionMessage, FCommandOutputType } from "../modules/remote-ex
 enum EInOutCommands {
     getTableOfContents = "getTableOfContents",
     getDocPage = "getDocPage",
-    getDropDownAreaOpenStates = "getDropDownAreaOpenStates"
+    getDropDownAreaOpenStates = "getDropDownAreaOpenStates",
+    getMaxListItems = "getMaxListItems"
 }
 
 enum EOutCommands {
 }
 
 enum EInCommands {
-    storeDropDownAreaOpenState = "storeDropDownAreaOpenState"
+    storeDropDownAreaOpenState = "storeDropDownAreaOpenState",
+    storeMaxListItems = "storeMaxListItems"
 }
 
 enum EConfigFiles {
@@ -88,9 +90,11 @@ export class DocumentationPannel {
     readonly title = "Unreal Engine Python";
 
     private readonly webviewDirectory;
-    private readonly pannelName = "sidepanel";
+    private readonly pannelName = "UE-Python-Documentation";
 
     private _dropDownAreaStates: { [id: string]: boolean } = {};
+
+    private maxListItems: { [id: string]: number } = {};
 
     pannel?: vscode.WebviewPanel;
 
@@ -168,6 +172,16 @@ export class DocumentationPannel {
             case EInOutCommands.getDropDownAreaOpenStates:
                 {
                     this.pannel?.webview.postMessage({ command: EInOutCommands.getDropDownAreaOpenStates, data: this._dropDownAreaStates });
+                    break;
+                }
+            case EInCommands.storeMaxListItems:
+                {
+                    this.maxListItems[data.data.id] = data.data.value;
+                    break;
+                }
+            case EInOutCommands.getMaxListItems:
+                {
+                    this.pannel?.webview.postMessage({ command: EInOutCommands.getMaxListItems, data: this.maxListItems });
                     break;
                 }
             default:

@@ -20,7 +20,6 @@ interface RawTableOfContents {
 }
 
 
-
 // We should convert toc into this format on mounted
 interface TableOfContents {
     [Type: string]: {
@@ -36,7 +35,6 @@ interface FilteredTableOfContents {
 }
 
 
-
 interface DocIndexProps {
     onItemClicked: (name: string) => void;
     onFilterChanged: (filter: string) => void;
@@ -50,6 +48,7 @@ export default class DocIndex extends Component<DocIndexProps> {
 
     contentRef: React.RefObject<HTMLDivElement>;
     numberOfDDAUpdates = 0;
+    maxListItems: {[id: string]: number} = {};
 
     constructor(props: DocIndexProps) {
         super(props);
@@ -61,6 +60,7 @@ export default class DocIndex extends Component<DocIndexProps> {
     async componentDidMount() {
         // Request the table of contents from the extension
         const tableOfContents: RawTableOfContents = await vscode.sendMessageAndWaitForResponse(vscode.EInOutCommands.getTableOfContents);
+        this.maxListItems = await vscode.sendMessageAndWaitForResponse(vscode.EInOutCommands.getMaxListItems);
 
         this.setState({
             tableOfContents: this.parseTableOfContents(tableOfContents),
@@ -109,6 +109,13 @@ export default class DocIndex extends Component<DocIndexProps> {
     onSearchInput(searchText: string) {
         this.setState({ filter: searchText });
         this.props.onFilterChanged(searchText);
+    }
+
+    /**
+     * Callback for when the Show More button in a DynamicList is clicked
+     */
+    onListExpanded(id: string, maxItems: number) {
+        vscode.sendMessage(vscode.EOutCommands.storeMaxListItems, { id, value: maxItems });
     }
 
     private passesFilter(itemName: string, includes: string[], alternativeIncludes?: string[]) {
@@ -203,16 +210,17 @@ export default class DocIndex extends Component<DocIndexProps> {
                                 {
                                     (itemData.items.length + itemData.prioritizedMatch.length > 0) &&
                                     <div className="doc-index-dd-content">
-                                        <DynamicList key={`dynamicList-${index}`} startingMaxChildren={50} increaseMaxChildrenStep={500}>
-                                        {
-                                            [...itemData.prioritizedMatch, ...itemData.items].map((itemName, index) => {
-                                                return (
-                                                    <span key={index} onClick={() => this.props.onItemClicked(itemName)}>
-                                                        {itemName}
-                                                    </span>
-                                                );
-                                            })
-                                        }
+                                        <DynamicList key={`dynamicList-${index}`} id={`dynamicList-${index}`} startingMaxChildren={this.maxListItems[`dynamicList-${index}`] || 50} 
+                                        increaseMaxChildrenStep={500} onListExpanded={(id, maxItems) => this.onListExpanded(id, maxItems)}>
+                                            {
+                                                [...itemData.prioritizedMatch, ...itemData.items].map((itemName, index) => {
+                                                    return (
+                                                        <span key={index} onClick={() => this.props.onItemClicked(itemName)}>
+                                                            {itemName}
+                                                        </span>
+                                                    );
+                                                })
+                                            }
                                         </DynamicList>
                                     </div>
                                 }
@@ -230,7 +238,7 @@ export default class DocIndex extends Component<DocIndexProps> {
         return (
             <Fragment>
                 <DocHeader handleSearchInput={(text: string) => this.onSearchInput(text)} filter={this.state.filter} />
-                
+
                 <div ref={this.contentRef} className="main-content" id="doc-index-content">
                     {this.renderProgressRing()}
 
