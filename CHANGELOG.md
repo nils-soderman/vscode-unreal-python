@@ -12,6 +12,7 @@
 - A bug where selecting a single indented line of code would fail to execute.
 - Documentation now remembers the applied filter when going back to the index page
 - Some broken UI styling for the documentation
+- Not being able to open functions in the documentation
 
 <br>
 

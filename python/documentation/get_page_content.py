@@ -64,7 +64,7 @@ def get_docstring(obj: object, object_name: str):
 
     doc_string = obj.__doc__
 
-    if "\n" in doc_string:
+    if doc_string and "\n" in doc_string:
         lines = []
         for index, line in enumerate(doc_string.split("\n")):
             line = _patch_line(line, index)
@@ -79,7 +79,7 @@ def get_docstring(obj: object, object_name: str):
 
         doc_string = "\n".join(lines)
 
-    else:
+    elif doc_string:
         doc_string = _patch_line(doc_string, 0).strip()
 
     return doc_string
@@ -164,7 +164,7 @@ def generate(object_name: str):
     else:
         object_name = "Unreal Functions"
         doc_string = get_docstring(unreal, object_name)
-        bases_names = None
+        bases_names = []
         inherited_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
         unique_members = copy.deepcopy(DEFAULT_DICT_LAYOUT)
         for function_name, function in inspect.getmembers(unreal):
@@ -181,7 +181,8 @@ def generate(object_name: str):
         "members": {
             "inherited": inherited_members,
             "unique": unique_members
-        }
+        },
+        "is_class": is_class
     }
 
 
