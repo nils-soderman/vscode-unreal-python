@@ -1,14 +1,15 @@
 # Change Log
 
 ## v0.2.2
-[2023-x]
+[2023-03-26]
 
 ### Changed:
 - Documentation now caches the open states of the dropdowns
 - Improved filtering for the Documentation
+- Having a word selected will auto insert it into the searchbar when opening the documentation
 
 ### Fixed:
-- A bug where selecting a single indented line of code would fail to execute. Closes [#6](https://github.com/nils-soderman/vscode-unreal-python/issues/6)
+- A bug where selecting a single indented line of code would fail to execute.
 - Documentation now remembers the applied filter when going back to the index page
 - Some broken UI styling for the documentation
 

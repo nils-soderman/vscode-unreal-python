@@ -48,7 +48,7 @@ export default class DocIndex extends Component<DocIndexProps> {
 
     contentRef: React.RefObject<HTMLDivElement>;
     numberOfDDAUpdates = 0;
-    maxListItems: {[id: string]: number} = {};
+    maxListItems: { [id: string]: number } = {};
 
     constructor(props: DocIndexProps) {
         super(props);
@@ -62,9 +62,14 @@ export default class DocIndex extends Component<DocIndexProps> {
         const tableOfContents: RawTableOfContents = await vscode.sendMessageAndWaitForResponse(vscode.EInOutCommands.getTableOfContents);
         this.maxListItems = await vscode.sendMessageAndWaitForResponse(vscode.EInOutCommands.getMaxListItems);
 
+        const initialFilter = await vscode.sendMessageAndWaitForResponse(vscode.EInOutCommands.getInitialFilter);
+        if (initialFilter) {
+            this.applyFilter(initialFilter);
+        }
+
         this.setState({
             tableOfContents: this.parseTableOfContents(tableOfContents),
-            bLoading: false
+            bLoading: false,
         });
     }
 
@@ -106,7 +111,7 @@ export default class DocIndex extends Component<DocIndexProps> {
         }
     }
 
-    onSearchInput(searchText: string) {
+    applyFilter(searchText: string) {
         this.setState({ filter: searchText });
         this.props.onFilterChanged(searchText);
     }
@@ -210,8 +215,8 @@ export default class DocIndex extends Component<DocIndexProps> {
                                 {
                                     (itemData.items.length + itemData.prioritizedMatch.length > 0) &&
                                     <div className="doc-index-dd-content">
-                                        <DynamicList key={`dynamicList-${index}`} id={`dynamicList-${index}`} startingMaxChildren={this.maxListItems[`dynamicList-${index}`] || 50} 
-                                        increaseMaxChildrenStep={500} onListExpanded={(id, maxItems) => this.onListExpanded(id, maxItems)}>
+                                        <DynamicList key={`dynamicList-${index}`} id={`dynamicList-${index}`} startingMaxChildren={this.maxListItems[`dynamicList-${index}`] || 50}
+                                            increaseMaxChildrenStep={500} onListExpanded={(id, maxItems) => this.onListExpanded(id, maxItems)}>
                                             {
                                                 [...itemData.prioritizedMatch, ...itemData.items].map((itemName, index) => {
                                                     return (
@@ -237,7 +242,7 @@ export default class DocIndex extends Component<DocIndexProps> {
     render() {
         return (
             <Fragment>
-                <DocHeader handleSearchInput={(text: string) => this.onSearchInput(text)} filter={this.state.filter} />
+                <DocHeader handleSearchInput={(text: string) => this.applyFilter(text)} filter={this.state.filter} />
 
                 <div ref={this.contentRef} className="main-content" id="doc-index-content">
                     {this.renderProgressRing()}

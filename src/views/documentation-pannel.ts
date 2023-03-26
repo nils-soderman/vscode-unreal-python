@@ -14,7 +14,8 @@ enum EInOutCommands {
     getTableOfContents = "getTableOfContents",
     getDocPage = "getDocPage",
     getDropDownAreaOpenStates = "getDropDownAreaOpenStates",
-    getMaxListItems = "getMaxListItems"
+    getMaxListItems = "getMaxListItems",
+    getInitialFilter = "getInitialFilter"
 }
 
 enum EOutCommands {
@@ -29,7 +30,35 @@ enum EConfigFiles {
     dropDownAreaStates = "documentation_dropDownArea_states.json"
 }
 
+/**
+ * Open the documentation in a new tab
+ * @param extensionUri The extension's Uri
+ */
+export function openDocumentationWindow(extensionUri: vscode.Uri) {
+    // Check if a single word is selected in the editor, and if so use that as the default filter
+    let defaultFilter: string | undefined = undefined;
+    const editor = vscode.window.activeTextEditor;
+    if (editor?.selections.length === 1) {
+        const selectedText = editor.document.getText(editor.selection);
+        if (selectedText) {
+            const words = selectedText.trim().split(" ");
+            if (words.length === 1) {
+                const selectedWord = words[0];
 
+                // Make sure the word does not contain any special characters
+                if (selectedWord.match(/^[a-zA-Z0-9_]+$/)) {
+                    defaultFilter = selectedWord;
+                }
+            }
+        }
+    }
+
+    // Create the documentation pannel and open it
+    const documentationPannel = new DocumentationPannel(extensionUri);
+    documentationPannel.open(vscode.ViewColumn.Two, defaultFilter);
+
+    return documentationPannel;
+}
 
 
 /**
@@ -87,16 +116,16 @@ function buildPageContent(filepath: string, module: string): Promise<boolean> {
 
 export class DocumentationPannel {
 
+    private readonly pannelName = "UE-Python-Documentation";
     readonly title = "Unreal Engine Python";
 
     private readonly webviewDirectory;
-    private readonly pannelName = "UE-Python-Documentation";
+    private pannel?: vscode.WebviewPanel;
 
-    private _dropDownAreaStates: { [id: string]: boolean } = {};
-
+    private dropDownAreaStates: { [id: string]: boolean } = {};
     private maxListItems: { [id: string]: number } = {};
+    private initialFilter: string | undefined = undefined;
 
-    pannel?: vscode.WebviewPanel;
 
     constructor(
         private readonly _extensionUri: vscode.Uri
@@ -104,15 +133,22 @@ export class DocumentationPannel {
         this.webviewDirectory = vscode.Uri.joinPath(_extensionUri, 'webview-ui', "build");
     }
 
-    public open(viewColumn = vscode.ViewColumn.Two) {
+    /**
+     * Open the documentation pannel in a new tab
+     * @param viewColumn The view column to open the pannel in
+     * @param defaultFilter The default filter to insert into the search bar
+     */
+    public open(viewColumn = vscode.ViewColumn.Two, defaultFilter?: string) {
+        // Set/Load some default values
+        this.initialFilter = defaultFilter;
+        this.dropDownAreaStates = utils.loadConfigFile(EConfigFiles.dropDownAreaStates, true, {});
+
         this.pannel = vscode.window.createWebviewPanel(this.pannelName, this.title, viewColumn, {
             enableScripts: true,
             localResourceRoots: [
                 this._extensionUri
             ]
         });
-
-        this._dropDownAreaStates = utils.loadConfigFile(EConfigFiles.dropDownAreaStates, true, {});
 
         this.pannel.webview.onDidReceiveMessage(data => { this.onDidReceiveMessage(data); });
         this.pannel.webview.html = this.getHtmlForWebview(this.pannel.webview);
@@ -137,7 +173,7 @@ export class DocumentationPannel {
     }
 
 
-    public async openPage(module: string, property?: string) {
+    public async openDetailsPage(module: string, property?: string) {
         const filepath = path.join(utils.getExtentionTempDir(), `docpage_${module}.json`);
         if (!fs.existsSync(filepath)) {
             await buildPageContent(filepath, module);
@@ -161,7 +197,7 @@ export class DocumentationPannel {
                 }
             case EInOutCommands.getDocPage:
                 {
-                    this.openPage(data.data.object, data.data.property);
+                    this.openDetailsPage(data.data.object, data.data.property);
                     break;
                 }
             case EInCommands.storeDropDownAreaOpenState:
@@ -171,7 +207,7 @@ export class DocumentationPannel {
                 }
             case EInOutCommands.getDropDownAreaOpenStates:
                 {
-                    this.pannel?.webview.postMessage({ command: EInOutCommands.getDropDownAreaOpenStates, data: this._dropDownAreaStates });
+                    this.pannel?.webview.postMessage({ command: EInOutCommands.getDropDownAreaOpenStates, data: this.dropDownAreaStates });
                     break;
                 }
             case EInCommands.storeMaxListItems:
@@ -184,22 +220,28 @@ export class DocumentationPannel {
                     this.pannel?.webview.postMessage({ command: EInOutCommands.getMaxListItems, data: this.maxListItems });
                     break;
                 }
+            case EInOutCommands.getInitialFilter:
+                {
+                    this.pannel?.webview.postMessage({ command: EInOutCommands.getInitialFilter, data: this.initialFilter });
+                    this.initialFilter = undefined;
+                    break;
+                }
             default:
                 throw new Error(`Not implemented: ${this.pannelName} recived an unknown command: '${data.command}'`);
         }
     }
 
     private storeDropDownAreaOpenState(id: string, value: boolean) {
-        this._dropDownAreaStates[id] = value;
+        this.dropDownAreaStates[id] = value;
 
-        utils.saveConfigFile(EConfigFiles.dropDownAreaStates, this._dropDownAreaStates);
+        utils.saveConfigFile(EConfigFiles.dropDownAreaStates, this.dropDownAreaStates);
     }
 
     private getHtmlForWebview(webview: vscode.Webview) {
         // Use a nonce to only allow a specific script to be run.
-        // const nonce = getNonce();
         const nonce = uuid.v4().replace(/-/g, "");
 
+        // Read the manifest file to locate the required script and style files
         const manifest = require(path.join(this.webviewDirectory.fsPath, 'asset-manifest.json'));
         const mainScript = manifest['files']['main.js'];
         const mainStyle = manifest['files']['main.css'];

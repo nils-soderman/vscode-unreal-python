@@ -5,7 +5,8 @@ export enum EInOutCommands {
     getTableOfContents = "getTableOfContents",
     getDocPage = "getDocPage",
     getDropDownAreaOpenStates = "getDropDownAreaOpenStates",
-    getMaxListItems = "getMaxListItems"
+    getMaxListItems = "getMaxListItems",
+    getInitialFilter = "getInitialFilter"
 }
 
 export enum EOutCommands {
