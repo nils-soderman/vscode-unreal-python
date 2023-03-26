@@ -41,6 +41,8 @@ Command: `Unreal Python: Attach`
 ### Documentation
 Browse the unreal python documentation inside VS Code. This documentation is generated from your current engine, so it will always be the correct version & also include your own custom C++ functions/classes.
 
+![browse Unreal Engine's Python Documentation in VS Code demo](https://github.com/nils-soderman/vscode-unreal-python/blob/main/media/demo/demo-documentation.gif?raw=true)
+
 Command: `Unreal Python: Open Documentation`
 
 <br>
