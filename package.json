@@ -34,7 +34,7 @@
       },
       {
         "category": "Unreal Python",
-        "title": "Setup code completion",
+        "title": "Setup Code Completion",
         "command": "ue-python.setupCodeCompletion"
       },
       {
