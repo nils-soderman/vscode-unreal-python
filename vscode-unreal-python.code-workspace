@@ -10,6 +10,10 @@
 		}
 	],
 	"settings": {
-		"typescript.tsc.autoDetect": "off"
+		"typescript.tsc.autoDetect": "off",
+
+		"python.formatting.autopep8Args": [
+			"--max-line-length=9999"
+		]
 	}
 }
