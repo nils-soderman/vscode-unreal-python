@@ -81,13 +81,13 @@ async function cleanUpTempFiles(commandId: string) {
  * Read the output file, written by the 'vscode_execute.py' python module 
  * @param commandId: The ID of which response to read
  */
-function readResponse(commandId: string) {
+function readResponse(commandId: string) : Array<Array<string>> {
     const outputFilename = getOutputFilepath(commandId);
     if (fs.existsSync(outputFilename)) {
         // Use slice to remove the last '\n' always added
-        return fs.readFileSync(outputFilename).toString("utf8").slice(0, -2);
+        return JSON.parse(fs.readFileSync(outputFilename).toString("utf8"));
     }
-    return "";
+    return [];
 }
 
 
@@ -107,13 +107,24 @@ function handleResponse(message: RemoteExecutionMessage, commandId: string) {
     }
 
     // Read the output message
-    const parsedOutputMessage = readResponse(commandId);
+    const parsedOutput = readResponse(commandId);
+    // Construct the output message
+    let outputMessage = "";
+    for (const line of parsedOutput) {
+        if (line[0] === "\n") {
+            continue;
+        }
 
+        // TODO: Handle different types found in `line[1]` with colors
+        outputMessage += `${line[0]}\n`;
+    }
+
+    outputMessage += ">>>"; // Add >>> to indicate that the command has finished
 
     const outputChannel = getOutputChannel();
     if (outputChannel) {
         // Add the message to the output channel
-        outputChannel.appendLine(parsedOutputMessage);
+        outputChannel.appendLine(outputMessage);
 
         // Bring up the output channel on screen
         if (utils.getExtensionConfig().get("execute.showOutput")) {
@@ -160,8 +171,7 @@ export async function main() {
         "__file__": vscode.window.activeTextEditor.document.uri.fsPath,  // eslint-disable-line @typescript-eslint/naming-convention
         "__name__": nameVar,  // eslint-disable-line @typescript-eslint/naming-convention
         "id": commandId,
-        "isDebugging": bIsDebugging,
-        "additionalPrint": ">>>"
+        "isDebugging": bIsDebugging
     };
 
     // Set `vscodeData` as a global dict variable, that can be read by the python script

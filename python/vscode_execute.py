@@ -4,11 +4,15 @@ This script will be called from 'vscode_execute_entry.py' and will execute the u
 
 import traceback
 import tempfile
+import json
 import sys
 import os
 import re
 
 from io import StringIO
+from typing import Callable
+
+import unreal
 
 TEMP_FOLDERPATH = os.path.join(tempfile.gettempdir(), "VSCode-Unreal-Python")
 OUTPUT_FILENAME = "exec-out"
@@ -16,25 +20,57 @@ OUTPUT_FILENAME = "exec-out"
 DATA_FILEPATH_GLOBAL_VAR_NAME = "data_filepath"
 
 
-class StdOutRedirection:
-    """ Re-direct the output to a text file while still printing it to the console, should be used with a 'with' statement. """
+class CustomStdoutRedirection(StringIO):
+    def __init__(self, function: Callable) -> None:
+        super().__init__()
+
+        self.function = function
+
+    def write(self, __s: str) -> int:
+        self.function(__s)
+        return super().write(__s)
+
+
+class UnrealLogRedirect:
     def __init__(self, output_filepath: str):
         self.output_filepath = output_filepath
-        self.stringio = StringIO()
-        self.stdout = None
+
+        self.output = []
+
+        self.original_stdout = sys.stdout
+
+        self.original_log = unreal.log
+        self.original_log_error = unreal.log_error
+        self.original_log_warning = unreal.log_warning
+
+    def redirect(self, msg: str):
+        self.output.append((msg, "log"))
+        self.original_log(msg)
+
+    def redirect_error(self, msg: str):
+        self.output.append((msg, "error"))
+        self.original_log_error(msg)
+
+    def redirect_warning(self, msg: str):
+        self.output.append((msg, "warning"))
+        self.original_log_warning(msg)
 
     def __enter__(self):
-        self.stdout = sys.stdout
-        sys.stdout = self.stringio
+        sys.stdout = CustomStdoutRedirection(self.redirect)
+
+        unreal.log = self.redirect
+        unreal.log_error = self.redirect_error
+        unreal.log_warning = self.redirect_warning
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.stringio.seek(0)
-        output = self.stringio.read()
+        unreal.log = self.original_log
+        unreal.log_error = self.original_log_error
+        unreal.log_warning = self.original_log_warning
+
+        sys.stdout = self.original_stdout
+
         with open(self.output_filepath, 'w', encoding="utf-8") as f:
-            f.write(output)
-        self.stdout.write(output)
-        self.stdout.flush()
-        sys.stdout = self.stdout
+            json.dump(self.output, f)
 
 
 def get_exec_globals():
@@ -71,10 +107,10 @@ def execute_code(code, filename, is_vscode_debugging):
         if is_vscode_debugging:
             traceback_message = '\033[91m' + traceback_message + '\033[0m'
 
-        print(traceback_message)
+        unreal.log_error(traceback_message)
 
 
-def main(exec_file, exec_origin, command_id, is_debugging, name_var=None, additional_print=None):
+def main(exec_file, exec_origin, command_id, is_debugging, name_var=None):
     # Set some global variables
     exec_globals = get_exec_globals()
 
@@ -84,17 +120,12 @@ def main(exec_file, exec_origin, command_id, is_debugging, name_var=None, additi
     elif "__name__" in exec_globals:
         exec_globals.pop("__name__")
 
-    output_filepath = os.path.join(
-        TEMP_FOLDERPATH, f"{OUTPUT_FILENAME}-{command_id}.txt")
+    output_filepath = os.path.join(TEMP_FOLDERPATH, f"{OUTPUT_FILENAME}-{command_id}.txt")
 
     with open(exec_file, 'r', encoding="utf-8") as vscode_in_file:
         if not is_debugging:
             # Re-direct the output through a text file
-            with StdOutRedirection(output_filepath):
+            with UnrealLogRedirect(output_filepath):
                 execute_code(vscode_in_file.read(), exec_origin, is_debugging)
-                if additional_print:
-                    print(additional_print)
         else:
             execute_code(vscode_in_file.read(), exec_origin, is_debugging)
-            if additional_print:
-                print(additional_print)

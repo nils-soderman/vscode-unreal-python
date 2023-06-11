@@ -19,6 +19,5 @@ vscode_execute.main(
     vscode_globals.get("__file__"),
     vscode_globals.get("id"),
     vscode_globals.get("isDebugging"),
-    vscode_globals.get("__name__"),
-    vscode_globals.get("additionalPrint")
+    vscode_globals.get("__name__")
 )
