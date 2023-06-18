@@ -602,10 +602,17 @@ class CommandSocket {
      * @param data The data recived, should be a dictionary that can be parsed into a `RemoteExecutionMessage`
      */
     private onData(data: Buffer) {
+        // TODO: data may be split into multiple packets, if it's too large. We need to handle this.
+
         // If we have a callback stored, call it with the parsed message
         const callback = this.callbacks.shift();
         if (callback) {
-            const message = RemoteExecutionMessage.fromBuffer(data);
+            let message = undefined;
+            try {
+                // For now, place it in a try/catch block, if data is sent in multiple packets, this will fail
+                message = RemoteExecutionMessage.fromBuffer(data);
+            }
+            catch (error) { }
             callback(message);
         }
 
