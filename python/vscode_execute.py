@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 """
 This script will be called from 'vscode_execute_entry.py' and will execute the user script
 """
 
 import traceback
 import tempfile
+import logging
 import json
 import sys
 import os
@@ -32,7 +35,7 @@ class CustomStdoutRedirection(StringIO):
 
 
 class UnrealLogRedirect:
-    def __init__(self, output_filepath: str):
+    def __init__(self, output_filepath: str | None = None):
         self.output_filepath = output_filepath
 
         self.output = []
@@ -73,7 +76,34 @@ class UnrealLogRedirect:
             json.dump(self.output, f)
 
 
-def get_exec_globals():
+class UnrealLogRedirectDebugging:
+    def __init__(self):
+        self.logger = logging.getLogger("Unreal")
+        self.original_log = unreal.log
+        self.original_log_error = unreal.log_error
+        self.original_log_warning = unreal.log_warning
+
+    def redirect_warning(self, msg: str):
+        self.logger.warning(msg)
+
+    def redirect_error(self, msg: str):
+        self.logger.error(msg)
+
+    def redirect(self, msg: str):
+        print(msg)
+
+    def __enter__(self):
+        unreal.log = self.redirect
+        unreal.log_error = self.redirect_error
+        unreal.log_warning = self.redirect_warning
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        unreal.log = self.original_log
+        unreal.log_error = self.original_log_error
+        unreal.log_warning = self.original_log_warning
+
+
+def get_exec_globals() -> dict:
     """ Get globals to be used in the exec function when executing user scripts """
     if "__VsCodeVariables__" not in globals():
         globals()["__VsCodeVariables__"] = {
@@ -103,14 +133,11 @@ def execute_code(code, filename, is_vscode_debugging):
             traceback_lines.append(line)
 
         traceback_message = "".join(traceback_lines).strip()
-        # Color the message red (this is only supported by 'Debug Console' in VsCode, and not not 'Output' log)
-        if is_vscode_debugging:
-            traceback_message = '\033[91m' + traceback_message + '\033[0m'
 
         unreal.log_error(traceback_message)
 
 
-def main(exec_file, exec_origin, command_id, is_debugging, name_var=None):
+def main(exec_file: str, exec_origin: str, command_id: str, is_debugging: bool, name_var: str | None = None):
     # Set some global variables
     exec_globals = get_exec_globals()
 
@@ -128,4 +155,5 @@ def main(exec_file, exec_origin, command_id, is_debugging, name_var=None):
             with UnrealLogRedirect(output_filepath):
                 execute_code(vscode_in_file.read(), exec_origin, is_debugging)
         else:
-            execute_code(vscode_in_file.read(), exec_origin, is_debugging)
+            with UnrealLogRedirectDebugging():
+                execute_code(vscode_in_file.read(), exec_origin, is_debugging)
