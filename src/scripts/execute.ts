@@ -43,7 +43,7 @@ function getOutputChannel(bEnsureChannelExists = true) {
  * @param commandId: The command ID will be appended to the filename
  */
 function getOutputFilepath(commandId: string) {
-    return path.join(utils.getExtentionTempDir(), `${OUTPUT_FILENAME}-${commandId}.txt`);
+    return path.join(utils.getExtentionTempDir(), `${OUTPUT_FILENAME}-${commandId}.json`);
 }
 
 
@@ -131,6 +131,7 @@ function handleResponse(message: RemoteExecutionMessage, commandId: string) {
             outputChannel.show(true);
         }
     }
+
 
     // Cleanup all temp that were written by this command
     cleanUpTempFiles(commandId);

@@ -147,7 +147,7 @@ def main(exec_file: str, exec_origin: str, command_id: str, is_debugging: bool, 
     elif "__name__" in exec_globals:
         exec_globals.pop("__name__")
 
-    output_filepath = os.path.join(TEMP_FOLDERPATH, f"{OUTPUT_FILENAME}-{command_id}.txt")
+    output_filepath = os.path.join(TEMP_FOLDERPATH, f"{OUTPUT_FILENAME}-{command_id}.json")
 
     with open(exec_file, 'r', encoding="utf-8") as vscode_in_file:
         if not is_debugging:
