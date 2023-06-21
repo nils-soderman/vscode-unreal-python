@@ -1,5 +1,13 @@
 # Change Log
 
+## v0.2.3
+[2023-06-21]
+
+### Fixed:
+- Unreal functions `log`, `log_warning` & `log_error` not showing up in the VS Code output. Issue [#8](https://github.com/nils-soderman/vscode-unreal-python/issues/8)
+- Output not showing up if it's too large. Issue [#8](https://github.com/nils-soderman/vscode-unreal-python/issues/8)
+
+
 ## v0.2.2
 [2023-03-26]
 
