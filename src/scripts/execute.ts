@@ -4,8 +4,8 @@
 
 import * as vscode from 'vscode';
 
+import * as crypto from 'crypto';
 import * as path from 'path';
-import * as uuid from 'uuid';
 import * as fs from 'fs';
 
 import * as utils from '../modules/utils';
@@ -144,7 +144,7 @@ export async function main() {
     }
 
     // Generate a random id, used to differentiate from other commands run at the same time
-    const commandId = uuid.v4();
+    const commandId = crypto.randomUUID();
 
     // Get a file to execute
     const tempExecFilepath = getTempPythonExecFilepath(commandId);

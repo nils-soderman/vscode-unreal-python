@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 
-import * as uuid from 'uuid';
+import * as crypto from 'crypto';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -239,7 +239,7 @@ export class DocumentationPannel {
 
     private getHtmlForWebview(webview: vscode.Webview) {
         // Use a nonce to only allow a specific script to be run.
-        const nonce = uuid.v4().replace(/-/g, "");
+        const nonce = crypto.randomUUID().replace(/-/g, "");
 
         // Read the manifest file to locate the required script and style files
         const manifest = require(path.join(this.webviewDirectory.fsPath, 'asset-manifest.json'));

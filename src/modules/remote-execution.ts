@@ -4,7 +4,7 @@
  */
 
 import * as dgram from 'dgram';
-import * as uuid from 'uuid';
+import * as crypto from 'crypto';
 import * as net from 'net';
 
 
@@ -114,7 +114,7 @@ export class RemoteConnection {
      */
     constructor(config = new RemoteExecutionConfig()) {
         this.config = config;
-        this.nodeId = uuid.v4();
+        this.nodeId = crypto.randomUUID();
     }
 
     /** Check if `start()` already has been requested, this does not mean that the server and all sockets has fully started yet. */
