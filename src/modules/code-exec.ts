@@ -76,7 +76,7 @@ function formatSelectedText(text: string, firstCharIndex: number) {
     let i = 0;
     for (let line of text.split("\n")) {
         if (numCharactersToRemove) {
-            if (i == 0) {
+            if (i === 0) {
                 line = line.trimStart();
             }
             else {
