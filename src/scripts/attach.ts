@@ -8,7 +8,7 @@ import * as vscode from 'vscode';
 import * as remoteHandler from '../modules/remote-handler';
 import * as utils from '../modules/utils';
 
-import { RemoteExecutionMessage, FCommandOutputType } from "../modules/remote-execution";
+import { ECommandOutputType } from "unreal-remote-execution";
 
 
 // ------------------------------------------------------------------------------------------
@@ -18,45 +18,40 @@ import { RemoteExecutionMessage, FCommandOutputType } from "../modules/remote-ex
 /**
  * Check if the python module "debugpy" is installed and accessible with the current `sys.paths` in Unreal Engine.  
  */
-function isDebugpyInstalled(): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-        const isDebugPyInstalledScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.isDebugpyInstalled);
+async function isDebugpyInstalled(): Promise<boolean> {
+    const isDebugPyInstalledScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.isDebugpyInstalled);
 
-        remoteHandler.executeFile(isDebugPyInstalledScript, {}, (message: RemoteExecutionMessage) => {
-            const outputs = message.getCommandResultOutput();
-
-            for (let output of outputs) {
-                if (output.type === FCommandOutputType.info) {
-                    resolve(output.output.toLowerCase() === "true");
-                    return;
-                }
+    const response = await remoteHandler.executeFile(isDebugPyInstalledScript, {});
+    if (response) {
+        for (const output of response.output) {
+            if (output.type === ECommandOutputType.INFO) {
+                return output.output.trim().toLowerCase() === "true";
             }
+        }
+    }
 
-            resolve(false);
-        });
-    });
+    return false;
 }
+
 
 /**
  * Check if the python module "debugpy" is installed and accessible with the current `sys.paths` in Unreal Engine.  
  */
-function getCurrentDebugpyPort(): Promise<number | null> {
-    return new Promise((resolve, reject) => {
-        const getCurrentDebugpyPortScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.getCurrentDebugpyPort);
+async function getCurrentDebugpyPort(): Promise<number | null> {
+    const getCurrentDebugpyPortScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.getCurrentDebugpyPort);
 
-        remoteHandler.executeFile(getCurrentDebugpyPortScript, {}, (message: RemoteExecutionMessage) => {
-            const outputs = message.getCommandResultOutput();
-
-            for (let output of outputs) {
-                if (output.type === FCommandOutputType.info) {
-                    const port = Number(output.output);
-                    resolve(port);
-                }
+    const response = await remoteHandler.executeFile(getCurrentDebugpyPortScript, {});
+    if (response) {
+        for (const output of response.output) {
+            if (output.type === ECommandOutputType.INFO) {
+                const port = Number(output.output);
+                return port;
             }
+        }
+    }
 
-            resolve(null);
-        });
-    });
+
+    return null;
 }
 
 
@@ -65,29 +60,25 @@ function getCurrentDebugpyPort(): Promise<number | null> {
  * @param callback The function to call once the module has been installed
  * @param target The directory where to install the module, if none is provided it'll be installed in the current Unreal Project
  */
-function installDebugpy(target = ""): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-        const installDebugpyScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.installDebugPy);
+async function installDebugpy(target = ""): Promise<boolean> {
+    const installDebugpyScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.installDebugPy);
 
-        // Pass along the target to the python script as a global variable
-        const globals = { "install_dir": target };  // eslint-disable-line @typescript-eslint/naming-convention
+    // Pass along the target to the python script as a global variable
+    const globals = { "install_dir": target };  // eslint-disable-line @typescript-eslint/naming-convention
 
-        remoteHandler.executeFile(installDebugpyScript, globals, (message: RemoteExecutionMessage) => {
-            const outputs = message.getCommandResultOutput();
+    const response = await remoteHandler.executeFile(installDebugpyScript, globals);
 
-            // We should've recived a response with "True" or "False"
-            for (let output of outputs) {
-                if (output.type === FCommandOutputType.info) {
-                    resolve(output.output.toLowerCase() === "true");
-                    return;
-                }
+    // We should've recived a response with "True" or "False"
+    if (response) {
+        for (const output of response.output) {
+            if (output.type === ECommandOutputType.INFO) {
+                return output.output.trim().toLowerCase() === "true";
             }
+        }
+    }
 
-            resolve(false);
-        });
-    });
+    return false;
 }
-
 
 // ------------------------------------------------------------------------------------------
 //                                  Attach to Unreal Engine
@@ -97,27 +88,22 @@ function installDebugpy(target = ""): Promise<boolean> {
  * Start a debugpy server in Unreal Engine.
  * @param port The port to start the server on
  */
-function startDebugpyServer(port: number): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-        const startDebugServerScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.startDebugServer);
+async function startDebugpyServer(port: number): Promise<boolean> {
+    const startDebugServerScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.startDebugServer);
 
-        const globals = { "debug_port": port };  // eslint-disable-line @typescript-eslint/naming-convention
+    const globals = { "debug_port": port };  // eslint-disable-line @typescript-eslint/naming-convention
 
-        remoteHandler.executeFile(startDebugServerScript, globals, (message: RemoteExecutionMessage) => {
-            const outputs = message.getCommandResultOutput();
+    const response = await remoteHandler.executeFile(startDebugServerScript, globals);
+    for (const output of response?.output ?? []) {
+        if (output.type === ECommandOutputType.INFO) {
+            return output.output.trim().toLowerCase() === "true";
+        }
+    }
 
-            for (let output of outputs) {
-                if (output.type === FCommandOutputType.info) {
-                    resolve(output.output.toLowerCase() === "true");
-                    return;
-                }
-            }
-
-            resolve(false);
-        });
-    });
+    return false;
 
 }
+
 
 /**
  * Start a python debug session and attach VS Code to a port

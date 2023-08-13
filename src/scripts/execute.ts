@@ -13,7 +13,7 @@ import * as utils from '../modules/utils';
 import * as remoteHandler from "../modules/remote-handler";
 import * as vsCodeExec from "../modules/code-exec";
 
-import { RemoteExecutionMessage } from "../modules/remote-execution";
+import { IRemoteExecutionMessageCommandOutputData } from "unreal-remote-execution";
 
 
 const INPUT_TEMP_PYTHON_FILENAME = "temp_exec";
@@ -38,15 +38,6 @@ function getOutputChannel(bEnsureChannelExists = true) {
 //                                    Filepaths
 // ------------------------------------------------------------------------------------------
 
-/** 
- * Get the filepath where the output for a spesific command will be saved
- * @param commandId: The command ID will be appended to the filename
- */
-function getOutputFilepath(commandId: string) {
-    return path.join(utils.getExtentionTempDir(), `${OUTPUT_FILENAME}-${commandId}.json`);
-}
-
-
 /**
  * Get a filepath where a temp python file can be saved
  * @param commandId: The command ID will be appended to the filename
@@ -67,7 +58,6 @@ function getTempPythonExecFilepath(commandId: string) {
 async function cleanUpTempFiles(commandId: string) {
     const filepaths = [
         getTempPythonExecFilepath(commandId),
-        getOutputFilepath(commandId)
     ];
 
     for (const filepath of filepaths) {
@@ -75,19 +65,6 @@ async function cleanUpTempFiles(commandId: string) {
             fs.unlinkSync(filepath);
         }
     }
-}
-
-/** 
- * Read the output file, written by the 'vscode_execute.py' python module 
- * @param commandId: The ID of which response to read
- */
-function readResponse(commandId: string) : Array<Array<string>> {
-    const outputFilename = getOutputFilepath(commandId);
-    if (fs.existsSync(outputFilename)) {
-        // Use slice to remove the last '\n' always added
-        return JSON.parse(fs.readFileSync(outputFilename).toString("utf8"));
-    }
-    return [];
 }
 
 
@@ -100,38 +77,25 @@ function readResponse(commandId: string) : Array<Array<string>> {
  * Because 'vscode_execute.py' re-directs all of the output through a .txt file, `message` will be empty,
  * instead use `readResponse` to fetch the output. 
  * */
-function handleResponse(message: RemoteExecutionMessage, commandId: string) {
+function handleResponse(message: IRemoteExecutionMessageCommandOutputData, commandId: string) {
     // If user is debugging MB, all output will automatically be appended to the debug console
     if (utils.isDebuggingUnreal()) {
         return;
     }
-
-    // Read the output message
-    const parsedOutput = readResponse(commandId);
-    // Construct the output message
-    let outputMessage = "";
-    for (const line of parsedOutput) {
-        if (line[0] === "\n") {
-            continue;
-        }
-
-        // TODO: Handle different types found in `line[1]` with colors
-        outputMessage += `${line[0]}\n`;
-    }
-
-    outputMessage += ">>>"; // Add >>> to indicate that the command has finished
-
     const outputChannel = getOutputChannel();
-    if (outputChannel) {
-        // Add the message to the output channel
-        outputChannel.appendLine(outputMessage);
-
-        // Bring up the output channel on screen
-        if (utils.getExtensionConfig().get("execute.showOutput")) {
-            outputChannel.show(true);
-        }
+    if (!outputChannel) {
+        return;
     }
 
+    for (const output of message.output) {
+        outputChannel.appendLine(output.output.trimEnd());
+    }
+
+    outputChannel.appendLine(">>>");
+
+    if (utils.getExtensionConfig().get("execute.showOutput")) {
+        outputChannel.show(true);
+    }
 
     // Cleanup all temp that were written by this command
     cleanUpTempFiles(commandId);
@@ -179,5 +143,8 @@ export async function main() {
     const globalVariables = { "vscode_globals": JSON.stringify(vscodeData) };  // eslint-disable-line @typescript-eslint/naming-convention
 
     const execFile = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.executeEntry);
-    remoteHandler.executeFile(execFile, globalVariables, (message: RemoteExecutionMessage) => { handleResponse(message, commandId); });
+    const response = await remoteHandler.executeFile(execFile, globalVariables);
+    if (response) {
+        handleResponse(response, commandId);
+    }
 }

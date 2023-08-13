@@ -8,7 +8,7 @@ import * as remoteHandler from '../modules/remote-handler';
 import * as utils from '../modules/utils';
 
 
-import { RemoteExecutionMessage, FCommandOutputType } from "../modules/remote-execution";
+import { ECommandOutputType } from "unreal-remote-execution";
 
 enum EInOutCommands {
     getTableOfContents = "getTableOfContents",
@@ -29,6 +29,7 @@ enum EInCommands {
 enum EConfigFiles {
     dropDownAreaStates = "documentation_dropDownArea_states.json"
 }
+
 
 /**
  * Open the documentation in a new tab
@@ -64,52 +65,48 @@ export function openDocumentationWindow(extensionUri: vscode.Uri) {
 /**
  *  
  */
-function buildDocumentationTableOfContents(filepath: string): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-        const buildDocumentationTocScirpt = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.buildDocumentationToC);
+async function buildDocumentationTableOfContents(filepath: string): Promise<boolean> {
+    const buildDocumentationTocScirpt = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.buildDocumentationToC);
 
-        const globals = {
-            "outFilepath": filepath
-        };
+    const globals = {
+        "outFilepath": filepath
+    };
 
-        remoteHandler.executeFile(buildDocumentationTocScirpt, globals, (message: RemoteExecutionMessage) => {
-            const outputs = message.getCommandResultOutput();
-            for (let output of outputs.reverse()) {
-                if (output.type === FCommandOutputType.info) {
-                    resolve(output.output.toLowerCase() === "true");
-                    return;
-                }
+    const response = await remoteHandler.executeFile(buildDocumentationTocScirpt, globals);
+    if (response) {
+        for (let output of response.output.reverse()) {
+            if (output.type === ECommandOutputType.INFO) {
+                return output.output.trim().toLowerCase() === "true";
             }
+        }
 
-            resolve(false);
-        });
-    });
+    }
+
+    return false;
 }
+
 
 /**
  *  
  */
-function buildPageContent(filepath: string, module: string): Promise<boolean> {
-    return new Promise((resolve, reject) => {
-        const getDocPageContentScirpt = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.getDocPageContent);
+async function buildPageContent(filepath: string, module: string): Promise<boolean> {
+    const getDocPageContentScirpt = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.getDocPageContent);
 
-        const globals = {
-            "object": module,
-            "outFilepath": filepath
-        };
+    const globals = {
+        "object": module,
+        "outFilepath": filepath
+    };
 
-        remoteHandler.executeFile(getDocPageContentScirpt, globals, (message: RemoteExecutionMessage) => {
-            const outputs = message.getCommandResultOutput();
-            for (let output of outputs.reverse()) {
-                if (output.type === FCommandOutputType.info) {
-                    resolve(output.output.toLowerCase() === "true");
-                    return;
-                }
+    const response = await remoteHandler.executeFile(getDocPageContentScirpt, globals);
+    if (response) {
+        for (let output of response.output.reverse()) {
+            if (output.type === ECommandOutputType.INFO) {
+                return output.output.trim().toLowerCase() === "true";
             }
+        }
+    }
 
-            resolve(false);
-        });
-    });
+    return false;
 }
 
 

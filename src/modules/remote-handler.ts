@@ -4,11 +4,12 @@
 
 import * as vscode from 'vscode';
 
-import * as remoteExecution from "./remote-execution";
+import { RemoteExecution, RemoteExecutionConfig } from "unreal-remote-execution";
+
 import * as extensionWiki from "./extension-wiki";
 import * as utils from "./utils";
 
-let gRemoteConnection: remoteExecution.RemoteConnection | null = null;
+let gCachedRemoteExecution: RemoteExecution | null = null;
 
 
 /**
@@ -18,11 +19,23 @@ function getRemoteConfig() {
     const extensionConfig = utils.getExtensionConfig();
 
     const multicastTTL: number | undefined = extensionConfig.get("remote.multicastTTL");
-    const multicastGroupEndpoint: string | undefined = extensionConfig.get("remote.multicastGroupEndpoint");
     const multicastBindAddress: string | undefined = extensionConfig.get("remote.multicastBindAddress");
-    const commandEndpoint: string | undefined = extensionConfig.get("remote.commandEndpoint");
 
-    return new remoteExecution.RemoteExecutionConfig(multicastTTL, multicastGroupEndpoint, multicastBindAddress, commandEndpoint);
+    let multicastGroupEndpoint: [string, number] | undefined = undefined;
+    const multicastGroupEndpointStr: string | undefined = extensionConfig.get("remote.multicastGroupEndpoint");
+    if (multicastGroupEndpointStr) {
+        const [multicastGroupStr, portStr] = multicastGroupEndpointStr.split(":", 2);
+        multicastGroupEndpoint = [multicastGroupStr, Number(portStr)];
+    }
+
+    let commandEndpoint: [string, number] | undefined = undefined;
+    const commandEndpointStr: string | undefined = extensionConfig.get("remote.commandEndpoint");
+    if (commandEndpointStr) {
+        const [commandHost, commandPortStr] = commandEndpointStr.split(":", 2);
+        commandEndpoint = [commandHost, Number(commandPortStr)];
+    }
+
+    return new RemoteExecutionConfig(multicastTTL, multicastGroupEndpoint, multicastBindAddress, commandEndpoint);
 }
 
 
@@ -31,7 +44,7 @@ function getRemoteConfig() {
  * @param config The remote execution config
  * @returns A list with 2 elements, the first one is a boolean depending on if a free port was found/assigned to the config. Second element is a error message.
  */
-async function ensureCommandPortAvaliable(config: remoteExecution.RemoteExecutionConfig): Promise<[boolean, string]> {
+async function ensureCommandPortAvaliable(config: RemoteExecutionConfig): Promise<boolean> {
     const extensionConfig = utils.getExtensionConfig();
 
     const host = config.commandEndpoint[0];
@@ -40,14 +53,16 @@ async function ensureCommandPortAvaliable(config: remoteExecution.RemoteExecutio
     // Check if user has enabled 'strictPort' 
     if (extensionConfig.get("strictPort")) {
         if (!await utils.isPortAvailable(commandEndpointPort, host)) {
-            return [false, `Port ${commandEndpointPort} is currently busy.  Consider changing the config: 'ue-python.remote.commandEndpoint'.`];
+            vscode.window.showErrorMessage(`Port ${commandEndpointPort} is currently busy. Consider changing the config: 'ue-python.remote.commandEndpoint'.`);
+            return false;
         }
     }
     else {
         // Check the next 100 ports, one should hopefully be free
         const freePort = await utils.findFreePort(commandEndpointPort, 101, host);
         if (!freePort) {
-            return [false, `All ports between ${commandEndpointPort} - ${commandEndpointPort + 100} are busy. Consider changing the config: 'ue-python.remote.commandEndpoint'.`];
+            vscode.window.showErrorMessage(`All ports between ${commandEndpointPort} - ${commandEndpointPort + 100} are busy. Consider changing the config: 'ue-python.remote.commandEndpoint'.`);
+            return false;
         }
 
         // If the first found free port wasn't the original port, update it
@@ -56,7 +71,7 @@ async function ensureCommandPortAvaliable(config: remoteExecution.RemoteExecutio
         }
     }
 
-    return [true, ""];
+    return true;
 }
 
 
@@ -64,20 +79,39 @@ async function ensureCommandPortAvaliable(config: remoteExecution.RemoteExecutio
  * Get the global remote connection instance
  * @param bEnsureConnection If a connection doesn't exists yet, create one.
  */
-export async function getRemoteConnection(bEnsureConnection = true) {
-    if (!gRemoteConnection && bEnsureConnection) {
-        const config = getRemoteConfig();
-
-        // Make sure the config has a port that isn't taken by something else
-        const response = await ensureCommandPortAvaliable(config);
-        if (response[0]) {
-            gRemoteConnection = new remoteExecution.RemoteConnection(config);
-        } else {
-            vscode.window.showErrorMessage(response[1]);
+export async function getRemoteExecutionInstance(bEnsureConnection = true, timeout = 3000) {
+    if (bEnsureConnection) {
+        if (!gCachedRemoteExecution) {
+            const config = getRemoteConfig();
+            gCachedRemoteExecution = new RemoteExecution(config);
+            await gCachedRemoteExecution.start();
         }
+
+        if (!gCachedRemoteExecution.hasCommandConnection()) {
+            const config = getRemoteConfig();
+            if (await ensureCommandPortAvaliable(config)) {
+                try {
+                    await gCachedRemoteExecution.getFirstRemoteNode(timeout);
+                } catch (error: any) {
+                    console.log(error);
+
+                    const clickedItem = await vscode.window.showErrorMessage(error.message, "Help");
+                    if (clickedItem === "Help") {
+                        extensionWiki.openPageInBrowser(extensionWiki.FPages.failedToConnect);
+                    }
+                    // vscode.window.showErrorMessage(error.message);
+                    return null;
+                }
+
+                const node = await gCachedRemoteExecution.getFirstRemoteNode(timeout);
+                await gCachedRemoteExecution.openCommandConnection(node);
+            }
+
+        }
+        // Make sure the config has a port that isn't taken by something else
     }
 
-    return gRemoteConnection;
+    return gCachedRemoteExecution;
 }
 
 
@@ -86,35 +120,13 @@ export async function getRemoteConnection(bEnsureConnection = true) {
  * @param command The python code as a string
  * @param callback The function to call with the response from Unreal
  */
-export async function sendCommand(command: string, callback?: (message: remoteExecution.RemoteExecutionMessage) => void) {
-    const remoteConnection = await getRemoteConnection();
-    if (!remoteConnection) {
+export async function runCommand(command: string) {
+    const remoteExec = await getRemoteExecutionInstance();
+    if (!remoteExec) {
         return;
     }
 
-    // Check if we have at least once requested to start a remote connection
-    if (remoteConnection.hasStartBeenRequested()) {
-        remoteConnection.runCommand(command, callback);
-    }
-    else {
-        // Run the start command with a timeout
-        const timeout: number | undefined = utils.getExtensionConfig().get("remote.timeout");
-
-        remoteConnection.start(async error => {
-            if (error) {
-                const clickedItem = await vscode.window.showErrorMessage(error.message, "Help");
-                if (clickedItem === "Help") {
-                    extensionWiki.openPageInBrowser(extensionWiki.FPages.failedToConnect);
-                }
-            }
-            else {
-                // If no error was provided the server should've started successfully
-                remoteConnection.runCommand(command, callback);
-            }
-
-        }, timeout);
-    }
-
+    return remoteExec.runCommand(command);
 }
 
 
@@ -124,7 +136,7 @@ export async function sendCommand(command: string, callback?: (message: remoteEx
  * @param variables Optional dict with global variables to set before executing the file
  * @param callback Function to call with the response from Unreal
  */
-export function executeFile(filepath: string, variables = {}, callback?: (message: remoteExecution.RemoteExecutionMessage) => void) {
+export function executeFile(filepath: string, variables = {}) {
     // Construct a string with all of the global variables, e.g: "x=1;y='Hello';"
     let variableString = `__file__=r'${filepath}';`;
 
@@ -140,7 +152,7 @@ export function executeFile(filepath: string, variables = {}, callback?: (messag
 
     // Put together one line of code for settings the global variables, then opening, reading & executing the given filepath
     const command = `${variableString}f=open(r'${filepath}','r');exec(f.read());f.close()`;
-    sendCommand(command, callback);
+    return runCommand(command);
 }
 
 
@@ -148,9 +160,9 @@ export function executeFile(filepath: string, variables = {}, callback?: (messag
  * Close the global remote connection, if there is one
  * @param callback Function to call once connection has fully closed
  */
-export async function closeRemoteConnection(callback?: (error?: Error) => void) {
-    const remoteConnection = await getRemoteConnection(false);
+export async function closeRemoteConnection() {
+    const remoteConnection = await getRemoteExecutionInstance(false);
     if (remoteConnection) {
-        remoteConnection.stop(callback);
+        remoteConnection.stop();
     }
 }

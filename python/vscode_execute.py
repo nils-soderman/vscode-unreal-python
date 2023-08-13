@@ -23,57 +23,57 @@ OUTPUT_FILENAME = "exec-out"
 DATA_FILEPATH_GLOBAL_VAR_NAME = "data_filepath"
 
 
-class CustomStdoutRedirection(StringIO):
-    def __init__(self, function: Callable) -> None:
-        super().__init__()
+# class CustomStdoutRedirection(StringIO):
+#     def __init__(self, function: Callable) -> None:
+#         super().__init__()
 
-        self.function = function
+#         self.function = function
 
-    def write(self, __s: str) -> int:
-        self.function(__s)
-        return super().write(__s)
+#     def write(self, __s: str) -> int:
+#         self.function(__s)
+#         return super().write(__s)
 
 
-class UnrealLogRedirect:
-    def __init__(self, output_filepath: str | None = None):
-        self.output_filepath = output_filepath
+# class UnrealLogRedirect:
+#     def __init__(self, output_filepath: str | None = None):
+#         self.output_filepath = output_filepath
 
-        self.output = []
+#         self.output = []
 
-        self.original_stdout = sys.stdout
+#         self.original_stdout = sys.stdout
 
-        self.original_log = unreal.log
-        self.original_log_error = unreal.log_error
-        self.original_log_warning = unreal.log_warning
+#         self.original_log = unreal.log
+#         self.original_log_error = unreal.log_error
+#         self.original_log_warning = unreal.log_warning
 
-    def redirect(self, msg: str):
-        self.output.append((msg, "log"))
-        self.original_log(msg)
+#     def redirect(self, msg: str):
+#         self.output.append((msg, "log"))
+#         self.original_log(msg)
 
-    def redirect_error(self, msg: str):
-        self.output.append((msg, "error"))
-        self.original_log_error(msg)
+#     def redirect_error(self, msg: str):
+#         self.output.append((msg, "error"))
+#         self.original_log_error(msg)
 
-    def redirect_warning(self, msg: str):
-        self.output.append((msg, "warning"))
-        self.original_log_warning(msg)
+#     def redirect_warning(self, msg: str):
+#         self.output.append((msg, "warning"))
+#         self.original_log_warning(msg)
 
-    def __enter__(self):
-        sys.stdout = CustomStdoutRedirection(self.redirect)
+#     def __enter__(self):
+#         sys.stdout = CustomStdoutRedirection(self.redirect)
 
-        unreal.log = self.redirect
-        unreal.log_error = self.redirect_error
-        unreal.log_warning = self.redirect_warning
+#         unreal.log = self.redirect
+#         unreal.log_error = self.redirect_error
+#         unreal.log_warning = self.redirect_warning
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        unreal.log = self.original_log
-        unreal.log_error = self.original_log_error
-        unreal.log_warning = self.original_log_warning
+#     def __exit__(self, exc_type, exc_val, exc_tb):
+#         unreal.log = self.original_log
+#         unreal.log_error = self.original_log_error
+#         unreal.log_warning = self.original_log_warning
 
-        sys.stdout = self.original_stdout
+#         sys.stdout = self.original_stdout
 
-        with open(self.output_filepath, 'w', encoding="utf-8") as f:
-            json.dump(self.output, f)
+#         with open(self.output_filepath, 'w', encoding="utf-8") as f:
+#             json.dump(self.output, f)
 
 
 class UnrealLogRedirectDebugging:
@@ -152,8 +152,8 @@ def main(exec_file: str, exec_origin: str, command_id: str, is_debugging: bool, 
     with open(exec_file, 'r', encoding="utf-8") as vscode_in_file:
         if not is_debugging:
             # Re-direct the output through a text file
-            with UnrealLogRedirect(output_filepath):
-                execute_code(vscode_in_file.read(), exec_origin, is_debugging)
+            # with UnrealLogRedirect(output_filepath):
+            execute_code(vscode_in_file.read(), exec_origin, is_debugging)
         else:
             with UnrealLogRedirectDebugging():
                 execute_code(vscode_in_file.read(), exec_origin, is_debugging)

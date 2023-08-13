@@ -11,7 +11,7 @@ import * as remoteHandler from '../modules/remote-handler';
 import * as extensionWiki from '../modules/extension-wiki';
 import * as utils from '../modules/utils';
 
-import { RemoteExecutionMessage, FCommandOutputType } from "../modules/remote-execution";
+import { ECommandOutputType } from "unreal-remote-execution";
 
 const STUB_FILE_NAME = "unreal.py";
 
@@ -31,21 +31,20 @@ function getPythonConfig() {
 
 /**
  * Get the path to the directory where the 'unreal.py' stubfile is generated.
- * The path will be for the currently opened Unreal project, as it'll use remote execution to find out
- * @param callback The function to call when the Unreal python sever has responded with a path
+ * The path will be for the currently connected Unreal project
  */
-function getUnrealStubDirectory(callback: (path?: string) => void) {
+async function getUnrealStubDirectory() {
     const getPythonPathScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.codeCompletionGetPath);
-    remoteHandler.executeFile(getPythonPathScript, {}, (message: RemoteExecutionMessage) => {
-        const outputs = message.getCommandResultOutput();
-        for (let output of outputs) {
-            if (output.type === FCommandOutputType.info) {
-                callback(output.output);
-                return;
+    const response = await remoteHandler.executeFile(getPythonPathScript, {});
+    if (response) {
+        for (const output of response.output) {
+            if (output.type === ECommandOutputType.INFO) {
+                return output.output.trim();
             }
         }
-        callback();
-    });
+    }
+
+    return null;
 }
 
 
@@ -64,7 +63,7 @@ function addPythonAnalysisPath(pathToAdd: string) {
 
     if (extraPaths) {
         const pathsToRemove: string[] = [];
-        
+
         for (const extraPath of extraPaths) {
             // Make sure the path doesn't already exist
             if (utils.isPathsSame(extraPath, pathToAdd)) {
@@ -96,7 +95,7 @@ function addPythonAnalysisPath(pathToAdd: string) {
 async function validateStubAndAddToPath(stubDirectoryPath: string) {
     // Check if a generated stub file exists
     const stubFilepath = path.join(stubDirectoryPath, STUB_FILE_NAME);
-    
+
     if (fs.existsSync(stubFilepath)) {
         addPythonAnalysisPath(stubDirectoryPath);
     }
@@ -110,34 +109,33 @@ async function validateStubAndAddToPath(stubDirectoryPath: string) {
 }
 
 
-export function main() {
-    getUnrealStubDirectory(async stubDirectoryPath => {
-        if (stubDirectoryPath) {
-            validateStubAndAddToPath(stubDirectoryPath);
-        }
-        else {
-            // Failed to get the path, ask user to manually browse to the UE project
-            const selectedItem = await vscode.window.showErrorMessage(
-                "Failed to automatically get the path to current Unreal Engine project",
-                "Browse"
-            );
+export async function main() {
+    const stubDirectoryPath = await getUnrealStubDirectory();
+    if (stubDirectoryPath) {
+        validateStubAndAddToPath(stubDirectoryPath);
+    }
+    else {
+        // Failed to get the path, ask user to manually browse to the UE project
+        const selectedItem = await vscode.window.showErrorMessage(
+            "Failed to automatically get the path to current Unreal Engine project",
+            "Browse"
+        );
 
-            if (selectedItem === "Browse") {
-                // Show a file browser dialog, asking the user to select a '.uproject' file
-                const selectedFiles = await vscode.window.showOpenDialog({
-                    "filters": {"Unreal Projects": ["uproject"]},  // eslint-disable-line @typescript-eslint/naming-convention
-                    "canSelectMany": false,
-                    "title": "Browse to the Unreal Engine project .uproject file",
-                    "openLabel": "Select project"
-                });
+        if (selectedItem === "Browse") {
+            // Show a file browser dialog, asking the user to select a '.uproject' file
+            const selectedFiles = await vscode.window.showOpenDialog({
+                "filters": { "Unreal Projects": ["uproject"] },  // eslint-disable-line @typescript-eslint/naming-convention
+                "canSelectMany": false,
+                "title": "Browse to the Unreal Engine project .uproject file",
+                "openLabel": "Select project"
+            });
 
-                if (selectedFiles) {
-                    // `selectedFiles[0]` should now be the .uproject file that the user whish to setup code completion for
-                    const projectDirectory = path.dirname(selectedFiles[0].fsPath);
-                    const projectStubDirectoryPath = path.join(projectDirectory, "Intermediate", "PythonStub");
-                    validateStubAndAddToPath(projectStubDirectoryPath);
-                }
+            if (selectedFiles) {
+                // `selectedFiles[0]` should now be the .uproject file that the user whish to setup code completion for
+                const projectDirectory = path.dirname(selectedFiles[0].fsPath);
+                const projectStubDirectoryPath = path.join(projectDirectory, "Intermediate", "PythonStub");
+                validateStubAndAddToPath(projectStubDirectoryPath);
             }
         }
-    });
+    }
 }
