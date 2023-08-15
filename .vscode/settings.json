@@ -9,7 +9,8 @@
         "**/__pycache__": true,
         "**/**.pyc": true,
         "*.code-workspace": true,
-        "webview-ui/": true // This folder is added as a seperate workspace folder in vscode-unreal-python.code-workspace
+        "webview-ui/": true, // This folder is added as a seperate workspace folder in vscode-unreal-python.code-workspace
+        "test": true
     },
 
     "search.exclude": {

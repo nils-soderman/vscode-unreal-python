@@ -4,7 +4,6 @@
 
 **/__pycache__
 **/**.pyc
-test.py
 
 .yarnrc
 .pylintrc
@@ -19,6 +18,7 @@ build-scripts
 builds/**
 media/demo/**
 src/**
+test/**
 
 webview-ui/src/**
 webview-ui/public/**

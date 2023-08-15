@@ -4,4 +4,3 @@ src/test
 **/__pycache__
 **/**.vsix
 builds/**
-test**
