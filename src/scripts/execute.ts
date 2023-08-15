@@ -80,6 +80,7 @@ async function cleanUpTempFiles(commandId: string) {
 function handleResponse(message: IRemoteExecutionMessageCommandOutputData, commandId: string) {
     // If user is debugging MB, all output will automatically be appended to the debug console
     if (utils.isDebuggingUnreal()) {
+        vscode.debug.activeDebugConsole.appendLine(">>>");
         return;
     }
     const outputChannel = getOutputChannel();
