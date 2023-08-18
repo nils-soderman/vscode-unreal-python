@@ -91,7 +91,8 @@ export async function getRemoteExecutionInstance(bEnsureConnection = true, timeo
             const config = getRemoteConfig();
             if (await ensureCommandPortAvaliable(config)) {
                 try {
-                    await gCachedRemoteExecution.getFirstRemoteNode(timeout);
+                    const node = await gCachedRemoteExecution.getFirstRemoteNode(timeout);
+                    await gCachedRemoteExecution.openCommandConnection(node);
                 } catch (error: any) {
                     console.log(error);
 
@@ -102,9 +103,6 @@ export async function getRemoteExecutionInstance(bEnsureConnection = true, timeo
                     // vscode.window.showErrorMessage(error.message);
                     return null;
                 }
-
-                const node = await gCachedRemoteExecution.getFirstRemoteNode(timeout);
-                await gCachedRemoteExecution.openCommandConnection(node);
             }
 
         }
