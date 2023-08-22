@@ -41,6 +41,11 @@
         "category": "Unreal Python",
         "title": "Open Documentation",
         "command": "ue-python.openDocumentation"
+      },
+      {
+        "category": "Unreal Python",
+        "title": "Select Instance",
+        "command": "ue-python.selectInstance"
       }
     ],
     "keybindings": [
@@ -136,7 +141,16 @@
           }
         }
       }
-    ]
+    ],
+    "icons": {
+      "unreal-engine": {
+        "description": "Unreal Engine Icon",
+        "default": {
+          "fontPath": "media/icon-font/ue-icon-font.woff2",
+          "fontCharacter": "\\E800"
+        }
+      }
+    }
   },
   "galleryBanner": {
     "color": "#0f0f0f",

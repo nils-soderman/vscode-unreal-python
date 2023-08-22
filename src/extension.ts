@@ -6,6 +6,7 @@ import * as utils from './modules/utils';
 import * as setupCodeCompletion from './scripts/setup-code-completion';
 import * as execute from './scripts/execute';
 import * as attach from './scripts/attach';
+import * as selectInstance from './scripts/select-instance';
 import { openDocumentationWindow } from './views/documentation-pannel';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -44,6 +45,12 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	context.subscriptions.push(
+		vscode.commands.registerCommand('ue-python.selectInstance', () => {
+			selectInstance.main();
+		})
+	);
+
 }
 
 
@@ -53,4 +60,6 @@ export function deactivate() {
 
 	// Close command connection
 	remoteHandler.closeRemoteConnection();
+
+	remoteHandler.removeStatusBarItem();
 }

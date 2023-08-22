@@ -17,6 +17,7 @@
 build-scripts
 builds/**
 media/demo/**
+media/icon-font/*.svg
 src/**
 test/**
 
