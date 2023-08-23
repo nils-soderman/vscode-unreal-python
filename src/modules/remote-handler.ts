@@ -4,7 +4,7 @@
 
 import * as vscode from 'vscode';
 
-import { RemoteExecution, RemoteExecutionConfig } from "unreal-remote-execution";
+import { RemoteExecution, RemoteExecutionConfig, RemoteExecutionNode } from "unreal-remote-execution";
 
 import * as extensionWiki from "./extension-wiki";
 import * as utils from "./utils";
@@ -33,7 +33,7 @@ export function removeStatusBarItem() {
 }
 
 
-export function updateStatusBar(node: any) {
+export function updateStatusBar(node: RemoteExecutionNode) {
     const statusBarItem = getStatusBarItem();
     if (statusBarItem) {
         statusBarItem.text = `$(unreal-engine) ${node.data.project_name}`;
@@ -107,43 +107,50 @@ async function ensureCommandPortAvaliable(config: RemoteExecutionConfig): Promis
 
 /**
  * Get the global remote connection instance
- * @param bEnsureConnection If a connection doesn't exists yet, create one.
+ * @param bEnsureConnection Make sure the remote execution instance exists, if not it'll create one.
  */
-export async function getRemoteExecutionInstance(bEnsureConnection = true) {
-    if (bEnsureConnection) {
-        if (!gCachedRemoteExecution) {
-            const config = getRemoteConfig();
-            gCachedRemoteExecution = new RemoteExecution(config);
-            gCachedRemoteExecution.events.addEventListener("commandConnectionClosed", onRemoteConnectionClosed);
-            await gCachedRemoteExecution.start();
-        }
+export async function getRemoteExecutionInstance(bEnsureExists?: true): Promise<RemoteExecution>;
+export async function getRemoteExecutionInstance(bEnsureExists?: false): Promise<RemoteExecution | null>;
 
-        if (!gCachedRemoteExecution.hasCommandConnection()) {
-            const config = getRemoteConfig();
-            if (await ensureCommandPortAvaliable(config)) {
-                const extensionConfig = utils.getExtensionConfig();
-                const timeout: number = extensionConfig.get("remote.timeout") ?? 3000;
-                try {
-                    const node = await gCachedRemoteExecution.getFirstRemoteNode(timeout);
-                    await gCachedRemoteExecution.openCommandConnection(node);
-
-                    updateStatusBar(node);
-                }
-                catch (error: any) {
-                    const clickedItem = await vscode.window.showErrorMessage(error.message, "Help");
-                    if (clickedItem === "Help") {
-                        extensionWiki.openPageInBrowser(extensionWiki.FPages.failedToConnect);
-                    }
-                    // vscode.window.showErrorMessage(error.message);
-                    return null;
-                }
-            }
-
-        }
-        // Make sure the config has a port that isn't taken by something else
+export async function getRemoteExecutionInstance(bEnsureExists = true) {
+    if (!gCachedRemoteExecution && bEnsureExists) {
+        const config = getRemoteConfig();
+        gCachedRemoteExecution = new RemoteExecution(config);
+        gCachedRemoteExecution.events.addEventListener("commandConnectionClosed", onRemoteConnectionClosed);
+        await gCachedRemoteExecution.start();
     }
 
     return gCachedRemoteExecution;
+}
+
+
+export async function getConnectedRemoteExecutionInstance() {
+    const remoteExecution = await getRemoteExecutionInstance();
+
+    if (!remoteExecution.hasCommandConnection()) {
+        const config = getRemoteConfig();
+        if (await ensureCommandPortAvaliable(config)) {
+            const extensionConfig = utils.getExtensionConfig();
+            const timeout: number = extensionConfig.get("remote.timeout") ?? 3000;
+            try {
+                const node = await remoteExecution.getFirstRemoteNode(timeout);
+                await remoteExecution.openCommandConnection(node);
+
+                updateStatusBar(node);
+            }
+            catch (error: any) {
+                const clickedItem = await vscode.window.showErrorMessage(error.message, "Help");
+                if (clickedItem === "Help") {
+                    extensionWiki.openPageInBrowser(extensionWiki.FPages.failedToConnect);
+                }
+
+                return null;
+            }
+        }
+
+    }
+
+    return remoteExecution;
 }
 
 
@@ -158,10 +165,9 @@ async function onRemoteConnectionClosed() {
 /**
  * Send a command to the remote connection
  * @param command The python code as a string
- * @param callback The function to call with the response from Unreal
  */
 export async function runCommand(command: string) {
-    const remoteExec = await getRemoteExecutionInstance();
+    const remoteExec = await getConnectedRemoteExecutionInstance();
     if (!remoteExec) {
         return;
     }
@@ -174,7 +180,6 @@ export async function runCommand(command: string) {
  * Execute a file in Unreal through the remote exection
  * @param filepath Absolute filepath to the python file to execute
  * @param variables Optional dict with global variables to set before executing the file
- * @param callback Function to call with the response from Unreal
  */
 export function executeFile(filepath: string, variables = {}) {
     // Construct a string with all of the global variables, e.g: "x=1;y='Hello';"
@@ -198,11 +203,8 @@ export function executeFile(filepath: string, variables = {}) {
 
 /**
  * Close the global remote connection, if there is one
- * @param callback Function to call once connection has fully closed
  */
 export async function closeRemoteConnection() {
     const remoteConnection = await getRemoteExecutionInstance(false);
-    if (remoteConnection) {
-        remoteConnection.stop();
-    }
+    remoteConnection?.stop();
 }

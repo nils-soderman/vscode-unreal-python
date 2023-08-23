@@ -1,9 +1,8 @@
 import * as vscode from 'vscode';
 
 import * as remoteHandler from '../modules/remote-handler';
-import * as utils from '../modules/utils';
 
-import { ECommandOutputType, RemoteExecutionNode } from "unreal-remote-execution";
+import { RemoteExecutionNode } from "unreal-remote-execution";
 
 
 interface UnrealInstanceQuickPickItem extends vscode.QuickPickItem {
@@ -12,14 +11,12 @@ interface UnrealInstanceQuickPickItem extends vscode.QuickPickItem {
 
 
 export async function main() {
-    const remoteExecution = await remoteHandler.getRemoteExecutionInstance(); // TODO: Don't start a new connection if one is already running
-    if (!remoteExecution) {
-        return;
-    }
+    const remoteExecution = await remoteHandler.getRemoteExecutionInstance();
 
     const quickPick = vscode.window.createQuickPick();
 
-    quickPick.title = "Select an Unreal Engine Instance";
+    // quickPick.title = "Select an Unreal Engine Instance";
+    quickPick.placeholder = "Searching for Unreal Engine instances...";
     quickPick.busy = true;
 
     quickPick.onDidAccept(async () => {
@@ -29,7 +26,10 @@ export async function main() {
             const item = quickPick.selectedItems[0] as UnrealInstanceQuickPickItem;
 
             if (remoteExecution.hasCommandConnection()) {
-                // TODO: Check if we're already connected to this node
+                // Check if we're already connected to this node
+                if (remoteExecution.connectedNode === item.node)
+                    return;
+
                 remoteExecution.closeCommandConnection();
             }
 
@@ -42,7 +42,7 @@ export async function main() {
     });
 
     quickPick.onDidHide(() => {
-        // remoteExecution.stopSearchingForNodes();
+        remoteExecution.stopSearchingForNodes();
         quickPick.dispose();
     });
 
