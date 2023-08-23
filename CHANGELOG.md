@@ -2,9 +2,14 @@
 
 ## [1.0.0] - UNRELEASED
 
+### Added:
+- Added command `ue-python.selectInstance` that allows the user to select which Unreal Engine instance to connect to
+- Added status bar item that shows the currently connected Unreal Engine instance
+
 ### Changed:
 - Output is no longer written to a file, it's instead transferred through the `unreal-remote-exectution` socket
 - [unreal-remote-exectution](https://www.npmjs.com/package/unreal-remote-execution) is now a standalone NodeJS package
+
 
 
 ## [0.2.3] - 2023-06-21
