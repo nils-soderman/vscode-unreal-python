@@ -133,7 +133,7 @@ export async function getConnectedRemoteExecutionInstance() {
             const extensionConfig = utils.getExtensionConfig();
             const timeout: number = extensionConfig.get("remote.timeout") ?? 3000;
             try {
-                const node = await remoteExecution.getFirstRemoteNode(timeout);
+                const node = await remoteExecution.getFirstRemoteNode(1000, timeout);
                 await remoteExecution.openCommandConnection(node);
 
                 updateStatusBar(node);
