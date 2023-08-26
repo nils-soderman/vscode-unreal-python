@@ -11,6 +11,7 @@
 - Output is no longer written to a file, it's instead transferred through the `unreal-remote-exectution` socket
     - [unreal-remote-exectution](https://www.npmjs.com/package/unreal-remote-execution) is now a standalone NodeJS package
 - Catch any errors that occurs during the installation of debugpy and log them to the output
+- The ReadMe now uses WebP animations instead of GIFs
 
 ## [0.2.3] - 2023-06-21
 
