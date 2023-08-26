@@ -2,7 +2,7 @@
 import subprocess
 
 import unreal
-from io import StringIO
+
 
 def install_debugpy(target=""):
     python_exe = unreal.get_interpreter_executable_path()
@@ -12,7 +12,6 @@ def install_debugpy(target=""):
     args = [python_exe, "-m", "pip", "install", "debugpy"]
     if target:
         args.append(f'--target="{target}"')
-
 
     try:
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
