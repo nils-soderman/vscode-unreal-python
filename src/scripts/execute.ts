@@ -13,7 +13,7 @@ import * as utils from '../modules/utils';
 import * as remoteHandler from "../modules/remote-handler";
 import * as vsCodeExec from "../modules/code-exec";
 
-import { IRemoteExecutionMessageCommandOutputData } from "unreal-remote-execution";
+import { IRemoteExecutionMessageCommandOutputData, RemoteExecution } from "unreal-remote-execution";
 
 
 const INPUT_TEMP_PYTHON_FILENAME = "temp_exec";
