@@ -9,7 +9,7 @@
 ### Changed:
 - Output is no longer written to a file, it's instead transferred through the `unreal-remote-exectution` socket
 - [unreal-remote-exectution](https://www.npmjs.com/package/unreal-remote-execution) is now a standalone NodeJS package
-
+- `ue-python.remote.timeout` config is now in milliseconds instead of seconds. To be consistent with other VS Code timeout configs
 
 
 ## [0.2.3] - 2023-06-21
