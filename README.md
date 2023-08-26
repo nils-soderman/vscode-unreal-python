@@ -10,7 +10,7 @@ Editor features to assist when writing Python code for Unreal Engine.
 
 Run code in Unreal Engine directly from within the editor:
 
-![execute code in unreal demo](https://github.com/nils-soderman/vscode-unreal-python/blob/main/media/demo/demo-exec.gif?raw=true)
+![execute code in unreal demo](https://github.com/nils-soderman/vscode-unreal-python/blob/main/media/demo/demo-exec.webp?raw=true)
 
 Command: `Unreal Python: Execute` <br>
 Keyboard Shortcut: <kbd>Ctrl</kbd> + <kbd>Enter</kbd>
@@ -31,7 +31,7 @@ Command: `Unreal Python: Setup code completion`
 ### Debugging
 Attach VS Code to Unreal Engine to debug your scripts, set breakpoints and step through the code.
 
-![debug unreal python scripts demo](https://github.com/nils-soderman/vscode-unreal-python/blob/main/media/demo/demo-attach.gif?raw=true)
+![debug unreal python scripts demo](https://github.com/nils-soderman/vscode-unreal-python/blob/main/media/demo/demo-attach.webp?raw=true)
 
 Command: `Unreal Python: Attach`
 
