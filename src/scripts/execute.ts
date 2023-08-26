@@ -17,21 +17,6 @@ import { IRemoteExecutionMessageCommandOutputData, RemoteExecution } from "unrea
 
 
 const INPUT_TEMP_PYTHON_FILENAME = "temp_exec";
-const OUTPUT_FILENAME = "exec-out";
-
-let gOutputChannel: vscode.OutputChannel | undefined;
-
-
-/**
- * Get the output channel for this extension
- * @param bEnsureChannelExists If channel doesn't exist, create it
- */
-function getOutputChannel(bEnsureChannelExists = true) {
-    if (!gOutputChannel && bEnsureChannelExists) {
-        gOutputChannel = vscode.window.createOutputChannel("UE Python");
-    }
-    return gOutputChannel;
-}
 
 
 // ------------------------------------------------------------------------------------------
@@ -83,7 +68,7 @@ function handleResponse(message: IRemoteExecutionMessageCommandOutputData, comma
         vscode.debug.activeDebugConsole.appendLine(">>>");
         return;
     }
-    const outputChannel = getOutputChannel();
+    const outputChannel = utils.getOutputChannel();
     if (!outputChannel) {
         return;
     }
@@ -122,7 +107,7 @@ export async function main() {
 
     // Clear the output channel if enabled in user settings
     if (extensionConfig.get("execute.clearOutput")) {
-        const outputChannel = getOutputChannel(false);
+        const outputChannel = utils.getOutputChannel(false);
         if (outputChannel) {
             outputChannel.clear();
         }

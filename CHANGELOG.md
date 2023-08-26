@@ -3,14 +3,14 @@
 ## [1.0.0] - UNRELEASED
 
 ### Added:
-- Added command `ue-python.selectInstance` that allows the user to select which Unreal Engine instance to connect to
+- Added command `ue-python.selectInstance` that allows the user to select which Unreal Engine instance to connect to. [#3](https://github.com/nils-soderman/vscode-unreal-python/issues/3)
 - Added status bar item that shows the currently connected Unreal Engine instance
 
 ### Changed:
-- Output is no longer written to a file, it's instead transferred through the `unreal-remote-exectution` socket
-- [unreal-remote-exectution](https://www.npmjs.com/package/unreal-remote-execution) is now a standalone NodeJS package
 - `ue-python.remote.timeout` config is now in milliseconds instead of seconds. To be consistent with other VS Code timeout configs
-
+- Output is no longer written to a file, it's instead transferred through the `unreal-remote-exectution` socket
+    - [unreal-remote-exectution](https://www.npmjs.com/package/unreal-remote-execution) is now a standalone NodeJS package
+- Catch any errors that occurs during the installation of debugpy and log them to the output
 
 ## [0.2.3] - 2023-06-21
 

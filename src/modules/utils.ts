@@ -245,3 +245,21 @@ export async function findFreePort(startPort: number, num: number, host?: string
 
     return null;
 }
+
+
+
+let gOutputChannel: vscode.OutputChannel | undefined;
+
+/**
+ * Get the output channel for this extension
+ * @param bEnsureChannelExists If channel doesn't exist, create it
+ */
+export function getOutputChannel(bEnsureExists?: true): vscode.OutputChannel;
+export function getOutputChannel(bEnsureExists?: false): vscode.OutputChannel | undefined;
+
+export function getOutputChannel(bEnsureChannelExists = true) {
+    if (!gOutputChannel && bEnsureChannelExists) {
+        gOutputChannel = vscode.window.createOutputChannel("UE Python");
+    }
+    return gOutputChannel;
+}

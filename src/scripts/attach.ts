@@ -69,13 +69,34 @@ async function installDebugpy(target = ""): Promise<boolean> {
     const response = await remoteHandler.executeFile(installDebugpyScript, globals);
 
     // We should've recived a response with "True" or "False"
+    let errorMessage = "";
     if (response) {
         for (const output of response.output) {
-            if (output.type === ECommandOutputType.INFO) {
-                return output.output.trim().toLowerCase() === "true";
-            }
+            if (output.type !== ECommandOutputType.INFO)
+                errorMessage += `${output.output}\n`;
+
+            else if (output.output.trim().toLowerCase() === "true")
+                return true;
         }
     }
+
+    if (errorMessage) {
+        const outputChannel = utils.getOutputChannel(true);
+        outputChannel.appendLine(errorMessage);
+        outputChannel.show(true);
+    }
+
+    vscode.window.showErrorMessage(
+        `Failed to install debugpy, consider installing it manually and make sure it's in the sys.path for Unreal Engine.`,
+        "View on pypi.org",
+        "Report Bug",
+    ).then((value) => {
+        if (value === "Report Bug")
+            utils.openUrl("https://github.com/nils-soderman/vscode-unreal-python/issues");
+
+        if (value === "View on pypi.org")
+            utils.openUrl("https://pypi.org/project/debugpy/");
+    });
 
     return false;
 }
@@ -131,20 +152,8 @@ export async function main() {
             "Install"
         );
 
-        if (selectedInstallOption === "Install") {
+        if (selectedInstallOption === "Install")
             bInstalled = await installDebugpy();
-
-            if (!bInstalled) {
-                const selectedErrorOption = await vscode.window.showErrorMessage(
-                    "Failed to install debugpy, please install it manually and make sure it's in the sys.path for Unreal Engine",
-                    "View on pypi.org"
-                );
-
-                if (selectedErrorOption === "View on pypi.org") {
-                    utils.openUrl("https://pypi.org/project/debugpy/");
-                }
-            }
-        }
     }
 
     if (!bInstalled) {
