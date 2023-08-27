@@ -4,6 +4,7 @@
  */
 
 import * as vscode from 'vscode';
+import * as crypto from 'crypto';
 
 import * as remoteHandler from '../modules/remote-handler';
 import * as utils from '../modules/utils';
@@ -63,8 +64,14 @@ async function getCurrentDebugpyPort(): Promise<number | null> {
 async function installDebugpy(target = ""): Promise<boolean> {
     const installDebugpyScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.installDebugPy);
 
+    // Generate a random id that we expect as a response from the python script if the installation was successful
+    const successId = crypto.randomUUID();
+
     // Pass along the target to the python script as a global variable
-    const globals = { "install_dir": target };  // eslint-disable-line @typescript-eslint/naming-convention
+    const globals = {
+        "install_dir": target, // eslint-disable-line @typescript-eslint/naming-convention
+        "success_id": successId  // eslint-disable-line @typescript-eslint/naming-convention
+    };
 
     const response = await remoteHandler.executeFile(installDebugpyScript, globals);
 
@@ -72,11 +79,10 @@ async function installDebugpy(target = ""): Promise<boolean> {
     let errorMessage = "";
     if (response) {
         for (const output of response.output) {
-            if (output.type !== ECommandOutputType.INFO)
-                errorMessage += `${output.output}\n`;
-
-            else if (output.output.trim().toLowerCase() === "true")
+            if (output.output.trim() === successId)
                 return true;
+
+            errorMessage += `${output.output}\n`;
         }
     }
 

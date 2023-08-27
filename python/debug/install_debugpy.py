@@ -17,7 +17,7 @@ def install_debugpy(target=""):
         process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         with process.stdout:
             for line in iter(process.stdout.readline, b""):
-                unreal.log_warning(line.decode("utf-8").strip())
+                unreal.log(line.decode("utf-8").strip())
     except Exception as e:
         unreal.log_error(f"Failed to install debugpy: {e}")
 
@@ -26,17 +26,17 @@ def install_debugpy(target=""):
         import debugpy
     except Exception as e:
         unreal.log_warning(str(e))
-        return False
+        return
 
-    return True
+    return globals().get("success_id")  # The response the extension expects if the installation was successful
 
 
 def main():
     install_dir = globals().get("install_dir")
-    success = install_debugpy(install_dir)
-
-    # Output is read by the VS Code extension
-    print(success)
+    response = install_debugpy(install_dir)
+    if response:
+        # Output is read by the VS Code extension
+        unreal.log(response)
 
 
 main()
