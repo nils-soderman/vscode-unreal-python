@@ -13,6 +13,8 @@ jobs:
             - uses: actions/setup-node@v3
               with:
                   node-version: 16
+            - run: npm ci --prefix webview-ui
+            - run: npm run build --prefix webview-ui
             - run: npm ci
             - name: Publish
               uses: HaaLeo/publish-vscode-extension@v1
