@@ -155,7 +155,6 @@ export async function getConnectedRemoteExecutionInstance() {
 
 
 async function onRemoteConnectionClosed() {
-    console.log("Remote connection closed");
     const remoteExecution = await getRemoteExecutionInstance(false);
     if (!remoteExecution?.hasCommandConnection())
         removeStatusBarItem();
