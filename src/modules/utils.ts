@@ -2,16 +2,35 @@ import * as vscode from 'vscode';
 
 import * as tcpPortUsed from 'tcp-port-used';
 import * as path from 'path';
-import * as open from 'open';
 import * as os from "os";
 import * as fs from 'fs';
 
+import open = require('open');
 
 const DATA_FOLDER_NAME = "VSCode-Unreal-Python";  // Folder name used for Temp & Data directory
 export const DEBUG_SESSION_NAME = "Unreal Python"; // The name of the debug session when debugging Unreal
 
-export const EXTENSION_DIR = path.dirname(path.dirname(__dirname));  // The base directory of where this extension is installed
-export const EXTENSION_PYTHON_DIR = path.join(EXTENSION_DIR, "python");  // The directory where all python scritps provided by this extension can be founnd
+
+let _extensionDir: string | undefined; // Stores the absolute path to this extension's directory, set on activation
+
+/**
+ * This function should only be called once, on activation
+ * @param dir Should be: `ExtensionContext.extensionPath`
+ */
+export function setExtensionDir(dir: string) {
+    _extensionDir = dir;
+}
+
+/**
+ * This function cannot be called in top-level. It must be called after the extension has been activated
+ * @returns The absolute path to this extension's directory
+ */
+export function getExtensionDir() {
+    if (!_extensionDir) {
+        throw Error("Extension Dir hasn't been set yet! This should be set on activation. This function cannot be called in top-level.");
+    }
+    return _extensionDir;
+}
 
 
 /**
@@ -19,8 +38,8 @@ export const EXTENSION_PYTHON_DIR = path.join(EXTENSION_DIR, "python");  // The 
  * All variables & methods are static, this class should not be instantiated.
  */
 export class FPythonScriptFiles {
-    static readonly execute = "vscode_execute";
-    static readonly executeEntry = "vscode_execute_entry";
+    static readonly execute = "execute/vscode_execute";
+    static readonly executeEntry = "execute/vscode_execute_entry";
     static readonly isDebugpyInstalled = "debug/is_debugpy_installed";
     static readonly installDebugPy = "debug/install_debugpy";
     static readonly startDebugServer = "debug/start_debug_server";
@@ -32,7 +51,7 @@ export class FPythonScriptFiles {
 
     /** Get the absolute path to one of the scripts defined in this struct */
     static getAbsPath(file: string) {
-        return path.join(EXTENSION_PYTHON_DIR, `${file}.py`);
+        return path.join(getExtensionDir(), "python", `${file}.py`);
     }
 }
 

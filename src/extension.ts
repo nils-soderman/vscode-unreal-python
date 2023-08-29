@@ -10,7 +10,8 @@ import * as selectInstance from './scripts/select-instance';
 import { openDocumentationWindow } from './views/documentation-pannel';
 
 export function activate(context: vscode.ExtensionContext) {
-
+	// Set the extension directory
+	utils.setExtensionDir(context.extensionPath);
 
 	// Register views
 	// const provider = new SidebarViewProvier(context.extensionUri);
@@ -18,7 +19,6 @@ export function activate(context: vscode.ExtensionContext) {
 	// context.subscriptions.push(
 	// 	vscode.window.registerWebviewViewProvider('ue-python.documentation', provider)
 	// );
-
 
 	// Register commands
 	context.subscriptions.push(

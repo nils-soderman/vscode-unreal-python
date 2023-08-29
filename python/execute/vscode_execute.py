@@ -11,6 +11,8 @@ import sys
 import os
 import re
 
+from contextlib import nullcontext
+
 import unreal
 
 TEMP_FOLDERPATH = os.path.join(tempfile.gettempdir(), "VSCode-Unreal-Python")
@@ -18,7 +20,12 @@ OUTPUT_FILENAME = "exec-out"
 
 DATA_FILEPATH_GLOBAL_VAR_NAME = "data_filepath"
 
+
 class UnrealLogRedirectDebugging:
+    """ 
+    Re-directs the Unreal log functions so that they are printed to python's stdout and can be read by the debugger
+    """
+
     def __init__(self):
         self.logger = logging.getLogger("Unreal")
         self.original_log = unreal.log
@@ -79,7 +86,7 @@ def execute_code(code: str, filename: str):
         unreal.log_error(traceback_message)
 
 
-def main(exec_file: str, exec_origin: str, command_id: str, is_debugging: bool, name_var: str | None = None):
+def main(exec_file: str, exec_origin: str, is_debugging: bool, name_var: str | None = None):
     # Set some global variables
     exec_globals = get_exec_globals()
 
@@ -90,10 +97,5 @@ def main(exec_file: str, exec_origin: str, command_id: str, is_debugging: bool, 
         exec_globals.pop("__name__")
 
     with open(exec_file, 'r', encoding="utf-8") as vscode_in_file:
-        if not is_debugging:
-            # Re-direct the output through a text file
-            # with UnrealLogRedirect(output_filepath):
+        with UnrealLogRedirectDebugging() if is_debugging else nullcontext():
             execute_code(vscode_in_file.read(), exec_origin)
-        else:
-            with UnrealLogRedirectDebugging():
-                execute_code(vscode_in_file.read(), exec_origin)

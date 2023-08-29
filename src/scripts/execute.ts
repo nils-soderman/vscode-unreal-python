@@ -121,7 +121,7 @@ export async function main() {
         "file": fileToExecute,
         "__file__": vscode.window.activeTextEditor.document.uri.fsPath,  // eslint-disable-line @typescript-eslint/naming-convention
         "__name__": nameVar,  // eslint-disable-line @typescript-eslint/naming-convention
-        "id": commandId,
+        // "id": commandId,
         "isDebugging": bIsDebugging
     };
 
