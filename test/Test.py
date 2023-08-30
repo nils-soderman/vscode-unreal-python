@@ -12,3 +12,5 @@ def Error():
     print('Exception:')
     Test = 1/0
 
+Log()
+
