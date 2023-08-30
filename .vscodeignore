@@ -1,6 +1,7 @@
 *.code-workspace
 **/.vscode/**
 **/**.vsix
+.github
 
 **/__pycache__
 **/**.pyc
@@ -20,6 +21,9 @@ media/demo/**
 media/icon-font/*.svg
 src/**
 test/**
+
+node_modules/
+!node_modules/**/[lL][iI][cC][eE][nN][sS][eE]*
 
 webview-ui/src/**
 webview-ui/public/**
