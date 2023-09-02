@@ -5,6 +5,7 @@
 ### Added:
 - Added command `ue-python.selectInstance` that allows the user to select which Unreal Engine instance to connect to. [#3](https://github.com/nils-soderman/vscode-unreal-python/issues/3)
 - Added status bar item that shows the currently connected Unreal Engine instance
+- Added success/error messages when setting up code completion
 
 ### Changed:
 - `ue-python.remote.timeout` config is now in milliseconds instead of seconds. To be consistent with other VS Code timeout configs
@@ -12,7 +13,7 @@
     - [unreal-remote-exectution](https://www.npmjs.com/package/unreal-remote-execution) is now a standalone NodeJS package
 - Catch any errors that occurs during the installation of debugpy and log them to the output
 - The ReadMe now uses WebP animations instead of GIFs
-- esbuild is now used for building the extension. Leading to a smaller extension size and faster activation time
+- esbuild is now used for building the extension. Resulting in a smaller extension size and faster activation time
 
 
 ## [0.2.3] - 2023-06-21

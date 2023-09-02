@@ -18,6 +18,8 @@ const STUB_FILE_NAME = "unreal.py";
 const PYTHON_CONFIG = "python";
 const EXTRA_PATHS_CONFIG = "analysis.extraPaths";
 
+const MS_PYTHON_EXTENSION_ID = "ms-python.python";
+
 const STUB_FILE_RELATIVE_FOLDER = "Intermediate/PythonStub";
 
 
@@ -53,37 +55,40 @@ async function getUnrealStubDirectory() {
  * This function will also remove any current paths that ends w/ 'Intermediate/PythonStub' 
  * to prevent multiple Unreal stub directories beeing added
  * @param pathToAdd The path to add
+ * @returns `true` if the path was added or already existed, `false` if the path could not be added
  */
-function addPythonAnalysisPath(pathToAdd: string) {
+function addPythonAnalysisPath(pathToAdd: string): boolean {
     // Make path use forward slashes, as it looks cleaner in the config file
     pathToAdd = utils.ensureForwardSlashes(pathToAdd);
 
     const pythonConfig = getPythonConfig();
     let extraPaths: Array<string> | undefined = pythonConfig.get(EXTRA_PATHS_CONFIG);
+    if (extraPaths === undefined)
+        return false;
 
-    if (extraPaths) {
-        const pathsToRemove: string[] = [];
+    const pathsToRemove: string[] = [];
 
-        for (const extraPath of extraPaths) {
-            // Make sure the path doesn't already exist
-            if (utils.isPathsSame(extraPath, pathToAdd)) {
-                return;
-            }
-
-            // Check if any other Unreal python paths exists, and if so remove them (if e.g. switching between projects)
-            const comparePath = utils.ensureForwardSlashes(path.resolve(extraPath)).toLowerCase();
-            if (comparePath.endsWith(STUB_FILE_RELATIVE_FOLDER.toLowerCase())) {
-                pathsToRemove.push(extraPath);
-            }
+    for (const extraPath of extraPaths) {
+        // Check if the path already exist
+        if (utils.isPathsSame(extraPath, pathToAdd)) {
+            return true;
         }
 
-        // Remove any additional Unreal stub directories found
-        extraPaths = extraPaths.filter(e => !pathsToRemove.includes(e));
-
-        // Add the path to extraPaths & update the config
-        extraPaths.push(pathToAdd);
-        pythonConfig.update(EXTRA_PATHS_CONFIG, extraPaths, true);
+        // Check if any other Unreal python paths exists, and if so remove them (if e.g. switching between projects)
+        const comparePath = utils.ensureForwardSlashes(path.resolve(extraPath)).toLowerCase();
+        if (comparePath.endsWith(STUB_FILE_RELATIVE_FOLDER.toLowerCase())) {
+            pathsToRemove.push(extraPath);
+        }
     }
+
+    // Remove any additional Unreal stub directories found
+    extraPaths = extraPaths.filter(e => !pathsToRemove.includes(e));
+
+    // Add the path to extraPaths & update the config
+    extraPaths.push(pathToAdd);
+    pythonConfig.update(EXTRA_PATHS_CONFIG, extraPaths, true);
+
+    return true;
 }
 
 
@@ -97,7 +102,18 @@ async function validateStubAndAddToPath(stubDirectoryPath: string) {
     const stubFilepath = path.join(stubDirectoryPath, STUB_FILE_NAME);
 
     if (fs.existsSync(stubFilepath)) {
-        addPythonAnalysisPath(stubDirectoryPath);
+        const configFullId = `${PYTHON_CONFIG}.${EXTRA_PATHS_CONFIG}`;
+
+        if (addPythonAnalysisPath(stubDirectoryPath)) {
+            const clickedItem = await vscode.window.showInformationMessage(`Added "${stubDirectoryPath}" to the '${configFullId}' config`, "Show Setting");
+            if (clickedItem === "Show Setting")
+                vscode.commands.executeCommand("workbench.action.openSettings", configFullId);
+        }
+        else {
+            const clickedItem = await vscode.window.showErrorMessage(`Config '${configFullId}' not found, make sure ${MS_PYTHON_EXTENSION_ID} extension is installed and enabled`, "Show Extension");
+            if (clickedItem === "Show Extension")
+                vscode.commands.executeCommand("workbench.extensions.search", MS_PYTHON_EXTENSION_ID);
+        }
     }
     else {
         // A generated stub file could not be found, ask the user to enable developer mode first
