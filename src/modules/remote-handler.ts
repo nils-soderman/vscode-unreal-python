@@ -9,6 +9,7 @@ import { RemoteExecution, RemoteExecutionConfig, RemoteExecutionNode } from "unr
 import * as extensionWiki from "./extension-wiki";
 import * as utils from "./utils";
 
+let gIsInitializatingConnection = false;
 let gCachedRemoteExecution: RemoteExecution | null = null;
 let gStatusBarItem: vscode.StatusBarItem | null = null;
 
@@ -124,14 +125,33 @@ export async function getRemoteExecutionInstance(bEnsureExists = true) {
 }
 
 
-export async function getConnectedRemoteExecutionInstance() {
+
+/**
+ * Get the global remote connection instance, and make sure it's connected
+ * @returns The remote execution instance, or null if it failed to connect
+ */
+export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecution | null> {
     const remoteExecution = await getRemoteExecutionInstance();
 
     if (!remoteExecution.hasCommandConnection()) {
         const config = getRemoteConfig();
+
+        if (gIsInitializatingConnection) {
+            return new Promise((resolve) => {
+                const interval = setInterval(() => {
+                    if (!gIsInitializatingConnection) {
+                        clearInterval(interval);
+                        resolve(getConnectedRemoteExecutionInstance());
+                    }
+                }, 1000);
+            });
+        }
+        gIsInitializatingConnection = true;
+
         if (await ensureCommandPortAvaliable(config)) {
             const extensionConfig = utils.getExtensionConfig();
             const timeout: number = extensionConfig.get("remote.timeout") ?? 3000;
+
             try {
                 const node = await remoteExecution.getFirstRemoteNode(1000, timeout);
                 await remoteExecution.openCommandConnection(node);
@@ -146,6 +166,13 @@ export async function getConnectedRemoteExecutionInstance() {
 
                 return null;
             }
+            finally {
+                gIsInitializatingConnection = false;
+            }
+        }
+        else {
+            gIsInitializatingConnection = false;
+            return null;
         }
 
     }
