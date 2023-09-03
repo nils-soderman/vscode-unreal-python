@@ -5,6 +5,7 @@
 
 import * as vscode from 'vscode';
 import * as crypto from 'crypto';
+import * as path from 'path';
 
 import * as remoteHandler from '../modules/remote-handler';
 import * as utils from '../modules/utils';
@@ -137,13 +138,15 @@ async function startDebugpyServer(port: number): Promise<boolean> {
  * @param port The port to connect to
  */
 function startVsCodeDebugModeSession(port: number) {
+    const moduleToIgnore = path.basename(utils.FPythonScriptFiles.execute);
+
     vscode.debug.startDebugging(undefined, {
         "name": utils.DEBUG_SESSION_NAME,
         "type": "python",
         "request": "attach",
         "port": port,
         "host": "localhost",
-        "rules": [{ "module": utils.FPythonScriptFiles.execute, "include": false }], // Make sure the execute module isn't debugged
+        "rules": [{ "module": moduleToIgnore, "include": false }], // Make sure the execute module isn't debugged
     });
 }
 
