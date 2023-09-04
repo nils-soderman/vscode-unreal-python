@@ -13,6 +13,9 @@ import * as utils from '../modules/utils';
 import { ECommandOutputType } from "unreal-remote-execution";
 
 
+const DEBUGPY_PYPI_URL = "https://pypi.org/project/debugpy/";
+const REPORT_BUG_URL = "https://github.com/nils-soderman/vscode-unreal-python/issues";
+
 // ------------------------------------------------------------------------------------------
 //                               Installation of debugpy
 // ------------------------------------------------------------------------------------------
@@ -94,15 +97,15 @@ async function installDebugpy(target = ""): Promise<boolean> {
     }
 
     vscode.window.showErrorMessage(
-        `Failed to install debugpy, consider installing it manually and make sure it's in the sys.path for Unreal Engine.`,
+        `Failed to install [debugpy](${DEBUGPY_PYPI_URL}), consider installing it manually and make sure it's in the sys.path for Unreal Engine.`,
         "View on pypi.org",
         "Report Bug",
     ).then((value) => {
         if (value === "Report Bug")
-            utils.openUrl("https://github.com/nils-soderman/vscode-unreal-python/issues");
+            utils.openUrl(REPORT_BUG_URL);
 
         if (value === "View on pypi.org")
-            utils.openUrl("https://pypi.org/project/debugpy/");
+            utils.openUrl(DEBUGPY_PYPI_URL);
     });
 
     return false;
@@ -157,7 +160,7 @@ export async function main() {
     let bInstalled = await isDebugpyInstalled();
     if (!bInstalled) {
         const selectedInstallOption = await vscode.window.showWarningMessage(
-            "Python module 'debugpy' is required for debugging",
+            `Python module [debugpy](${DEBUGPY_PYPI_URL}) is required for debugging`,
             "Install"
         );
 
