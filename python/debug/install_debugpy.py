@@ -28,7 +28,7 @@ def install_debugpy(target=""):
     try:
         import debugpy
     except Exception as e:
-        unreal.log_warning(f"`import debugpy` -> {str(e)}")
+        unreal.log_error(f"`import debugpy` -> {str(e)}")
         return
 
     return globals().get("success_id")  # The response the extension expects if the installation was successful
