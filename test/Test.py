@@ -1,6 +1,7 @@
 import unreal
 
-def Log():
+
+def log():
     print('Hello World')
 
     unreal.log("Logging Info")
@@ -8,9 +9,20 @@ def Log():
     unreal.log_error("Logging Error")
 
 
-def Error():
+def error():
     print('Exception:')
     Test = 1/0
 
-Log()
 
+def non_ascii():
+    print('你好世界')
+
+
+def large_output():
+    engine_content = unreal.EditorAssetLibrary.list_assets('/Engine')
+    for item in engine_content[:1000]:
+        print(item)
+    print('Done.')
+
+
+log()
