@@ -2,7 +2,6 @@
 
 import inspect
 import types
-import time
 import json
 
 import unreal
@@ -129,16 +128,13 @@ def main():
     if not filepath:
         return False
 
-    # start_time = time.perf_counter()
     table_of_contents = UnrealTableOfContents()
     table_of_contents.load()
 
     with open(filepath, "w", encoding="utf-8") as file:
         json.dump(table_of_contents.get_dict(), file)
 
-    # print(f"Took {time.perf_counter() - start_time:.2}s")
-
     return True
 
 
-print(main())
+unreal.log(main())

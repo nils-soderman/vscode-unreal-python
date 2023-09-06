@@ -199,4 +199,4 @@ def main():
     return False
 
 
-print(main())
+unreal.log(main())

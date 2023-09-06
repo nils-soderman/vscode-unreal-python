@@ -1,8 +1,6 @@
 import unreal
 
 import debugpy
-import socket
-import sys
 import os
 
 VSCODE_DEBUG_SERVER_ENV_VAR = "vscode_debugpy_server_port"
@@ -31,4 +29,4 @@ def main():
     return is_server_running
 
 # output is read by the VSCode extension
-print(main())
+unreal.log(main())

@@ -1,5 +1,7 @@
 import sys
 
+import unreal
+
 
 def is_debugpy_installed(extra_sys_path=""):
     try:
@@ -28,6 +30,6 @@ def main():
     installed = is_debugpy_installed(extra_sys_path)
 
     # output is sent back to VS Code
-    print(installed)
+    unreal.log(installed)
 
 main()

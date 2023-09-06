@@ -14,7 +14,7 @@ def get_python_stub_path():
 
 
 def main():
-    print(get_python_stub_path())
+    unreal.log(get_python_stub_path())
 
 
 main()

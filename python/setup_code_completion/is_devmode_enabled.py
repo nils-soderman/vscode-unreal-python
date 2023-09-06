@@ -31,7 +31,7 @@ def is_devmode_enabled():
 
 
 def main():
-    print(is_devmode_enabled())
+    unreal.log(is_devmode_enabled())
 
 
 main()
