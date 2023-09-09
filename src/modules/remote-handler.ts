@@ -110,15 +110,15 @@ async function ensureCommandPortAvaliable(config: RemoteExecutionConfig): Promis
  * Get the global remote connection instance
  * @param bEnsureConnection Make sure the remote execution instance exists, if not it'll create one.
  */
-export async function getRemoteExecutionInstance(bEnsureExists?: true): Promise<RemoteExecution>;
-export async function getRemoteExecutionInstance(bEnsureExists?: false): Promise<RemoteExecution | null>;
-
 export async function getRemoteExecutionInstance(bEnsureExists = true) {
     if (!gCachedRemoteExecution && bEnsureExists) {
         const config = getRemoteConfig();
-        gCachedRemoteExecution = new RemoteExecution(config);
-        gCachedRemoteExecution.events.addEventListener("commandConnectionClosed", onRemoteConnectionClosed);
-        await gCachedRemoteExecution.start();
+        if (await ensureCommandPortAvaliable(config))
+        {
+            gCachedRemoteExecution = new RemoteExecution(config);
+            gCachedRemoteExecution.events.addEventListener("commandConnectionClosed", onRemoteConnectionClosed);
+            await gCachedRemoteExecution.start();
+        }
     }
 
     return gCachedRemoteExecution;
@@ -132,6 +132,8 @@ export async function getRemoteExecutionInstance(bEnsureExists = true) {
  */
 export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecution | null> {
     const remoteExecution = await getRemoteExecutionInstance();
+    if (!remoteExecution)
+        return null;
 
     if (!remoteExecution.hasCommandConnection()) {
         const config = getRemoteConfig();
@@ -154,7 +156,7 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
 
             try {
                 const node = await remoteExecution.getFirstRemoteNode(1000, timeout);
-                await remoteExecution.openCommandConnection(node);
+                await remoteExecution.openCommandConnection(node, true, timeout);
 
                 updateStatusBar(node);
             }
