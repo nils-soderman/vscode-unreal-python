@@ -107,6 +107,18 @@ async function ensureCommandPortAvaliable(config: RemoteExecutionConfig): Promis
 
 
 /**
+ * Get the port the remote execution command connection is using
+ */
+export async function getRemoteExecutionCommandPort() {
+    const remoteExecution = await getRemoteExecutionInstance(false);
+    if (!remoteExecution)
+        return null;
+
+    return remoteExecution.config.commandEndpoint[1];
+}
+
+
+/**
  * Get the global remote connection instance
  * @param bEnsureConnection Make sure the remote execution instance exists, if not it'll create one.
  */

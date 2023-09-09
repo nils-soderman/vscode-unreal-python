@@ -180,8 +180,10 @@ export async function main() {
 
     let attachPort = await getCurrentDebugpyPort();
     if (!attachPort) {
+        const reservedCommandPort = await remoteHandler.getRemoteExecutionCommandPort();
+
         if (config.get("strictPort")) {
-            if (await utils.isPortAvailable(configPort)) {
+            if (await utils.isPortAvailable(configPort) && reservedCommandPort !== configPort) {
                 attachPort = configPort;
             }
             else {
@@ -189,7 +191,8 @@ export async function main() {
             }
         }
         else {
-            attachPort = await utils.findFreePort(configPort, 101);
+            const startPort = reservedCommandPort === configPort ? configPort + 1 : configPort;
+            attachPort = await utils.findFreePort(startPort, 101);
             if (!attachPort) {
                 vscode.window.showErrorMessage(`All ports between ${configPort} -> ${configPort + 100} are busy. Please update the 'config ue-python.debug.port'.`);
             }
