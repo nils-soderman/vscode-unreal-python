@@ -1,6 +1,6 @@
 # Change Log
 
-## [1.0.0] - UNRELEASED
+## [1.0.0] - 2023-09-09
 
 ### Added:
 - Added command `ue-python.selectInstance` that allows the user to select which Unreal Engine instance to connect to. [#3](https://github.com/nils-soderman/vscode-unreal-python/issues/3)
