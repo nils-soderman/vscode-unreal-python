@@ -25,7 +25,7 @@ DEFAULT_DICT_LAYOUT = {
 PROPERTY_DOCSTRING_PATTERN = re.compile(r"\(*.+\):  \[[^\]]+\] [^\)]+[\:]?")
 
 # Regex pattern that matches "abc.X(X) -> X ", where X is any character, used for function docstrings
-FUNCTION_DOCSTRING_PATTERN = re.compile(r"[Xx].+\(*\)\s*->\s*[\w\,]*\s*(or None)?")
+FUNCTION_DOCSTRING_PATTERN = re.compile(r"^[Xx].+\(*\)\s*->\s*[\w\,]*\s*(or None)?")
 
 
 def get_docstring(obj: object, object_name: str):
@@ -94,12 +94,12 @@ def patch_method_name_and_doc(name: str, doc: str):
             name, delimiter, name_hints = name.partition("(")
             name_hints = delimiter + name_hints  # re-append the delimiter
     else:
-        matches = FUNCTION_DOCSTRING_PATTERN.findall(doc)
-        if matches:
-            matching_text: str = matches[0]
+        match = FUNCTION_DOCSTRING_PATTERN.match(doc)
+        if match:
+            matching_text: str = doc[match.start():match.end()]
             _, delimiter, name_hints = matching_text.partition("(")
             name_hints = delimiter + name_hints
-            doc = doc.replace(matching_text, "")
+            doc = doc[match.end():]
 
     return name, name_hints, doc
 
