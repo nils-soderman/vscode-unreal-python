@@ -12,6 +12,8 @@ interface UnrealInstanceQuickPickItem extends vscode.QuickPickItem {
 
 export async function main() {
     const remoteExecution = await remoteHandler.getRemoteExecutionInstance();
+    if (!remoteExecution)
+        return;
 
     const quickPick = vscode.window.createQuickPick();
 
