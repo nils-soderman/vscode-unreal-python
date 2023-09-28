@@ -216,7 +216,9 @@ export async function runCommand(command: string) {
         return;
     }
 
-    return remoteExec.runCommand(command);
+    const bUnattended = utils.getExtensionConfig().get("execute.unattended") ? true : false;
+
+    return remoteExec.runCommand(command, bUnattended);
 }
 
 

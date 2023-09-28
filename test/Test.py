@@ -24,5 +24,8 @@ def large_output():
         print(item)
     print('Done.')
 
+def message_box():
+    result = unreal.EditorDialog().show_message("Title", "Hello World", unreal.AppMsgType.YES_NO_CANCEL, unreal.AppReturnType.YES)
+    print(f"{result = }")
 
 log()

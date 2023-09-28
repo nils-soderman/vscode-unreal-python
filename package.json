@@ -91,6 +91,12 @@
             "default": "__main__",
             "description": "The value for the Python variable `__name__` whenever executing code through VS Code",
             "scope": "resource"
+          },
+          "ue-python.execute.unattended": {
+            "type": "boolean",
+            "default": false,
+            "description": "Will suppress some UI that requires user input, such as message boxes",
+            "scope": "resource"
           }
         }
       },
