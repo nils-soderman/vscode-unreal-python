@@ -3,7 +3,7 @@
   "displayName": "Unreal Engine Python",
   "publisher": "NilsSoderman",
   "description": "Tools to assist when writing Python code for Unreal Engine.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "categories": [
     "Other",
     "Debuggers"
@@ -83,7 +83,7 @@
           "ue-python.execute.clearOutput": {
             "type": "boolean",
             "default": false,
-            "description": "Clear output log each time somethings new is executed.",
+            "description": "Clear output log each time somethings new is executed",
             "scope": "resource"
           },
           "ue-python.execute.name": {
@@ -95,7 +95,7 @@
           "ue-python.execute.unattended": {
             "type": "boolean",
             "default": false,
-            "description": "Will suppress some UI that requires user input, such as message boxes",
+            "description": "Execute code with the `-unattended` flag, suppressing some UI that requires user input, such as message boxes",
             "scope": "resource"
           }
         }
