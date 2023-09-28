@@ -51,8 +51,7 @@
     "keybindings": [
       {
         "command": "ue-python.execute",
-        "key": "ctrl+enter",
-        "when": "config.ue-python.execute.enableShortcut"
+        "key": "ctrl+enter"
       }
     ],
     "configuration": [
@@ -91,12 +90,6 @@
             "type": "string",
             "default": "__main__",
             "description": "The value for the Python variable `__name__` whenever executing code through VS Code",
-            "scope": "resource"
-          },
-          "ue-python.execute.enableShortcut": {
-            "type": "boolean",
-            "default": true,
-            "description": "Enable the `ue-python.execute` shortcut",
             "scope": "resource"
           }
         }
