@@ -1,9 +1,9 @@
 # Change Log
 
-## [1.1.0] - UNRELEASED
+## [1.1.0] - 2023-09-30
 
 ### Added:
-- Config `ue-python.execute.unattended` that allows the user to execute code with the unattended flag [#14](https://github.com/nils-soderman/vscode-unreal-python/issues/14)
+- Config `ue-python.execute.unattended` that allows the user to execute code with the `-unattended` flag [#14](https://github.com/nils-soderman/vscode-unreal-python/issues/14)
 
 ### Changed:
 - Code is no longer executed with the `-unattended` flag by default [#14](https://github.com/nils-soderman/vscode-unreal-python/issues/14)
