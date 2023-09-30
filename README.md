@@ -48,7 +48,7 @@ Command: `Unreal Python: Open Documentation`
 <br>
 
 #### Notes:
-* Commands can be run from VS Code's command palette, `Show All Commands` _(Default shortcut: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>)_
+* Commands can be run from the command palette, `Show All Commands` _(Default shortcut: <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd>)_
 * Remote Execution must be enabled in Unreal Engine for this extension to work, [more details here](https://github.com/nils-soderman/vscode-unreal-python/wiki/Failed-to-connect-to-Unreal-Engine-%5BTroubleshooting%5D "Enable Unreal Engine Remote Execution - Wiki").
 
 <br>
