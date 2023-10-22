@@ -171,6 +171,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "icon": "media/icon.png",
   "scripts": {
+    "postinstall": "cd ./webview-ui && npm install",
     "vscode:prepublish": "npm run build-webview && npm run esbuild-base -- --minify",
     "build-webview": "npm run build --prefix webview-ui",
     "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
