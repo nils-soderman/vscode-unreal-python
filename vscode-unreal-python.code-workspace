@@ -1,11 +1,11 @@
 {
 	"folders": [
 		{
-			"name": "==== Extension Source ====",
+			"name": "====== Extension Source ======",
 			"path": "."
 		},
 		{
-			"name": "====== Sidebar UI ======",
+			"name": "==== Documentation Webview ====",
 			"path": "./webview-ui"
 		}
 	],
