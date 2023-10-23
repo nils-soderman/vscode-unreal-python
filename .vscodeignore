@@ -22,6 +22,8 @@ media/icon-font/*.svg
 src/**
 test/**
 
+CONTRIBUTING.md
+
 node_modules/
 !node_modules/**/[lL][iI][cC][eE][nN][sS][eE]*
 
