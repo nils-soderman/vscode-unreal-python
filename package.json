@@ -3,7 +3,7 @@
   "displayName": "Unreal Engine Python",
   "publisher": "NilsSoderman",
   "description": "Tools to assist when writing Python code for Unreal Engine.",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "categories": [
     "Other",
     "Debuggers"
@@ -106,16 +106,18 @@
           "ue-python.remote.multicastGroupEndpoint": {
             "type": "string",
             "default": "239.0.0.1:6766",
-            "markdownDescription": "The multicast group endpoint _(must match the \"Multicast Group Endpoint\" setting in the Python plugin)_",
+            "markdownDescription": "The multicast group endpoint in the format of \"IP:PORT\" _(must match the \"Multicast Group Endpoint\" setting in the Python plugin)_",
             "scope": "resource",
-            "order": 0
+            "order": 0,
+            "pattern": "^[0-9.]+:[0-9]+$"
           },
           "ue-python.remote.multicastBindAdress": {
             "type": "string",
             "default": "0.0.0.0",
             "markdownDescription": "The adapter address that the UDP multicast socket should bind to, or 0.0.0.0 to bind to all adapters _(must match the \"Multicast Bind Address\" setting in the Python plugin)_",
             "scope": "resource",
-            "order": 1
+            "order": 1,
+            "pattern": "^[0-9.]+$"
           },
           "ue-python.remote.multicastTTL": {
             "type": "number",
@@ -129,7 +131,8 @@
             "default": "127.0.0.1:6776",
             "markdownDescription": "The endpoint for the TCP command connection hosted by this client _(that the remote client will connect to)_",
             "scope": "resource",
-            "order": 3
+            "order": 3,
+            "pattern": "^[0-9.]+:[0-9]+$"
           },
           "ue-python.remote.timeout": {
             "type": "number",
