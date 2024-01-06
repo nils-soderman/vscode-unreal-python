@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.1.1] - 2024-01-06
+
+### Added:
+- Added regex validation for `ue-python.remote` settings that takes strings.
+
+### Fixed:
+- Changes to the `ue-python.remote` settings no longer requires a restart of VS Code to take effect [#20](https://github.com/nils-soderman/vscode-unreal-python/issues/20)
+
+
 ## [1.1.0] - 2023-09-30
 
 ### Added:
