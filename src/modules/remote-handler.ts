@@ -125,8 +125,7 @@ export async function getRemoteExecutionCommandPort() {
 export async function getRemoteExecutionInstance(bEnsureExists = true) {
     if (!gCachedRemoteExecution && bEnsureExists) {
         const config = getRemoteConfig();
-        if (await ensureCommandPortAvaliable(config))
-        {
+        if (await ensureCommandPortAvaliable(config)) {
             gCachedRemoteExecution = new RemoteExecution(config);
             gCachedRemoteExecution.events.addEventListener("commandConnectionClosed", onRemoteConnectionClosed);
             await gCachedRemoteExecution.start();
@@ -136,6 +135,11 @@ export async function getRemoteExecutionInstance(bEnsureExists = true) {
     return gCachedRemoteExecution;
 }
 
+
+export function nullifyRemoteExecutionInstance() {
+    gCachedRemoteExecution?.stop();
+    gCachedRemoteExecution = null;
+}
 
 
 /**
@@ -182,6 +186,7 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
                     extensionWiki.openPageInBrowser(extensionWiki.FPages.failedToConnect);
                 }
 
+                nullifyRemoteExecutionInstance();
                 return null;
             }
             finally {
@@ -189,6 +194,7 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
             }
         }
         else {
+            nullifyRemoteExecutionInstance();
             gIsInitializatingConnection = false;
             return null;
         }

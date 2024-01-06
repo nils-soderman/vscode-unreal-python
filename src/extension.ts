@@ -51,6 +51,10 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
+	// Check if config is changed
+	context.subscriptions.push(
+		vscode.workspace.onDidChangeConfiguration(onConfigurationChanged)
+	);
 }
 
 
@@ -62,4 +66,17 @@ export function deactivate() {
 	remoteHandler.closeRemoteConnection();
 
 	remoteHandler.removeStatusBarItem();
+}
+
+
+function onConfigurationChanged(event: vscode.ConfigurationChangeEvent) {
+	// Check if we need to restart the remote execution instance
+	const restartOnProperties = ['multicastGroupEndpoint', 'commandEndpoint', 'multicastTTL', 'multicastBindAdress'];
+	for (const property of restartOnProperties) {
+		if (event.affectsConfiguration(`ue-python.remote.${property}`)) {
+			remoteHandler.nullifyRemoteExecutionInstance();
+			break;
+		}
+	}
+
 }
