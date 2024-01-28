@@ -1,5 +1,15 @@
 # Change Log
 
+## [1.2.0] - UNRELEASED
+
+## Breaking changes:
+- `ue-python.remote.multicastBindAddress` now defaults to "127.0.0.1" to match the new default value in Unreal Engine 5.3
+- Renamed config `ue-python.remote.multicastBindAdress` to `ue-python.remote.multicastBindAddress` to fix spelling error.
+
+### Fixed:
+- Fixed config `ue-python.remote.multicastBindAddress` not read correctly, always defaulting to "0.0.0.0".
+
+
 ## [1.1.1] - 2024-01-06
 
 ### Added:

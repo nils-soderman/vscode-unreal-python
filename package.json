@@ -3,7 +3,7 @@
   "displayName": "Unreal Engine Python",
   "publisher": "NilsSoderman",
   "description": "Tools to assist when writing Python code for Unreal Engine.",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "categories": [
     "Other",
     "Debuggers"
@@ -111,9 +111,9 @@
             "order": 0,
             "pattern": "^[0-9.]+:[0-9]+$"
           },
-          "ue-python.remote.multicastBindAdress": {
+          "ue-python.remote.multicastBindAddress": {
             "type": "string",
-            "default": "0.0.0.0",
+            "default": "127.0.0.1",
             "markdownDescription": "The adapter address that the UDP multicast socket should bind to, or 0.0.0.0 to bind to all adapters _(must match the \"Multicast Bind Address\" setting in the Python plugin)_",
             "scope": "resource",
             "order": 1,
