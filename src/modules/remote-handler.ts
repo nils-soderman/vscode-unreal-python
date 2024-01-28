@@ -181,10 +181,10 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
                 if (message.startsWith("Timed out"))
                     message = "Timed out while trying to connect to Unreal Engine.";
 
-                const clickedItem = await vscode.window.showErrorMessage(message, "Help");
-                if (clickedItem === "Help") {
-                    extensionWiki.openPageInBrowser(extensionWiki.FPages.failedToConnect);
-                }
+                vscode.window.showErrorMessage(message, "Help").then((clickedItem) => {
+                    if (clickedItem === "Help")
+                        extensionWiki.openPageInBrowser(extensionWiki.FPages.failedToConnect);
+                });
 
                 nullifyRemoteExecutionInstance();
                 return null;
