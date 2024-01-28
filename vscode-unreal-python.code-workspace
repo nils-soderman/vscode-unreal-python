@@ -5,8 +5,12 @@
 			"path": "."
 		},
 		{
-			"name": "==== Documentation Webview ====",
+			"name": "=== Documentation Webview ===",
 			"path": "./webview-ui"
+		},
+		{
+			"name": "========== Test ==========",
+			"path": "./test"
 		}
 	],
 	"settings": {
