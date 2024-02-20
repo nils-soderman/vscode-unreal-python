@@ -8,6 +8,7 @@ import { RemoteExecution, RemoteExecutionConfig, RemoteExecutionNode } from "unr
 
 import * as extensionWiki from "./extension-wiki";
 import * as utils from "./utils";
+import * as logger from "./logger";
 
 let gIsInitializatingConnection = false;
 let gCachedRemoteExecution: RemoteExecution | null = null;
@@ -129,6 +130,12 @@ export async function getRemoteExecutionInstance(bEnsureExists = true) {
             gCachedRemoteExecution = new RemoteExecution(config);
             gCachedRemoteExecution.events.addEventListener("commandConnectionClosed", onRemoteConnectionClosed);
             await gCachedRemoteExecution.start();
+
+            logger.log("Remote execution instance created");
+            logger.log(`Multicast TTL: ${config.multicastTTL}`);
+            logger.log(`Multicast Bind Address: ${config.multicastBindAddress}`);
+            logger.log(`Multicast Group Endpoint: ${config.multicastGroupEndpoint[0]}:${config.multicastGroupEndpoint[1]}`);
+            logger.log(`Command Endpoint: ${config.commandEndpoint[0]}:${config.commandEndpoint[1]}`);
         }
     }
 
@@ -170,13 +177,18 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
             const extensionConfig = utils.getExtensionConfig();
             const timeout: number = extensionConfig.get("remote.timeout") ?? 3000;
 
+            logger.log(`Connecting with a timeout of ${timeout}ms.`);
+
             try {
                 const node = await remoteExecution.getFirstRemoteNode(1000, timeout);
                 await remoteExecution.openCommandConnection(node, true, timeout);
 
+                logger.log("Connected to: " + JSON.stringify(node.data));
+
                 updateStatusBar(node);
             }
             catch (error: any) {
+                logger.log(error);
                 let message: string = error.message;
                 if (message.startsWith("Timed out"))
                     message = "Timed out while trying to connect to Unreal Engine.";

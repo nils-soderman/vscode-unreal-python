@@ -1,5 +1,14 @@
 # Change Log
 
+## [1.2.1] - UNRELEASED
+
+### Added:
+- A new output channel _"UE Python Log"_ where extension logs are written to.
+
+### Fixed:
+- Folder settings being ignored when a workspace is opened.
+
+
 ## [1.2.0] - 2024-01-29
 
 ## Breaking changes:
