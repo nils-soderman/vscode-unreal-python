@@ -1,6 +1,6 @@
 # Change Log
 
-## [1.2.1] - UNRELEASED
+## [1.2.1] - 2024-02-24
 
 ### Added:
 - A new output channel _"UE Python Log"_ where extension logs are written to.
