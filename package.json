@@ -57,16 +57,33 @@
     "configuration": [
       {
         "properties": {
-          "ue-python.debug.port": {
+          "ue-python.strictPort": {
+            "type": "boolean",
+            "default": false,
+            "markdownDescription": "Prevent this extension from automatically finding a free port if a port assigned in the config is busy.",
+            "scope": "resource"
+          }
+        }
+      },
+      {
+        "title": "Attach",
+        "properties": {
+          "ue-python.attach.port": {
             "type": "number",
             "default": 6868,
             "description": "Port to use for the debugpy server when attaching VS Code to Unreal",
             "scope": "resource"
           },
-          "ue-python.strictPort": {
+          "ue-python.attach.justMyCode": {
             "type": "boolean",
-            "default": false,
-            "markdownDescription": "Prevent this extension from automatically finding a free port if a port assigned in the config is busy.",
+            "default": true,
+            "description": "Enable or disable Just My Code when attaching to Unreal Engine",
+            "scope": "resource"
+          },
+          "ue-python.attach.showOutput": {
+            "type": "boolean",
+            "default": true,
+            "description": "Display the output log when attaching to Unreal Engine",
             "scope": "resource"
           }
         }

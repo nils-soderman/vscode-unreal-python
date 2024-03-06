@@ -17,6 +17,20 @@ const DEBUGPY_PYPI_URL = "https://pypi.org/project/debugpy/";
 const REPORT_BUG_URL = "https://github.com/nils-soderman/vscode-unreal-python/issues";
 
 // ------------------------------------------------------------------------------------------
+//                                  Types
+// ------------------------------------------------------------------------------------------
+
+/**
+ * Settings for attaching to Unreal Engine.
+ */
+type AttachConfiguration = {
+    port: number;
+    justMyCode: boolean;
+    showOutput: boolean;
+};
+
+
+// ------------------------------------------------------------------------------------------
 //                               Installation of debugpy
 // ------------------------------------------------------------------------------------------
 
@@ -115,6 +129,7 @@ async function installDebugpy(target = ""): Promise<boolean> {
 //                                  Attach to Unreal Engine
 // ------------------------------------------------------------------------------------------
 
+
 /**
  * Start a debugpy server in Unreal Engine.
  * @param port The port to start the server on
@@ -140,8 +155,10 @@ async function startDebugpyServer(port: number): Promise<boolean> {
  * Start a python debug session and attach VS Code to a port
  * @param port The port to connect to
  */
-function startVsCodeDebugModeSession(port: number) {
+function startVsCodeDebugModeSession(attachSettings: AttachConfiguration) {
     const moduleToIgnore = path.basename(utils.FPythonScriptFiles.execute);
+
+    const {port, ...otherSettings } = attachSettings;
 
     vscode.debug.startDebugging(undefined, {
         "name": utils.DEBUG_SESSION_NAME,
@@ -150,6 +167,7 @@ function startVsCodeDebugModeSession(port: number) {
         "port": port,
         "host": "localhost",
         "rules": [{ "module": moduleToIgnore, "include": false }], // Make sure the execute module isn't debugged
+        ...otherSettings
     });
 }
 
@@ -173,38 +191,39 @@ export async function main() {
     }
 
     const config = utils.getExtensionConfig();
-    const configPort: number | undefined = config.get("debug.port");
-    if (!configPort) {
+    const attachConfig: AttachConfiguration | undefined = config.get("attach");
+    if (!attachConfig) {
         return;
     }
+
 
     let attachPort = await getCurrentDebugpyPort();
     if (!attachPort) {
         const reservedCommandPort = await remoteHandler.getRemoteExecutionCommandPort();
 
         if (config.get("strictPort")) {
-            if (await utils.isPortAvailable(configPort) && reservedCommandPort !== configPort) {
-                attachPort = configPort;
+            if (await utils.isPortAvailable(attachConfig.port) && reservedCommandPort !== attachConfig.port) {
+                attachPort = attachConfig.port;
             }
             else {
-                vscode.window.showErrorMessage(`Port ${configPort} is currently busy. Please update the 'config ue-python.debug.port'.`);
+                vscode.window.showErrorMessage(`Port ${attachConfig.port} is currently busy. Please update the 'config ue-python.debug.port'.`);
             }
         }
         else {
-            const startPort = reservedCommandPort === configPort ? configPort + 1 : configPort;
+            const startPort = reservedCommandPort === attachConfig.port ? attachConfig.port + 1 : attachConfig.port;
             attachPort = await utils.findFreePort(startPort, 101);
             if (!attachPort) {
-                vscode.window.showErrorMessage(`All ports between ${configPort} -> ${configPort + 100} are busy. Please update the 'config ue-python.debug.port'.`);
+                vscode.window.showErrorMessage(`All ports between ${attachConfig.port} -> ${attachConfig.port + 100} are busy. Please update the 'config ue-python.debug.port'.`);
             }
         }
 
         if (attachPort) {
             if (await startDebugpyServer(attachPort)) {
-                startVsCodeDebugModeSession(attachPort);
+                startVsCodeDebugModeSession(attachConfig);
             }
         }
     }
     else {
-        startVsCodeDebugModeSession(attachPort);
+        startVsCodeDebugModeSession(attachConfig);
     }
 }
