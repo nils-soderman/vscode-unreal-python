@@ -26,7 +26,6 @@ const REPORT_BUG_URL = "https://github.com/nils-soderman/vscode-unreal-python/is
 type AttachConfiguration = {
     port: number;
     justMyCode: boolean;
-    showOutput: boolean;
 };
 
 
@@ -207,13 +206,19 @@ export async function main() {
             }
             else {
                 vscode.window.showErrorMessage(`Port ${attachConfig.port} is currently busy. Please update the 'config ue-python.debug.port'.`);
+                return;
             }
         }
         else {
             const startPort = reservedCommandPort === attachConfig.port ? attachConfig.port + 1 : attachConfig.port;
             attachPort = await utils.findFreePort(startPort, 101);
-            if (!attachPort) {
+
+            if (attachPort) {
+                attachConfig.port = attachPort;
+            }
+            else {
                 vscode.window.showErrorMessage(`All ports between ${attachConfig.port} -> ${attachConfig.port + 100} are busy. Please update the 'config ue-python.debug.port'.`);
+                return;
             }
         }
 

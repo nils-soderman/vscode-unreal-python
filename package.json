@@ -57,6 +57,15 @@
     "configuration": [
       {
         "properties": {
+          "ue-python.debug.port": {
+            "type": "number",
+            "default": 6868,
+            "description": "Port to use for the debugpy server when starting a new Unreal instance",
+            "scope": "resource",
+
+            "deprecationMessage": "Deprecated: Use `ue-python.attach.port` instead.",
+            "markdownDeprecationMessage": "**Deprecated**: Use `ue-python.attach.port` instead."
+          },
           "ue-python.strictPort": {
             "type": "boolean",
             "default": false,
@@ -77,13 +86,7 @@
           "ue-python.attach.justMyCode": {
             "type": "boolean",
             "default": true,
-            "description": "Enable or disable Just My Code when attaching to Unreal Engine",
-            "scope": "resource"
-          },
-          "ue-python.attach.showOutput": {
-            "type": "boolean",
-            "default": true,
-            "description": "Display the output log when attaching to Unreal Engine",
+            "description": "Restricts debugging to user-written code only. Set to false to also enable debugging of standard library functions.",
             "scope": "resource"
           }
         }
