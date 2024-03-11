@@ -205,7 +205,7 @@ export async function main() {
                 attachPort = attachConfig.port;
             }
             else {
-                vscode.window.showErrorMessage(`Port ${attachConfig.port} is currently busy. Please update the 'config ue-python.debug.port'.`);
+                vscode.window.showErrorMessage(`Port ${attachConfig.port} is currently busy. Please update the 'config ue-python.attach.port'.`);
                 return;
             }
         }
@@ -217,7 +217,7 @@ export async function main() {
                 attachConfig.port = attachPort;
             }
             else {
-                vscode.window.showErrorMessage(`All ports between ${attachConfig.port} -> ${attachConfig.port + 100} are busy. Please update the 'config ue-python.debug.port'.`);
+                vscode.window.showErrorMessage(`All ports between ${attachConfig.port} -> ${attachConfig.port + 100} are busy. Please update the 'config ue-python.attach.port'.`);
                 return;
             }
         }
