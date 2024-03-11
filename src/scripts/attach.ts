@@ -229,6 +229,8 @@ export async function main() {
         }
     }
     else {
+        attachConfig.port = attachPort;
+
         startVsCodeDebugModeSession(attachConfig);
     }
 }
