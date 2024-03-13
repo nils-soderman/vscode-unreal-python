@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.3.0] - UNRELEASED
+
+### Deprecated:
+
+### Breaking changes:
+- Renamed config `ue-python.debug.port` to `ue-python.attach.port`. `ue-python.debug.port` has been deprecated and will be removed in a future release _(Contributed by [@F-Dudley](https://github.com/F-Dudley))_
+
+### Added:
+- Config `ue-python.attach.justMyCode` to allow debugging of standard library modules. [#23](https://github.com/nils-soderman/vscode-unreal-python/issues/23) _(Contributed by [@F-Dudley](https://github.com/F-Dudley))_
+
+
 ## [1.2.1] - 2024-02-24
 
 ### Added:
