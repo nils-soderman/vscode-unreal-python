@@ -17,13 +17,13 @@ const DEBUGPY_PYPI_URL = "https://pypi.org/project/debugpy/";
 const REPORT_BUG_URL = "https://github.com/nils-soderman/vscode-unreal-python/issues";
 
 // ------------------------------------------------------------------------------------------
-//                                  Types
+//                                  Interfaces
 // ------------------------------------------------------------------------------------------
 
 /**
  * Settings for attaching to Unreal Engine.
  */
-type AttachConfiguration = {
+interface IAttachConfiguration {
     port: number;
     justMyCode: boolean;
 };
@@ -67,7 +67,6 @@ async function getCurrentDebugpyPort(): Promise<number | null> {
             }
         }
     }
-
 
     return null;
 }
@@ -152,21 +151,18 @@ async function startDebugpyServer(port: number): Promise<boolean> {
 
 /**
  * Start a python debug session and attach VS Code to a port
- * @param port The port to connect to
+ * @param attachSettings Launch settings for the debug session
  */
-function startVsCodeDebugModeSession(attachSettings: AttachConfiguration) {
+function attach(attachSettings: IAttachConfiguration) {
     const moduleToIgnore = path.basename(utils.FPythonScriptFiles.execute);
-
-    const {port, ...otherSettings } = attachSettings;
 
     vscode.debug.startDebugging(undefined, {
         "name": utils.DEBUG_SESSION_NAME,
         "type": "python",
         "request": "attach",
-        "port": port,
         "host": "localhost",
         "rules": [{ "module": moduleToIgnore, "include": false }], // Make sure the execute module isn't debugged
-        ...otherSettings
+        ...attachSettings
     });
 }
 
@@ -174,63 +170,69 @@ function startVsCodeDebugModeSession(attachSettings: AttachConfiguration) {
 /** Attach VS Code to Unreal Engine */
 export async function main() {
     // Make sure debugpy is installed
-    let bInstalled = await isDebugpyInstalled();
+    const bInstalled = await isDebugpyInstalled();
     if (!bInstalled) {
         const selectedInstallOption = await vscode.window.showWarningMessage(
             `Python module [debugpy](${DEBUGPY_PYPI_URL}) is required for debugging`,
             "Install"
         );
 
-        if (selectedInstallOption === "Install")
-            bInstalled = await installDebugpy();
-    }
-
-    if (!bInstalled) {
-        return;
+        if (selectedInstallOption === "Install") {
+            if (!await installDebugpy())
+                return;
+        }
+        else {
+            return;
+        }
     }
 
     const config = utils.getExtensionConfig();
-    const attachConfig: AttachConfiguration | undefined = config.get("attach");
+    const attachConfig = config.get<IAttachConfiguration>("attach");
     if (!attachConfig) {
         return;
     }
 
+    // TODO: Remove in the next release
+    // Check if the deprecated port setting is used
+    const deprecatedPortConfig = config.inspect("debug.port");
+    const deprecatedPortValue = config.get<number>("debug.port");
+    if (deprecatedPortValue && deprecatedPortConfig?.defaultValue !== deprecatedPortValue) {
+        if (config.inspect("attach.port")?.defaultValue === attachConfig.port) {
+            attachConfig.port = deprecatedPortValue;
+            vscode.window.showWarningMessage("The 'ue-python.debug.port' setting is deprecated, please use 'ue-python.attach.port' instead.");
+        }
+    }
 
-    let attachPort = await getCurrentDebugpyPort();
-    if (!attachPort) {
+    // Check if debugpy is already running
+    const currentPort = await getCurrentDebugpyPort();
+    if (currentPort) {
+        attachConfig.port = currentPort;
+        attach(attachConfig);
+    }
+    else {
+        // If "strictPort" is enabled, make sure the port specified is available
         const reservedCommandPort = await remoteHandler.getRemoteExecutionCommandPort();
-
-        if (config.get("strictPort")) {
-            if (await utils.isPortAvailable(attachConfig.port) && reservedCommandPort !== attachConfig.port) {
-                attachPort = attachConfig.port;
-            }
-            else {
+        if (config.get<boolean>("strictPort")) {
+            if (!(await utils.isPortAvailable(attachConfig.port)) || reservedCommandPort === attachConfig.port) {
                 vscode.window.showErrorMessage(`Port ${attachConfig.port} is currently busy. Please update the 'config ue-python.attach.port'.`);
                 return;
             }
         }
         else {
+            // Find a free port as close to the specified port as possible
             const startPort = reservedCommandPort === attachConfig.port ? attachConfig.port + 1 : attachConfig.port;
-            attachPort = await utils.findFreePort(startPort, 101);
-
-            if (attachPort) {
-                attachConfig.port = attachPort;
-            }
-            else {
+            const freePort = await utils.findFreePort(startPort, 100);
+            if (!freePort) {
                 vscode.window.showErrorMessage(`All ports between ${attachConfig.port} -> ${attachConfig.port + 100} are busy. Please update the 'config ue-python.attach.port'.`);
                 return;
             }
+
+            attachConfig.port = freePort;
         }
 
-        if (attachPort) {
-            if (await startDebugpyServer(attachPort)) {
-                startVsCodeDebugModeSession(attachConfig);
-            }
+        // Start the debugpy server and attach to it
+        if (await startDebugpyServer(attachConfig.port)) {
+            attach(attachConfig);
         }
-    }
-    else {
-        attachConfig.port = attachPort;
-
-        startVsCodeDebugModeSession(attachConfig);
     }
 }

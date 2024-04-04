@@ -255,7 +255,7 @@ export async function isPortAvailable(port: number, host?: string) {
  * @returns The port as a number, or `null` if all ports were taken
  */
 export async function findFreePort(startPort: number, num: number, host?: string) {
-    for (let i = 0; i < num; i++) {
+    for (let i = 0; i < num + 1; i++) {
         const port = startPort + i;
         if (await isPortAvailable(port, host)) {
             return port;
@@ -264,7 +264,6 @@ export async function findFreePort(startPort: number, num: number, host?: string
 
     return null;
 }
-
 
 
 let gOutputChannel: vscode.OutputChannel | undefined;
