@@ -8,6 +8,7 @@ import * as crypto from 'crypto';
 import * as path from 'path';
 
 import * as remoteHandler from '../modules/remote-handler';
+import * as logger from '../modules/logger';
 import * as utils from '../modules/utils';
 
 import { ECommandOutputType } from "unreal-remote-execution";
@@ -37,16 +38,22 @@ interface IAttachConfiguration {
  * Check if the python module "debugpy" is installed and accessible with the current `sys.paths` in Unreal Engine.  
  */
 async function isDebugpyInstalled(): Promise<boolean> {
-    const isDebugPyInstalledScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.isDebugpyInstalled);
+    logger.log("Checking if debugpy is installed...");
 
+    const isDebugPyInstalledScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.isDebugpyInstalled);
     const response = await remoteHandler.executeFile(isDebugPyInstalledScript, {});
     if (response) {
         for (const output of response.output) {
             if (output.type === ECommandOutputType.INFO) {
-                return output.output.trim().toLowerCase() === "true";
+                if (output.output.trim().toLowerCase() === "true") {
+                    logger.log("debugpy python module found");
+                    return true;
+                }
             }
         }
     }
+
+    logger.log("debugpy python module could not be found");
 
     return false;
 }
@@ -58,15 +65,24 @@ async function isDebugpyInstalled(): Promise<boolean> {
 async function getCurrentDebugpyPort(): Promise<number | null> {
     const getCurrentDebugpyPortScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.getCurrentDebugpyPort);
 
+    logger.log("Checking if debugpy is currently running...");
+
     const response = await remoteHandler.executeFile(getCurrentDebugpyPortScript, {});
     if (response) {
         for (const output of response.output) {
             if (output.type === ECommandOutputType.INFO) {
                 const port = Number(output.output);
-                return port;
+
+                if (port) {
+                    logger.log(`debugpy is already running on port ${port}`);
+                    return port;
+                }
+
             }
         }
     }
+
+    logger.log("debugpy is currently not running");
 
     return null;
 }
@@ -78,6 +94,8 @@ async function getCurrentDebugpyPort(): Promise<number | null> {
  * @param target The directory where to install the module, if none is provided it'll be installed in the current Unreal Project
  */
 async function installDebugpy(target = ""): Promise<boolean> {
+    logger.log("Installing debugpy...");
+
     const installDebugpyScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.installDebugPy);
 
     // Generate a random id that we expect as a response from the python script if the installation was successful
@@ -102,10 +120,10 @@ async function installDebugpy(target = ""): Promise<boolean> {
         }
     }
 
+    logger.log("Failed to install debugpy");
     if (errorMessage) {
-        const outputChannel = utils.getOutputChannel(true);
-        outputChannel.appendLine(errorMessage);
-        outputChannel.show(true);
+        logger.log(errorMessage);
+        logger.show();
     }
 
     vscode.window.showErrorMessage(
@@ -137,6 +155,8 @@ async function startDebugpyServer(port: number): Promise<boolean> {
 
     const globals = { "debug_port": port };  // eslint-disable-line @typescript-eslint/naming-convention
 
+    logger.log(`Starting debugpy server on port ${port}`);
+
     const response = await remoteHandler.executeFile(startDebugServerScript, globals);
     for (const output of response?.output ?? []) {
         if (output.type === ECommandOutputType.INFO) {
@@ -144,8 +164,8 @@ async function startDebugpyServer(port: number): Promise<boolean> {
         }
     }
 
+    logger.log("Failed to start debugpy server");
     return false;
-
 }
 
 
@@ -156,14 +176,18 @@ async function startDebugpyServer(port: number): Promise<boolean> {
 function attach(attachSettings: IAttachConfiguration) {
     const moduleToIgnore = path.basename(utils.FPythonScriptFiles.execute);
 
-    vscode.debug.startDebugging(undefined, {
+    const configuration = {
         "name": utils.DEBUG_SESSION_NAME,
         "type": "python",
         "request": "attach",
         "host": "localhost",
         "rules": [{ "module": moduleToIgnore, "include": false }], // Make sure the execute module isn't debugged
         ...attachSettings
-    });
+    };
+
+    logger.log(`Attaching to Unreal Engine with the following config:\n${JSON.stringify(configuration, null, 4)}`);
+
+    vscode.debug.startDebugging(undefined, configuration);
 }
 
 
@@ -172,6 +196,7 @@ export async function main() {
     // Make sure debugpy is installed
     const bInstalled = await isDebugpyInstalled();
     if (!bInstalled) {
+
         const selectedInstallOption = await vscode.window.showWarningMessage(
             `Python module [debugpy](${DEBUGPY_PYPI_URL}) is required for debugging`,
             "Install"
@@ -214,6 +239,7 @@ export async function main() {
         const reservedCommandPort = await remoteHandler.getRemoteExecutionCommandPort();
         if (config.get<boolean>("strictPort")) {
             if (!(await utils.isPortAvailable(attachConfig.port)) || reservedCommandPort === attachConfig.port) {
+                logger.log(`Port ${attachConfig.port} is currently busy.`);
                 vscode.window.showErrorMessage(`Port ${attachConfig.port} is currently busy. Please update the 'config ue-python.attach.port'.`);
                 return;
             }
@@ -223,6 +249,7 @@ export async function main() {
             const startPort = reservedCommandPort === attachConfig.port ? attachConfig.port + 1 : attachConfig.port;
             const freePort = await utils.findFreePort(startPort, 100);
             if (!freePort) {
+                logger.log(`All ports between ${attachConfig.port} -> ${attachConfig.port + 100} are busy.`);
                 vscode.window.showErrorMessage(`All ports between ${attachConfig.port} -> ${attachConfig.port + 100} are busy. Please update the 'config ue-python.attach.port'.`);
                 return;
             }
