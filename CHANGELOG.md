@@ -1,8 +1,6 @@
 # Change Log
 
-## [1.3.0] - UNRELEASED
-
-### Deprecated:
+## [1.3.0] - 2024-04-13
 
 ### Breaking changes:
 - Renamed config `ue-python.debug.port` to `ue-python.attach.port`. `ue-python.debug.port` has been deprecated and will be removed in a future release _(Contributed by [@F-Dudley](https://github.com/F-Dudley))_
