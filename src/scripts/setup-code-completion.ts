@@ -9,6 +9,7 @@ import * as fs from 'fs';
 
 import * as remoteHandler from '../modules/remote-handler';
 import * as extensionWiki from '../modules/extension-wiki';
+import * as logger from '../modules/logger';
 import * as utils from '../modules/utils';
 
 import { ECommandOutputType } from "unreal-remote-execution";
@@ -18,35 +19,32 @@ const STUB_FILE_NAME = "unreal.py";
 const PYTHON_CONFIG = "python";
 const EXTRA_PATHS_CONFIG = "analysis.extraPaths";
 
-const MS_PYTHON_EXTENSION_ID = "ms-python.python";
-
-const STUB_FILE_RELATIVE_FOLDER = "Intermediate/PythonStub";
-
 
 /**
- * Get the python extension's configuration 
+ * Get the path to the directory where the 'unreal.py' stubfile is generated,
+ * Based on the currently connected Unreal Engine project.
  */
-function getPythonConfig() {
-    return vscode.workspace.getConfiguration(PYTHON_CONFIG);
-}
-
-
-/**
- * Get the path to the directory where the 'unreal.py' stubfile is generated.
- * The path will be for the currently connected Unreal project
- */
-async function getUnrealStubDirectory() {
+async function getUnrealStubDirectory(): Promise<string | null> {
     const getPythonPathScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.codeCompletionGetPath);
     const response = await remoteHandler.executeFile(getPythonPathScript, {});
+
+    let directory: string | null = null;
+
     if (response) {
         for (const output of response.output) {
-            if (output.type === ECommandOutputType.INFO) {
-                return output.output.trim();
+            logger.log(`[${output.type}] ${output.output}`);
+            if (response.success && output.type === ECommandOutputType.INFO) {
+                directory = output.output.trim();
             }
+        }
+
+        if (!response.success) {
+            logger.logError("Failed to get the path to the Unreal Engine project", new Error(response.result));
+            return null;
         }
     }
 
-    return null;
+    return directory;
 }
 
 
@@ -57,38 +55,79 @@ async function getUnrealStubDirectory() {
  * @param pathToAdd The path to add
  * @returns `true` if the path was added or already existed, `false` if the path could not be added
  */
-function addPythonAnalysisPath(pathToAdd: string): boolean {
-    // Make path use forward slashes, as it looks cleaner in the config file
-    pathToAdd = utils.ensureForwardSlashes(pathToAdd);
+function addPythonAnalysisPath(pathToAdd: string): void {
+    const fullConfigName = `${PYTHON_CONFIG}.${EXTRA_PATHS_CONFIG}`;
 
-    const pythonConfig = getPythonConfig();
-    let extraPaths: Array<string> | undefined = pythonConfig.get(EXTRA_PATHS_CONFIG);
-    if (extraPaths === undefined)
-        return false;
+    const activeWorkspaceFolder = utils.getActiveWorkspaceFolder();
+    const pythonConfig = vscode.workspace.getConfiguration(PYTHON_CONFIG, activeWorkspaceFolder?.uri);
 
-    const pathsToRemove: string[] = [];
+    const bHasWorkspaceFileOpen = vscode.workspace.workspaceFile !== undefined;
 
-    for (const extraPath of extraPaths) {
-        // Check if the path already exist
-        if (utils.isPathsSame(extraPath, pathToAdd)) {
-            return true;
+    let extraPathsConfig = pythonConfig.inspect<string[]>(EXTRA_PATHS_CONFIG);
+    if (!extraPathsConfig) {
+        logger.log(`Failed to get the config '${fullConfigName}'`);
+        return;
+    }
+
+    // Use the global scope as default
+    let settingsInfo = {
+        niceName: "User",
+        paths: extraPathsConfig.globalValue,
+        scope: vscode.ConfigurationTarget.Global,
+        openSettingsCommand: "workbench.action.openSettings"
+    };
+
+    // Search through the different scopes to find the first one that has a custom value
+    const valuesToCheck = [
+        {
+            niceName: "Folder",
+            paths: extraPathsConfig.workspaceFolderValue,
+            scope: vscode.ConfigurationTarget.WorkspaceFolder,
+            openSettingsCommand: bHasWorkspaceFileOpen ? "workbench.action.openFolderSettings" : "workbench.action.openWorkspaceSettings"
+        },
+        {
+            niceName: "Workspace",
+            paths: extraPathsConfig.workspaceValue,
+            scope: vscode.ConfigurationTarget.Workspace,
+            openSettingsCommand: "workbench.action.openWorkspaceSettings"
         }
+    ];
 
-        // Check if any other Unreal python paths exists, and if so remove them (if e.g. switching between projects)
-        const comparePath = utils.ensureForwardSlashes(path.resolve(extraPath)).toLowerCase();
-        if (comparePath.endsWith(STUB_FILE_RELATIVE_FOLDER.toLowerCase())) {
-            pathsToRemove.push(extraPath);
+    for (const value of valuesToCheck) {
+        if (value.paths && value.paths !== extraPathsConfig.defaultValue) {
+            settingsInfo = value;
+            break;
         }
     }
 
-    // Remove any additional Unreal stub directories found
-    extraPaths = extraPaths.filter(e => !pathsToRemove.includes(e));
+    // Create a new list that will contain the old paths and the new one
+    let newPathsValue = settingsInfo.paths ? [...settingsInfo.paths] : [];
 
-    // Add the path to extraPaths & update the config
-    extraPaths.push(pathToAdd);
-    pythonConfig.update(EXTRA_PATHS_CONFIG, extraPaths, true);
+    // Check if the path already exists
+    if (newPathsValue.some(path => utils.isPathsSame(path, pathToAdd))) {
+        logger.log(`Path "${pathToAdd}" already exists in '${fullConfigName}' in ${settingsInfo.niceName} settings.`);
+        vscode.window.showInformationMessage(`Path "${pathToAdd}" already exists in '${fullConfigName}' in ${settingsInfo.niceName} settings.`);
+        return;
+    }
 
-    return true;
+    // Remove any paths that ends with 'Intermediate/PythonStub'
+    newPathsValue = newPathsValue.filter(path => !path.endsWith("Intermediate/PythonStub"));
+
+    // Add the new path and update the configuration
+    newPathsValue.push(pathToAdd);
+    pythonConfig.update(EXTRA_PATHS_CONFIG, newPathsValue, settingsInfo.scope);
+
+    logger.log(`Added path "${pathToAdd}" to '${fullConfigName}' in ${settingsInfo.niceName} settings.`);
+
+    vscode.window.showInformationMessage(`Updated '${fullConfigName}' in ${settingsInfo.niceName} settings.`, "Show Setting").then(
+        (value) => {
+            if (value === "Show Setting") {
+                vscode.commands.executeCommand(settingsInfo.openSettingsCommand, `${fullConfigName}`);
+            }
+        }
+    );
+
+    return;
 }
 
 
@@ -97,60 +136,48 @@ function addPythonAnalysisPath(pathToAdd: string): boolean {
  * If a valid stub file doesn't exist, user will be prompted to enable developer mode and the path will NOT be added to the python config.
  * @param stubDirectoryPath The directory where the 'unreal.py' stub file is located
  */
-async function validateStubAndAddToPath(stubDirectoryPath: string) {
+async function validateStubAndAddToPath(stubDirectoryPath: string): Promise<void> {
     // Check if a generated stub file exists
     const stubFilepath = path.join(stubDirectoryPath, STUB_FILE_NAME);
 
-    if (fs.existsSync(stubFilepath)) {
-        const configFullId = `${PYTHON_CONFIG}.${EXTRA_PATHS_CONFIG}`;
-
-        if (addPythonAnalysisPath(stubDirectoryPath)) {
-            const clickedItem = await vscode.window.showInformationMessage(`Added "${stubDirectoryPath}" to the '${configFullId}' config`, "Show Setting");
-            if (clickedItem === "Show Setting")
-                vscode.commands.executeCommand("workbench.action.openSettings", configFullId);
-        }
-        else {
-            const clickedItem = await vscode.window.showErrorMessage(`Config '${configFullId}' not found, make sure ${MS_PYTHON_EXTENSION_ID} extension is installed and enabled`, "Show Extension");
-            if (clickedItem === "Show Extension")
-                vscode.commands.executeCommand("workbench.extensions.search", MS_PYTHON_EXTENSION_ID);
-        }
-    }
-    else {
+    if (!fs.existsSync(stubFilepath)) {
+        logger.log(`Failed to find the generated stub file: "${stubFilepath}"`);
         // A generated stub file could not be found, ask the user to enable developer mode first
         const clickedItem = await vscode.window.showErrorMessage("To setup code completion you first need to enable Developer Mode in Unreal Engine's Python plugin settings.", "Help");
-        if (clickedItem === "Help") {
+        if (clickedItem === "Help")
             extensionWiki.openPageInBrowser(extensionWiki.FPages.enableDevmode);
-        }
+
+        return;
     }
+
+    addPythonAnalysisPath(stubDirectoryPath);
 }
 
 
 export async function main() {
-    const stubDirectoryPath = await getUnrealStubDirectory();
-    if (stubDirectoryPath) {
-        validateStubAndAddToPath(stubDirectoryPath);
+    const autoStubDirectoryPath = await getUnrealStubDirectory();
+    if (autoStubDirectoryPath) {
+        validateStubAndAddToPath(autoStubDirectoryPath);
     }
     else {
-        // Failed to get the path, ask user to manually browse to the UE project
         const selectedItem = await vscode.window.showErrorMessage(
-            "Failed to automatically get the path to current Unreal Engine project",
-            "Browse"
+            "Setup Code Completion: Failed to automatically get the path to current Unreal Engine project",
+            "Browse Manually"
         );
 
-        if (selectedItem === "Browse") {
-            // Show a file browser dialog, asking the user to select a '.uproject' file
+        if (selectedItem === "Browse Manually") {
             const selectedFiles = await vscode.window.showOpenDialog({
-                "filters": { "Unreal Projects": ["uproject"] },  // eslint-disable-line @typescript-eslint/naming-convention
+                "filters": { "Unreal Project": ["uproject"] },  // eslint-disable-line @typescript-eslint/naming-convention
                 "canSelectMany": false,
-                "title": "Browse to the Unreal Engine project .uproject file",
+                "title": "Select the Unreal Engine project file (.uproject) to setup code completion for",
                 "openLabel": "Select project"
             });
 
             if (selectedFiles) {
                 // `selectedFiles[0]` should now be the .uproject file that the user whish to setup code completion for
                 const projectDirectory = path.dirname(selectedFiles[0].fsPath);
-                const projectStubDirectoryPath = path.join(projectDirectory, "Intermediate", "PythonStub");
-                validateStubAndAddToPath(projectStubDirectoryPath);
+                const manualStubDirectoryPath = path.join(projectDirectory, "Intermediate", "PythonStub");
+                validateStubAndAddToPath(manualStubDirectoryPath);
             }
         }
     }

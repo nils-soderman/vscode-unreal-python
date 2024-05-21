@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.3.1] - UNRELEASED
+
+### Fixed:
+
+- `ue-python.setupCodeCompletion` will now correctly insert the path in the correct setting scope _(user/workspace/folder)_
+
 ## [1.3.0] - 2024-04-13
 
 ### Breaking changes:
