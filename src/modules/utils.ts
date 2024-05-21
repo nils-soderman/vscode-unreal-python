@@ -61,17 +61,22 @@ export class FPythonScriptFiles {
 // -----------------------------------------------------------------------------------------
 
 /**
+ * Get the workspace folder for the currently active file/text editor
+ */
+export function getActiveWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
+    if (vscode.window.activeTextEditor) {
+        const activeDocumenet = vscode.window.activeTextEditor.document;
+        return vscode.workspace.getWorkspaceFolder(activeDocumenet.uri);
+    }
+}
+
+
+/**
  * @returns The workspace configuration for this extension _('ue-python')_
  */
 export function getExtensionConfig() {
-    // Try to get the active workspace folder first, to have it read Folder Settings
-    let workspaceFolder: vscode.Uri | undefined = undefined;
-    if (vscode.window.activeTextEditor) {
-        const activeDocumenet = vscode.window.activeTextEditor.document;
-        workspaceFolder = vscode.workspace.getWorkspaceFolder(activeDocumenet.uri)?.uri;
-    }
-
-    return vscode.workspace.getConfiguration("ue-python", workspaceFolder);
+    const activeWorkspaceFolder = getActiveWorkspaceFolder()?.uri;
+    return vscode.workspace.getConfiguration("ue-python", activeWorkspaceFolder);
 }
 
 
