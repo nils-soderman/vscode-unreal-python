@@ -4,9 +4,10 @@ import * as remoteHandler from './modules/remote-handler';
 import * as utils from './modules/utils';
 
 import * as setupCodeCompletion from './scripts/setup-code-completion';
+import * as selectInstance from './scripts/select-instance';
 import * as execute from './scripts/execute';
 import * as attach from './scripts/attach';
-import * as selectInstance from './scripts/select-instance';
+
 import { openDocumentationWindow } from './views/documentation-pannel';
 
 export function activate(context: vscode.ExtensionContext) {
