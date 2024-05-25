@@ -4,7 +4,7 @@
 
 import * as vscode from 'vscode';
 
-import { RemoteExecution, RemoteExecutionConfig, RemoteExecutionNode } from "unreal-remote-execution";
+import { RemoteExecution, RemoteExecutionConfig, RemoteExecutionNode, ECommandOutputType } from "unreal-remote-execution";
 
 import * as extensionWiki from "./extension-wiki";
 import * as utils from "./utils";
@@ -185,6 +185,8 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
 
                 logger.log("Connected to: " + JSON.stringify(node.data));
 
+                await onRemoteInstanceCreated(remoteExecution);
+
                 updateStatusBar(node);
             }
             catch (error: any) {
@@ -217,10 +219,48 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
 }
 
 
+/**
+ * Called when a remote instance is created
+ */
+async function onRemoteInstanceCreated(instance: RemoteExecution) {
+    const config = utils.getExtensionConfig();
+
+    // Add the workspace folders to the python path
+    if (config.get<boolean>('execute.addWorkspaceToPath', false)) {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (workspaceFolders) {
+            const workspacePaths = workspaceFolders.map((folder) => folder.uri.fsPath);
+            const response = await executeFile(
+                utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.addSysPath),
+                {
+                    vsc_paths: workspacePaths // eslint-disable-line @typescript-eslint/naming-convention
+                }
+            );
+
+            if (response) {
+                if (response.result)
+                    logger.log(response.result);
+                for (const output of response.output) {
+                    if (output.type === ECommandOutputType.ERROR)
+                        logger.logError("Ran into an error while adding workspace folders to the python path.", new Error(output.output));
+                    else
+                        logger.log(`[${output.type}] ${output.output}`);
+                }
+            }
+        }
+    }
+}
+
+
+/**
+ * Called when the remote connection is closed
+ */
 async function onRemoteConnectionClosed() {
     const remoteExecution = await getRemoteExecutionInstance(false);
     if (!remoteExecution?.hasCommandConnection())
         removeStatusBarItem();
+
+    logger.log("Remote connection closed");
 }
 
 
@@ -245,22 +285,16 @@ export async function runCommand(command: string) {
  * @param filepath Absolute filepath to the python file to execute
  * @param variables Optional dict with global variables to set before executing the file
  */
-export function executeFile(filepath: string, variables = {}) {
-    // Construct a string with all of the global variables, e.g: "x=1;y='Hello';"
-    let variableString = `__file__=r'${filepath}';`;
-
-    for (const [key, value] of Object.entries(variables)) {
-        let safeValueStr = value;
-        if (typeof value === "string") {
-            // Append single quotes ' to the start & end of the value
-            safeValueStr = `r'${value}'`;
-        }
-
-        variableString += `${key}=${safeValueStr};`;
+export function executeFile(filepath: string, globals: any = {}) {
+    if (!globals.hasOwnProperty('__file__')) {
+        globals["__file__"] = filepath;
     }
 
+    let globalsStr = JSON.stringify(globals);
+    globalsStr = globalsStr.replace(/\\/g, "\\\\");
+
     // Put together one line of code for settings the global variables, then opening, reading & executing the given filepath
-    const command = `${variableString}f=open(r'${filepath}','r');exec(f.read());f.close()`;
+    const command = `import json;globals().update(json.loads('${globalsStr}'));f=open(r'${filepath}','r');exec(f.read());f.close()`;
     return runCommand(command);
 }
 

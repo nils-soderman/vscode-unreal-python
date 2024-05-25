@@ -3,7 +3,7 @@
   "displayName": "Unreal Engine Python",
   "publisher": "NilsSoderman",
   "description": "Tools to assist when writing Python code for Unreal Engine.",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "categories": [
     "Other",
     "Debuggers"
@@ -116,6 +116,12 @@
             "type": "boolean",
             "default": false,
             "description": "Execute code with the `-unattended` flag, suppressing some UI that requires user input, such as message boxes",
+            "scope": "resource"
+          },
+          "ue-python.execute.addWorkspaceToPath": {
+            "type": "boolean",
+            "default": false,
+            "description": "Add the workspace folder(s) to the Python path when executing code",
             "scope": "resource"
           }
         }

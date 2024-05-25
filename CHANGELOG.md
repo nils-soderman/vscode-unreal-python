@@ -2,6 +2,10 @@
 
 ## [1.3.1] - UNRELEASED
 
+### Added:
+
+- `ue-python.execute.addWorkspaceToPath` that allows the user to add the workspace folder to the Python path when executing code [#28](https://github.com/nils-soderman/vscode-unreal-python/issues/28)
+
 ### Fixed:
 
 - `ue-python.setupCodeCompletion` will now correctly insert the path in the correct setting scope _(user/workspace/folder)_

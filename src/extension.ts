@@ -14,13 +14,6 @@ export function activate(context: vscode.ExtensionContext) {
 	// Set the extension directory
 	utils.setExtensionDir(context.extensionPath);
 
-	// Register views
-	// const provider = new SidebarViewProvier(context.extensionUri);
-
-	// context.subscriptions.push(
-	// 	vscode.window.registerWebviewViewProvider('ue-python.documentation', provider)
-	// );
-
 	// Register commands
 	context.subscriptions.push(
 		vscode.commands.registerCommand('ue-python.execute', () => {
@@ -72,9 +65,16 @@ export function deactivate() {
 
 function onConfigurationChanged(event: vscode.ConfigurationChangeEvent) {
 	// Check if we need to restart the remote execution instance
-	const restartOnProperties = ['multicastGroupEndpoint', 'commandEndpoint', 'multicastTTL', 'multicastBindAdress'];
+	const restartOnProperties = [
+		'remote.multicastGroupEndpoint',
+		'remote.commandEndpoint',
+		'remote.multicastTTL',
+		'remote.multicastBindAdress',
+		'execute.addWorkspaceToPath'
+	];
+
 	for (const property of restartOnProperties) {
-		if (event.affectsConfiguration(`ue-python.remote.${property}`)) {
+		if (event.affectsConfiguration(`ue-python.${property}`)) {
 			remoteHandler.nullifyRemoteExecutionInstance();
 			break;
 		}
