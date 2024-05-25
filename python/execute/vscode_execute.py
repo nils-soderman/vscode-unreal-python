@@ -60,6 +60,17 @@ def get_exec_globals() -> dict:
     return globals()["__VsCodeVariables__"]
 
 
+def find_package(filepath: str):
+    """ Find the expected __package__ value for the executed file, so relative imports work """
+    normalized_filepath = os.path.normpath(filepath).lower()
+    for path in sys.path:
+        if normalized_filepath.startswith(os.path.normpath(path).lower()):
+            package = os.path.relpath(os.path.dirname(filepath), path).replace(os.sep, ".")
+            if package != ".":
+                return package
+    return ""
+
+
 def execute_code(code: str, filename: str):
     try:
         exec(compile(code, filename, "exec"), get_exec_globals())
@@ -95,6 +106,8 @@ def main(exec_file: str, exec_origin: str, is_debugging: bool, name_var: str | N
         exec_globals["__name__"] = name_var
     elif "__name__" in exec_globals:
         exec_globals.pop("__name__")
+
+    exec_globals["__package__"] = find_package(exec_origin)
 
     with open(exec_file, 'r', encoding="utf-8") as vscode_in_file:
         with UnrealLogRedirectDebugging() if is_debugging else nullcontext():
