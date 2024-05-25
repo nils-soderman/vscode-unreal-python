@@ -5,6 +5,7 @@
 ### Fixed:
 
 - `ue-python.setupCodeCompletion` will now correctly insert the path in the correct setting scope _(user/workspace/folder)_
+- Traceback messages potentially having the wrong line number in the clickable URL
 
 ## [1.3.0] - 2024-04-13
 
