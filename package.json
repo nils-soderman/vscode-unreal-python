@@ -120,7 +120,7 @@
           },
           "ue-python.execute.addWorkspaceToPath": {
             "type": "boolean",
-            "default": false,
+            "default": true,
             "description": "Add the workspace folder(s) to the Python path when executing code",
             "scope": "resource"
           }
