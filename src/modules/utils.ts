@@ -40,10 +40,10 @@ export function getExtensionDir() {
 export class FPythonScriptFiles {
     static readonly execute = "execute/vscode_execute";
     static readonly executeEntry = "execute/vscode_execute_entry";
-    static readonly isDebugpyInstalled = "debug/is_debugpy_installed";
-    static readonly installDebugPy = "debug/install_debugpy";
-    static readonly startDebugServer = "debug/start_debug_server";
-    static readonly getCurrentDebugpyPort = "debug/current_debugy_port";
+    static readonly isDebugpyInstalled = "attach/is_debugpy_installed";
+    static readonly installDebugPy = "attach/install_debugpy";
+    static readonly startDebugServer = "attach/start_debug_server";
+    static readonly getCurrentDebugpyPort = "attach/current_debugy_port";
     static readonly codeCompletionGetPath = "setup_code_completion/get_stub_path";
     static readonly isDevmodeEnabled = "setup_code_completion/is_devmode_enabled";
     static readonly buildDocumentationToC = "documentation/build_toc";
