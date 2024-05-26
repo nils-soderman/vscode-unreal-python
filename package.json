@@ -60,7 +60,6 @@
           "ue-python.debug.port": {
             "type": "number",
             "default": 6868,
-            "description": "Port to use for the debugpy server when starting a new Unreal instance",
             "scope": "resource",
 
             "deprecationMessage": "Deprecated: Use `ue-python.attach.port` instead.",
@@ -70,6 +69,12 @@
             "type": "boolean",
             "default": false,
             "markdownDescription": "Prevent this extension from automatically finding a free port if a port assigned in the config is busy.",
+            "scope": "resource"
+          },
+          "ue-python.environment.addWorkspaceToPath": {
+            "type": "boolean",
+            "default": true,
+            "description": "Add the workspace folder(s) to the Python path when connecting to Unreal Engine",
             "scope": "resource"
           }
         }
@@ -116,12 +121,6 @@
             "type": "boolean",
             "default": false,
             "description": "Execute code with the `-unattended` flag, suppressing some UI that requires user input, such as message boxes",
-            "scope": "resource"
-          },
-          "ue-python.execute.addWorkspaceToPath": {
-            "type": "boolean",
-            "default": true,
-            "description": "Add the workspace folder(s) to the Python path when executing code",
             "scope": "resource"
           }
         }

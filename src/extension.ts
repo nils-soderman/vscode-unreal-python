@@ -70,7 +70,7 @@ function onConfigurationChanged(event: vscode.ConfigurationChangeEvent) {
 		'remote.commandEndpoint',
 		'remote.multicastTTL',
 		'remote.multicastBindAdress',
-		'execute.addWorkspaceToPath'
+		'environment.addWorkspaceToPath'
 	];
 
 	for (const property of restartOnProperties) {

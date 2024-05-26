@@ -226,7 +226,7 @@ async function onRemoteInstanceCreated(instance: RemoteExecution) {
     const config = utils.getExtensionConfig();
 
     // Add the workspace folders to the python path
-    if (config.get<boolean>('execute.addWorkspaceToPath', false)) {
+    if (config.get<boolean>('environment.addWorkspaceToPath', false)) {
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (workspaceFolders) {
             const workspacePaths = workspaceFolders.map((folder) => folder.uri.fsPath);
