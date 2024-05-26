@@ -63,11 +63,19 @@ def get_exec_globals() -> dict:
 def find_package(filepath: str):
     """ Find the expected __package__ value for the executed file, so relative imports work """
     normalized_filepath = os.path.normpath(filepath).lower()
+    
+    valid_packages = []
     for path in sys.path:
-        if normalized_filepath.startswith(os.path.normpath(path).lower()):
+        normalized_path = os.path.normpath(path).lower()
+        if normalized_filepath.startswith(normalized_path):
             package = os.path.relpath(os.path.dirname(filepath), path).replace(os.sep, ".")
             if package != ".":
-                return package
+                valid_packages.append(package)
+
+    # If there are multiple valid packages, choose the shortest one
+    if valid_packages:
+        return min(valid_packages, key=len)
+
     return ""
 
 

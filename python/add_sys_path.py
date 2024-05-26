@@ -7,6 +7,9 @@ import os
 
 def main():
     vsc_paths = globals().get("vsc_paths", [])
+
+    vsc_paths.sort(key=len, reverse=True)  # Sort the paths by length to ensure that the most specific paths are added first
+
     for vsc_path in vsc_paths:
         normalized_path = os.path.normpath(vsc_path)
         # Make sure the path doesn't already exist in sys.path
