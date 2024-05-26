@@ -3,13 +3,15 @@ Script to add the given paths to sys.path
 """
 
 import sys
+import os
 
 def main():
-    paths = globals().get("vsc_paths", [])
-    for path in paths:
-        if path not in sys.path:
-            sys.path.append(path)
-            print(f'Added "{path}" to sys.path')
-
+    vsc_paths = globals().get("vsc_paths", [])
+    for vsc_path in vsc_paths:
+        normalized_path = os.path.normpath(vsc_path)
+        # Make sure the path doesn't already exist in sys.path
+        if not any(normalized_path.lower() == os.path.normpath(path).lower() for path in sys.path):
+            sys.path.append(normalized_path)
+            print(f'Added "{normalized_path}" to sys.path')
 
 main()
