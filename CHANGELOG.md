@@ -1,10 +1,11 @@
 # Change Log
 
-## [1.3.1] - UNRELEASED
+## [1.4.0] - 2024-05-26
 
 ### Added:
 
-- `ue-python.execute.addWorkspaceToPath` that allows the user to add the workspace folder to the Python path when executing code [#28](https://github.com/nils-soderman/vscode-unreal-python/issues/28)
+- Support for relative import _(if the script is within sys.path's scope)_
+- The VS Code workspace folders are now added to the Python path when connecting to Unreal. Set `ue-python.environment.addWorkspaceToPath` to `false` to disable this behaviour [#28](https://github.com/nils-soderman/vscode-unreal-python/issues/28)
 
 ### Fixed:
 
