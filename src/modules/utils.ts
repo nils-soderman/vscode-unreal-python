@@ -7,6 +7,8 @@ import * as fs from 'fs';
 
 import open = require('open');
 
+export const EXTENSION_ID = "ue-python";
+
 const DATA_FOLDER_NAME = "VSCode-Unreal-Python";  // Folder name used for Temp & Data directory
 export const DEBUG_SESSION_NAME = "Unreal Python"; // The name of the debug session when debugging Unreal
 
@@ -77,7 +79,7 @@ export function getActiveWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
  */
 export function getExtensionConfig() {
     const activeWorkspaceFolder = getActiveWorkspaceFolder()?.uri;
-    return vscode.workspace.getConfiguration("ue-python", activeWorkspaceFolder);
+    return vscode.workspace.getConfiguration(EXTENSION_ID, activeWorkspaceFolder);
 }
 
 

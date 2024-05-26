@@ -223,22 +223,27 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
  * Called when a remote instance is created
  */
 async function onRemoteInstanceCreated(instance: RemoteExecution) {
-    const config = utils.getExtensionConfig();
+    // Check if we should add any workspace folders to the python path
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders) {
+        let foldersToAddToPath: string[] = [];
+        for (const folder of workspaceFolders) {
+            const config = vscode.workspace.getConfiguration(utils.EXTENSION_ID, folder.uri);
+            if (config.get<boolean>('environment.addWorkspaceToPath', false)) {
+                foldersToAddToPath.push(folder.uri.fsPath);
+            }
+        }
 
-    // Add the workspace folders to the python path
-    if (config.get<boolean>('environment.addWorkspaceToPath', false)) {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (workspaceFolders) {
-            const workspacePaths = workspaceFolders.map((folder) => folder.uri.fsPath);
+        if (foldersToAddToPath.length > 0) {
             const response = await executeFile(
                 utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.addSysPath),
                 {
-                    vsc_paths: workspacePaths // eslint-disable-line @typescript-eslint/naming-convention
+                    vsc_paths: foldersToAddToPath // eslint-disable-line @typescript-eslint/naming-convention
                 }
             );
 
             if (response) {
-                if (response.result)
+                if (response.result && response.result !== "None")
                     logger.log(response.result);
                 for (const output of response.output) {
                     if (output.type === ECommandOutputType.ERROR)
