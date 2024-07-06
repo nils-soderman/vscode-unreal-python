@@ -82,16 +82,13 @@ function formatSelectedText(text: string, firstCharIndex: number) {
             else {
                 const trimmedLine = line.trimStart();
 
-                // Check if it's just an empty line or a comment
-                if (!trimmedLine || trimmedLine[0] === "#") {
-                    continue;
+                if (trimmedLine && trimmedLine[0] !== "#") {
+                    const numberOfWhitespaceCharacters = line.length - trimmedLine.length;
+                    if (numberOfWhitespaceCharacters < numCharactersToRemove) {
+                        numCharactersToRemove = numberOfWhitespaceCharacters;
+                    }
+                    line = line.slice(numCharactersToRemove);
                 }
-
-                const numberOfWhitespaceCharacters = line.length - trimmedLine.length;
-                if (numberOfWhitespaceCharacters < numCharactersToRemove) {
-                    numCharactersToRemove = numberOfWhitespaceCharacters;
-                }
-                line = line.slice(numCharactersToRemove);
             }
         }
 

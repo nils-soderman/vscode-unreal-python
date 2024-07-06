@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.4.1] - UNRELEASED
+
+### Fixed:
+- Stepping over indented code not always working correctly
+
 ## [1.4.0] - 2024-05-26
 
 ### Added:
