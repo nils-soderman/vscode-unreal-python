@@ -1,4 +1,4 @@
-import open = require('open');
+import * as vscode from 'vscode';
 
 export const WIKI_URL = "https://github.com/nils-soderman/vscode-unreal-python/wiki/";
 
@@ -17,8 +17,8 @@ export class FPages {
  * @param page The page to get the full URL of, should be a value of `FPages`
  * @returns The full page url
  */
-export function getPageUrl(page: string) {
-    return WIKI_URL + page;
+export function getPageUrl(page: string): vscode.Uri {
+    return vscode.Uri.parse(WIKI_URL + page);
 }
 
 /** 
@@ -27,5 +27,5 @@ export function getPageUrl(page: string) {
  */
 export function openPageInBrowser(page: string) {
     const url = getPageUrl(page);
-    open(url);
+    return vscode.env.openExternal(url);
 }

@@ -5,8 +5,6 @@ import * as path from 'path';
 import * as os from "os";
 import * as fs from 'fs';
 
-import open = require('open');
-
 export const EXTENSION_ID = "ue-python";
 
 const DATA_FOLDER_NAME = "VSCode-Unreal-Python";  // Folder name used for Temp & Data directory
@@ -227,16 +225,6 @@ export function cleanupTempFiles() {
     if (fs.existsSync(tempDir)) {
         fs.rmSync(tempDir, { recursive: true });
     }
-}
-
-
-// -----------------------------------------------------------------------------------------
-//                                          Web
-// -----------------------------------------------------------------------------------------
-
-/** Open a url in the default webbrowser */
-export function openUrl(url: string) {
-    open(url);
 }
 
 

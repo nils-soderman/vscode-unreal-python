@@ -132,10 +132,9 @@ async function installDebugpy(target = ""): Promise<boolean> {
         "Report Bug",
     ).then((value) => {
         if (value === "Report Bug")
-            utils.openUrl(REPORT_BUG_URL);
-
+            vscode.env.openExternal(vscode.Uri.parse(REPORT_BUG_URL));
         if (value === "View on pypi.org")
-            utils.openUrl(DEBUGPY_PYPI_URL);
+            vscode.env.openExternal(vscode.Uri.parse(DEBUGPY_PYPI_URL));
     });
 
     return false;
