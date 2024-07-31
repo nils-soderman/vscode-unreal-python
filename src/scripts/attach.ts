@@ -198,18 +198,7 @@ export async function main(): Promise<boolean> {
     const config = utils.getExtensionConfig();
     const attachConfig = config.get<IAttachConfiguration>("attach");
     if (!attachConfig) {
-        return;
-    }
-
-    // TODO: Remove in the next release
-    // Check if the deprecated port setting is used
-    const deprecatedPortConfig = config.inspect("debug.port");
-    const deprecatedPortValue = config.get<number>("debug.port");
-    if (deprecatedPortValue && deprecatedPortConfig?.defaultValue !== deprecatedPortValue) {
-        if (config.inspect("attach.port")?.defaultValue === attachConfig.port) {
-            attachConfig.port = deprecatedPortValue;
-            vscode.window.showWarningMessage("The 'ue-python.debug.port' setting is deprecated, please use 'ue-python.attach.port' instead.");
-        }
+        return false;
     }
 
     // Check if debugpy is already running

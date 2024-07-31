@@ -57,14 +57,7 @@
     "configuration": [
       {
         "properties": {
-          "ue-python.debug.port": {
-            "type": "number",
-            "default": 6868,
-            "scope": "resource",
-            "deprecationMessage": "Deprecated: Use `ue-python.attach.port` instead.",
-            "markdownDeprecationMessage": "**Deprecated**: Use `ue-python.attach.port` instead."
-          },
-          "ue-python.strictPort": {
+                    "ue-python.strictPort": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Prevent this extension from automatically finding a free port if a port assigned in the config is busy.",
