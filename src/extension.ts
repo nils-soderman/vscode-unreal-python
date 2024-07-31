@@ -12,7 +12,7 @@ import { openDocumentationWindow } from './views/documentation-pannel';
 
 export function activate(context: vscode.ExtensionContext) {
 	// Set the extension directory
-	utils.setExtensionDir(context.extensionPath);
+	utils.setExtensionUri(context.extensionUri);
 
 	// Register commands
 	context.subscriptions.push(
@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('ue-python.openDocumentation', () => {
-			openDocumentationWindow(context.extensionUri);
+			return openDocumentationWindow(context);
 		})
 	);
 
@@ -52,14 +52,16 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 
-export function deactivate() {
-	// Remove all temp files created by this extension
-	utils.cleanupTempFiles();
+export async function deactivate() {
+	remoteHandler.removeStatusBarItem();
+
+	// TODO: await these 2 together
 
 	// Close command connection
-	remoteHandler.closeRemoteConnection();
+	await remoteHandler.closeRemoteConnection();
 
-	remoteHandler.removeStatusBarItem();
+	// Remove all temp files created by this extension
+	await utils.cleanupTempFiles();
 }
 
 

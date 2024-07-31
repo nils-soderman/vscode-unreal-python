@@ -5,7 +5,6 @@
 import * as vscode from 'vscode';
 
 import * as path from 'path';
-import * as fs from 'fs';
 
 import * as remoteHandler from '../modules/remote-handler';
 import * as extensionWiki from '../modules/extension-wiki';
@@ -24,11 +23,11 @@ const EXTRA_PATHS_CONFIG = "analysis.extraPaths";
  * Get the path to the directory where the 'unreal.py' stubfile is generated,
  * Based on the currently connected Unreal Engine project.
  */
-async function getUnrealStubDirectory(): Promise<string | null> {
-    const getPythonPathScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.codeCompletionGetPath);
+async function getUnrealStubDirectory(): Promise<vscode.Uri | null> {
+    const getPythonPathScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.codeCompletionGetPath);
     const response = await remoteHandler.executeFile(getPythonPathScript, {});
 
-    let directory: string | null = null;
+    let directory: string | undefined = undefined;
 
     if (response) {
         for (const output of response.output) {
@@ -44,7 +43,10 @@ async function getUnrealStubDirectory(): Promise<string | null> {
         }
     }
 
-    return directory;
+    if (directory)
+        return vscode.Uri.file(directory);
+
+    return null;
 }
 
 
@@ -136,11 +138,11 @@ function addPythonAnalysisPath(pathToAdd: string): void {
  * If a valid stub file doesn't exist, user will be prompted to enable developer mode and the path will NOT be added to the python config.
  * @param stubDirectoryPath The directory where the 'unreal.py' stub file is located
  */
-async function validateStubAndAddToPath(stubDirectoryPath: string): Promise<void> {
+async function validateStubAndAddToPath(stubDirectoryPath: vscode.Uri): Promise<void> {
     // Check if a generated stub file exists
-    const stubFilepath = path.join(stubDirectoryPath, STUB_FILE_NAME);
+    const stubFilepath = vscode.Uri.joinPath(stubDirectoryPath, STUB_FILE_NAME);
 
-    if (!fs.existsSync(stubFilepath)) {
+    if (!utils.uriExists(stubFilepath)) {
         logger.log(`Failed to find the generated stub file: "${stubFilepath}"`);
         // A generated stub file could not be found, ask the user to enable developer mode first
         const clickedItem = await vscode.window.showErrorMessage("To setup code completion you first need to enable Developer Mode in Unreal Engine's Python plugin settings.", "Help");
@@ -150,7 +152,7 @@ async function validateStubAndAddToPath(stubDirectoryPath: string): Promise<void
         return;
     }
 
-    addPythonAnalysisPath(stubDirectoryPath);
+    addPythonAnalysisPath(stubDirectoryPath.fsPath);
 }
 
 
@@ -175,8 +177,8 @@ export async function main() {
 
             if (selectedFiles) {
                 // `selectedFiles[0]` should now be the .uproject file that the user whish to setup code completion for
-                const projectDirectory = path.dirname(selectedFiles[0].fsPath);
-                const manualStubDirectoryPath = path.join(projectDirectory, "Intermediate", "PythonStub");
+                const projectDirectory = vscode.Uri.file(path.dirname(selectedFiles[0].fsPath));
+                const manualStubDirectoryPath = vscode.Uri.joinPath(projectDirectory, "Intermediate", "PythonStub");
                 validateStubAndAddToPath(manualStubDirectoryPath);
             }
         }

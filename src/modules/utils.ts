@@ -3,7 +3,6 @@ import * as vscode from 'vscode';
 import * as tcpPortUsed from 'tcp-port-used';
 import * as path from 'path';
 import * as os from "os";
-import * as fs from 'fs';
 
 export const EXTENSION_ID = "ue-python";
 
@@ -11,21 +10,21 @@ const DATA_FOLDER_NAME = "VSCode-Unreal-Python";  // Folder name used for Temp &
 export const DEBUG_SESSION_NAME = "Unreal Python"; // The name of the debug session when debugging Unreal
 
 
-let _extensionDir: string | undefined; // Stores the absolute path to this extension's directory, set on activation
+let _extensionDir: vscode.Uri | undefined; // Stores the absolute path to this extension's directory, set on activation
 
 /**
  * This function should only be called once, on activation
- * @param dir Should be: `ExtensionContext.extensionPath`
+ * @param uri Should be: `ExtensionContext.extensionPath`
  */
-export function setExtensionDir(dir: string) {
-    _extensionDir = dir;
+export function setExtensionUri(uri: vscode.Uri) {
+    _extensionDir = uri;
 }
 
 /**
  * This function cannot be called in top-level. It must be called after the extension has been activated
  * @returns The absolute path to this extension's directory
  */
-export function getExtensionDir() {
+export function getExtensionUri(): vscode.Uri {
     if (!_extensionDir) {
         throw Error("Extension Dir hasn't been set yet! This should be set on activation. This function cannot be called in top-level.");
     }
@@ -51,8 +50,8 @@ export class FPythonScriptFiles {
     static readonly addSysPath = "add_sys_path";
 
     /** Get the absolute path to one of the scripts defined in this struct */
-    static getAbsPath(file: string) {
-        return path.join(getExtensionDir(), "python", `${file}.py`);
+    static getUri(file: string): vscode.Uri {
+        return vscode.Uri.joinPath(getExtensionUri(), "python", `${file}.py`);
     }
 }
 
@@ -102,128 +101,36 @@ export function isPathsSame(a: string, b: string) {
 
 
 /**
- * Make sure a path uses forward slashes
- */
-export function ensureForwardSlashes(inPath: string) {
-    return inPath.replace(/\\/g, "/");;
-}
-
-
-/**
  * @param bEnsureExists If folder doesn't exist, create it
  * @returns absolute path to this extensions tempdir
  */
-export function getExtentionTempDir(bEnsureExists = true) {
-    const tempDir = path.join(os.tmpdir(), DATA_FOLDER_NAME);
-    if (bEnsureExists && !fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir);
+export async function getExtensionTempUri(bEnsureExists = true): Promise<vscode.Uri> {
+    const tempUri = vscode.Uri.file(os.tmpdir());
+    const extensionTmpUri = vscode.Uri.joinPath(tempUri, DATA_FOLDER_NAME);
+    if (bEnsureExists && !await uriExists(tempUri)) {
+        await vscode.workspace.fs.createDirectory(tempUri);
     }
-    return tempDir;
+
+    return extensionTmpUri;
 }
 
-
-/** 
- * @param bEnsureExists If folder doesn't exist, create it
- * @returns The directory where to save extension data 
- * */
-export function getExtensionConfigDir(bEnsureExists = true) {
-    let configDir: string | undefined;
-    if (process.platform === 'win32') {
-        // Windows
-        configDir = process.env.APPDATA;
+export async function uriExists(uri: vscode.Uri): Promise<boolean> {
+    try {
+        await vscode.workspace.fs.stat(uri);
+        return true;
+    } catch {
+        return false;
     }
-    else if (process.platform === 'darwin') {
-        // Mac OS
-        configDir = path.join(os.homedir(), 'Library');
-    }
-    else {
-        // Linux
-        configDir = path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'));
-    }
-
-    if (!configDir) {
-        return;
-    }
-
-    configDir = path.join(configDir, DATA_FOLDER_NAME);
-
-    // Create folder if it doesn't exists
-    if (bEnsureExists && !fs.existsSync(configDir)) {
-        fs.mkdirSync(configDir);
-    }
-
-    return configDir;
 }
 
-
-/**
- * Write a temp file inside of this extensions temp directory
- * @param filename The basename of the file
- * @param text Text to write to the file
- * @returns the absolute filepath of the file
- */
-export function saveTempFile(filename: string, text: string | object) {
-    if (!path.isAbsolute(filename)) {
-        filename = path.join(getExtentionTempDir(), filename);
-    }
-
-    if (typeof text === "object") {
-        text = JSON.stringify(text);
-    }
-
-    fs.writeFileSync(filename, text);
-
-    return filename;
-}
-
-
-export function saveConfigFile(filename: string, text: string | object) {
-    if (!path.isAbsolute(filename)) {
-        const configDir = getExtensionConfigDir(true);
-        if (!configDir) {
-            return;
-        }
-
-        filename = path.join(configDir, filename);
-    }
-
-    if (typeof text === "object") {
-        text = JSON.stringify(text);
-    }
-
-    fs.writeFileSync(filename, text);
-
-    return filename;
-}
-
-
-export function loadConfigFile(filename: string, bParseJson = false, defaultValue: any = undefined) {
-    if (!path.isAbsolute(filename)) {
-        const configDir = getExtensionConfigDir(true);
-        if (!configDir) {
-            return defaultValue;
-        }
-        filename = path.join(configDir, filename);
-    }
-
-    if (!fs.existsSync(filename)) {
-        return defaultValue;
-    }
-
-    const content = fs.readFileSync(filename, { encoding: "utf-8" });
-    if (bParseJson) {
-        return JSON.parse(content);
-    }
-    return content;
-}
 
 /**
  * Delete this extension's temp folder (and all of the files inside of it)
  */
-export function cleanupTempFiles() {
-    const tempDir = getExtentionTempDir();
-    if (fs.existsSync(tempDir)) {
-        fs.rmSync(tempDir, { recursive: true });
+export async function cleanupTempFiles() {
+    const tmpDir = await getExtensionTempUri();
+    if (await uriExists(tmpDir)) {
+        await vscode.workspace.fs.delete(tmpDir, { recursive: true, useTrash: false });
     }
 }
 

@@ -236,7 +236,7 @@ async function onRemoteInstanceCreated(instance: RemoteExecution) {
 
         if (foldersToAddToPath.length > 0) {
             const response = await executeFile(
-                utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.addSysPath),
+                utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.addSysPath),
                 {
                     vsc_paths: foldersToAddToPath // eslint-disable-line @typescript-eslint/naming-convention
                 }
@@ -287,19 +287,19 @@ export async function runCommand(command: string) {
 
 /**
  * Execute a file in Unreal through the remote exection
- * @param filepath Absolute filepath to the python file to execute
+ * @param uri Absolute filepath to the python file to execute
  * @param variables Optional dict with global variables to set before executing the file
  */
-export function executeFile(filepath: string, globals: any = {}) {
+export function executeFile(uri: vscode.Uri, globals: any = {}) {
     if (!globals.hasOwnProperty('__file__')) {
-        globals["__file__"] = filepath;
+        globals["__file__"] = uri.fsPath;
     }
 
     let globalsStr = JSON.stringify(globals);
     globalsStr = globalsStr.replace(/\\/g, "\\\\");
 
     // Put together one line of code for settings the global variables, then opening, reading & executing the given filepath
-    const command = `import json;globals().update(json.loads('${globalsStr}'));f=open(r'${filepath}','r');exec(f.read());f.close()`;
+    const command = `import json;globals().update(json.loads('${globalsStr}'));f=open(r'${uri.fsPath}','r');exec(f.read());f.close()`;
     return runCommand(command);
 }
 

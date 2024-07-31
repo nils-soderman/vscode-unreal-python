@@ -35,7 +35,7 @@ enum EConfigFiles {
  * Open the documentation in a new tab
  * @param extensionUri The extension's Uri
  */
-export function openDocumentationWindow(extensionUri: vscode.Uri) {
+export async function openDocumentationWindow(context: vscode.ExtensionContext) {
     // Check if a single word is selected in the editor, and if so use that as the default filter
     let defaultFilter: string | undefined = undefined;
     const editor = vscode.window.activeTextEditor;
@@ -55,8 +55,8 @@ export function openDocumentationWindow(extensionUri: vscode.Uri) {
     }
 
     // Create the documentation pannel and open it
-    const documentationPannel = new DocumentationPannel(extensionUri);
-    documentationPannel.open(vscode.ViewColumn.Two, defaultFilter);
+    const documentationPannel = new DocumentationPannel(context.extensionUri, context.globalStorageUri);
+    await documentationPannel.open(vscode.ViewColumn.Two, defaultFilter);
 
     return documentationPannel;
 }
@@ -65,11 +65,11 @@ export function openDocumentationWindow(extensionUri: vscode.Uri) {
 /**
  *  
  */
-async function buildDocumentationTableOfContents(filepath: string): Promise<boolean> {
-    const buildDocumentationTocScirpt = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.buildDocumentationToC);
+async function buildDocumentationTableOfContents(uri: vscode.Uri): Promise<boolean> {
+    const buildDocumentationTocScirpt = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.buildDocumentationToC);
 
     const globals = {
-        "outFilepath": filepath
+        "outFilepath": uri.fsPath
     };
 
     const response = await remoteHandler.executeFile(buildDocumentationTocScirpt, globals);
@@ -89,12 +89,12 @@ async function buildDocumentationTableOfContents(filepath: string): Promise<bool
 /**
  *  
  */
-async function buildPageContent(filepath: string, module: string): Promise<boolean> {
-    const getDocPageContentScirpt = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.getDocPageContent);
+async function buildPageContent(filepath: vscode.Uri, module: string): Promise<boolean> {
+    const getDocPageContentScirpt = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.getDocPageContent);
 
     const globals = {
         "object": module,
-        "outFilepath": filepath
+        "outFilepath": filepath.fsPath
     };
 
     const response = await remoteHandler.executeFile(getDocPageContentScirpt, globals);
@@ -125,9 +125,10 @@ export class DocumentationPannel {
 
 
     constructor(
-        private readonly _extensionUri: vscode.Uri
+        private readonly extensionUri: vscode.Uri,
+        private readonly globalStorage: vscode.Uri
     ) {
-        this.webviewDirectory = vscode.Uri.joinPath(_extensionUri, 'webview-ui', "build");
+        this.webviewDirectory = vscode.Uri.joinPath(extensionUri, 'webview-ui', "build");
     }
 
     /**
@@ -135,15 +136,15 @@ export class DocumentationPannel {
      * @param viewColumn The view column to open the pannel in
      * @param defaultFilter The default filter to insert into the search bar
      */
-    public open(viewColumn = vscode.ViewColumn.Two, defaultFilter?: string) {
+    public async open(viewColumn = vscode.ViewColumn.Two, defaultFilter?: string) {
         // Set/Load some default values
         this.initialFilter = defaultFilter;
-        this.dropDownAreaStates = utils.loadConfigFile(EConfigFiles.dropDownAreaStates, true, {});
+        this.dropDownAreaStates = await this.loadDropDownAreaOpenState();
 
         this.pannel = vscode.window.createWebviewPanel(this.pannelName, this.title, viewColumn, {
             enableScripts: true,
             localResourceRoots: [
-                this._extensionUri
+                this.extensionUri
             ]
         });
 
@@ -153,15 +154,15 @@ export class DocumentationPannel {
 
 
     public async sendTableOfContents() {
-        const filepath = path.join(utils.getExtentionTempDir(), "documentation_toc.json");
+        const filepath = vscode.Uri.joinPath(await utils.getExtensionTempUri(), "documentation_toc.json");
         // Build table of content if it doesn't already exists
-        if (!fs.existsSync(filepath)) {
+        if (!await utils.uriExists(filepath)) {
             if (!await buildDocumentationTableOfContents(filepath)) {
                 return;
             }
         }
-        const tableOfContentsString = fs.readFileSync(filepath);
-        const data = JSON.parse(tableOfContentsString.toString());
+        const tableOfContentsBytes = vscode.workspace.fs.readFile(filepath);
+        const data = JSON.parse(tableOfContentsBytes.toString());
 
         if (this.pannel) {
             this.pannel.webview.postMessage({ command: EInOutCommands.getTableOfContents, data: data });
@@ -171,13 +172,13 @@ export class DocumentationPannel {
 
 
     public async openDetailsPage(module: string, property?: string) {
-        const filepath = path.join(utils.getExtentionTempDir(), `docpage_${module}.json`);
-        if (!fs.existsSync(filepath)) {
+        const filepath = vscode.Uri.joinPath(await utils.getExtensionTempUri(), `docpage_${module}.json`);
+        if (!await utils.uriExists(filepath)) {
             await buildPageContent(filepath, module);
         }
 
-        const tableOfContentsString = fs.readFileSync(filepath);
-        const data = JSON.parse(tableOfContentsString.toString());
+        const tableOfContentsBytes = await vscode.workspace.fs.readFile(filepath);
+        const data = JSON.parse(tableOfContentsBytes.toString());
 
         if (this.pannel) {
             this.pannel.webview.postMessage({ command: EInOutCommands.getDocPage, data: { pageData: data, property: property } });
@@ -230,8 +231,14 @@ export class DocumentationPannel {
 
     private storeDropDownAreaOpenState(id: string, value: boolean) {
         this.dropDownAreaStates[id] = value;
-
-        utils.saveConfigFile(EConfigFiles.dropDownAreaStates, this.dropDownAreaStates);
+        const dropDownStatesStorage = vscode.Uri.joinPath(this.globalStorage, EConfigFiles.dropDownAreaStates);
+        return vscode.workspace.fs.writeFile(dropDownStatesStorage, Buffer.from(JSON.stringify(this.dropDownAreaStates)));
+    }
+    
+    private async loadDropDownAreaOpenState() {
+        const dropDownStatesStorage = vscode.Uri.joinPath(this.globalStorage, EConfigFiles.dropDownAreaStates);
+        const data = await vscode.workspace.fs.readFile(dropDownStatesStorage);
+        return JSON.parse(data.toString());
     }
 
     private getHtmlForWebview(webview: vscode.Webview) {

@@ -3,7 +3,6 @@
  */
 
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 
 
 /**
@@ -82,6 +81,7 @@ function formatSelectedText(text: string, firstCharIndex: number) {
             else {
                 const trimmedLine = line.trimStart();
 
+                // Check if it's just an empty line or a comment
                 if (trimmedLine && trimmedLine[0] !== "#") {
                     const numberOfWhitespaceCharacters = line.length - trimmedLine.length;
                     if (numberOfWhitespaceCharacters < numCharactersToRemove) {
@@ -106,8 +106,8 @@ function formatSelectedText(text: string, firstCharIndex: number) {
  * @param text Text to write to the file
  * @returns the absolute filepath of the file
  */
-function saveFile(filepath: string, text: string) {
-    fs.writeFileSync(filepath, text);
+async function saveFile(filepath: vscode.Uri, text: string) {
+    await vscode.workspace.fs.writeFile(filepath, Buffer.from(text));
     return filepath;
 }
 
@@ -116,7 +116,7 @@ function saveFile(filepath: string, text: string) {
  * @param tempFilepath If a temp file needs to be saved, this path will be used
  * @returns The filepath to a executable python file based on the curerrent file/selection in VS Code
  */
-export function getFileToExecute(tempFilepath: string) {
+export async function getFileToExecute(tempFilepath: vscode.Uri) {
     if (!vscode.window.activeTextEditor) {
         return;
     }
@@ -135,5 +135,5 @@ export function getFileToExecute(tempFilepath: string) {
     }
 
     // No selection and everything is saved, return the current file
-    return activeDocuemt.uri.fsPath;
+    return activeDocuemt.uri;
 }
