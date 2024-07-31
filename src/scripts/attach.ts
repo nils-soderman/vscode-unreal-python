@@ -37,10 +37,10 @@ interface IAttachConfiguration {
 /**
  * Check if the python module "debugpy" is installed and accessible with the current `sys.paths` in Unreal Engine.  
  */
-async function isDebugpyInstalled(): Promise<boolean> {
+export async function isDebugpyInstalled(): Promise<boolean> {
     logger.log("Checking if debugpy is installed...");
 
-    const isDebugPyInstalledScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.isDebugpyInstalled);
+    const isDebugPyInstalledScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.isDebugpyInstalled);
     const response = await remoteHandler.executeFile(isDebugPyInstalledScript, {});
     if (response) {
         for (const output of response.output) {
@@ -62,8 +62,8 @@ async function isDebugpyInstalled(): Promise<boolean> {
 /**
  * Check if the python module "debugpy" is installed and accessible with the current `sys.paths` in Unreal Engine.  
  */
-async function getCurrentDebugpyPort(): Promise<number | null> {
-    const getCurrentDebugpyPortScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.getCurrentDebugpyPort);
+export async function getCurrentDebugpyPort(): Promise<number | null> {
+    const getCurrentDebugpyPortScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.getCurrentDebugpyPort);
 
     logger.log("Checking if debugpy is currently running...");
 
@@ -93,17 +93,17 @@ async function getCurrentDebugpyPort(): Promise<number | null> {
  * @param callback The function to call once the module has been installed
  * @param target The directory where to install the module, if none is provided it'll be installed in the current Unreal Project
  */
-async function installDebugpy(target = ""): Promise<boolean> {
+export async function installDebugpy(target?: vscode.Uri): Promise<boolean> {
     logger.log("Installing debugpy...");
 
-    const installDebugpyScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.installDebugPy);
+    const installDebugpyScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.installDebugPy);
 
     // Generate a random id that we expect as a response from the python script if the installation was successful
     const successId = crypto.randomUUID();
 
     // Pass along the target to the python script as a global variable
     const globals = {
-        "install_dir": target, // eslint-disable-line @typescript-eslint/naming-convention
+        "install_dir": target?.fsPath, // eslint-disable-line @typescript-eslint/naming-convention
         "success_id": successId  // eslint-disable-line @typescript-eslint/naming-convention
     };
 
@@ -120,22 +120,8 @@ async function installDebugpy(target = ""): Promise<boolean> {
         }
     }
 
-    logger.log("Failed to install debugpy");
-    if (errorMessage) {
-        logger.log(errorMessage);
-        logger.show();
-    }
-
-    vscode.window.showErrorMessage(
-        `Failed to install [debugpy](${DEBUGPY_PYPI_URL}), consider installing it manually and make sure it's in the sys.path for Unreal Engine.`,
-        "View on pypi.org",
-        "Report Bug",
-    ).then((value) => {
-        if (value === "Report Bug")
-            vscode.env.openExternal(vscode.Uri.parse(REPORT_BUG_URL));
-        if (value === "View on pypi.org")
-            vscode.env.openExternal(vscode.Uri.parse(DEBUGPY_PYPI_URL));
-    });
+    logger.log("Failed to install python module `debugpy`");
+    logger.logError(`Failed to install [debugpy](${DEBUGPY_PYPI_URL}), consider installing it manually.`, new Error(errorMessage));
 
     return false;
 }
@@ -150,7 +136,7 @@ async function installDebugpy(target = ""): Promise<boolean> {
  * @param port The port to start the server on
  */
 async function startDebugpyServer(port: number): Promise<boolean> {
-    const startDebugServerScript = utils.FPythonScriptFiles.getAbsPath(utils.FPythonScriptFiles.startDebugServer);
+    const startDebugServerScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.startDebugServer);
 
     const globals = { "debug_port": port };  // eslint-disable-line @typescript-eslint/naming-convention
 
@@ -186,16 +172,15 @@ function attach(attachSettings: IAttachConfiguration) {
 
     logger.log(`Attaching to Unreal Engine with the following config:\n${JSON.stringify(configuration, null, 4)}`);
 
-    vscode.debug.startDebugging(undefined, configuration);
+    return vscode.debug.startDebugging(undefined, configuration);
 }
 
 
 /** Attach VS Code to Unreal Engine */
-export async function main() {
+export async function main(): Promise<boolean> {
     // Make sure debugpy is installed
     const bInstalled = await isDebugpyInstalled();
     if (!bInstalled) {
-
         const selectedInstallOption = await vscode.window.showWarningMessage(
             `Python module [debugpy](${DEBUGPY_PYPI_URL}) is required for debugging`,
             "Install"
@@ -203,10 +188,10 @@ export async function main() {
 
         if (selectedInstallOption === "Install") {
             if (!await installDebugpy())
-                return;
+                return false;
         }
         else {
-            return;
+            return false;
         }
     }
 
@@ -240,7 +225,7 @@ export async function main() {
             if (!(await utils.isPortAvailable(attachConfig.port)) || reservedCommandPort === attachConfig.port) {
                 logger.log(`Port ${attachConfig.port} is currently busy.`);
                 vscode.window.showErrorMessage(`Port ${attachConfig.port} is currently busy. Please update the 'config ue-python.attach.port'.`);
-                return;
+                return false;
             }
         }
         else {
@@ -250,7 +235,7 @@ export async function main() {
             if (!freePort) {
                 logger.log(`All ports between ${attachConfig.port} -> ${attachConfig.port + 100} are busy.`);
                 vscode.window.showErrorMessage(`All ports between ${attachConfig.port} -> ${attachConfig.port + 100} are busy. Please update the 'config ue-python.attach.port'.`);
-                return;
+                return false;
             }
 
             attachConfig.port = freePort;
@@ -258,7 +243,9 @@ export async function main() {
 
         // Start the debugpy server and attach to it
         if (await startDebugpyServer(attachConfig.port)) {
-            attach(attachConfig);
+            return attach(attachConfig);
         }
     }
+
+    return false;
 }
