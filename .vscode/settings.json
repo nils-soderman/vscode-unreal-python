@@ -1,21 +1,20 @@
 // Place your settings in this file to overwrite default and user settings.
 {
     "files.exclude": {
-        "out": true,
+        ".vscode-test": true,
+        "dist": true,
         "node_modules": true,
-        "builds": true,
-        ".vscode": true,
+        "webview-ui": true, // This folder is added as a seperate workspace folder in vscode-unreal-python.code-workspace
         "LICENSE": true,
-        "**/__pycache__": true,
-        "**/**.pyc": true,
         "*.code-workspace": true,
-        "webview-ui/": true, // This folder is added as a seperate workspace folder in vscode-unreal-python.code-workspace
-        "test": true,
-        "*.vsix": true
+        "*.vsix": true,
+        "**/__pycache__": true,
+        "**/**.pyc": true
     },
-
+    
     "search.exclude": {
-        "out": true
+        "out": true,
+        "test": true,
     },
 
     // Turn off tsc task auto detection since we have the necessary tasks as npm scripts

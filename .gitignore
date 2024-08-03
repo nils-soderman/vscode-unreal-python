@@ -1,6 +1,6 @@
+.vscode-test
 node_modules
+dist
 out
-src/test
 **/__pycache__
-**/**.vsix
-builds/**
+*.vsix

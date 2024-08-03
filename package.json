@@ -18,7 +18,7 @@
     "ue5",
     "ue4"
   ],
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
@@ -57,7 +57,7 @@
     "configuration": [
       {
         "properties": {
-                    "ue-python.strictPort": {
+          "ue-python.strictPort": {
             "type": "boolean",
             "default": false,
             "markdownDescription": "Prevent this extension from automatically finding a free port if a port assigned in the config is busy.",
@@ -194,10 +194,11 @@
     "postinstall": "cd ./webview-ui && npm install",
     "vscode:prepublish": "npm run build-webview && npm run esbuild-base -- --minify",
     "build-webview": "npm run build --prefix webview-ui",
-    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "watch": "npm run esbuild-base -- --sourcemap --watch",
-    "lint": "eslint src --ext ts"
+    "lint": "eslint src --ext ts",
+    "test": "tsc -p ./ && vscode-test"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.7",
