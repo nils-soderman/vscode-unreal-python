@@ -15,6 +15,7 @@
     "search.exclude": {
         "out": true,
         "test": true,
+        "media": true,
     },
 
     // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
