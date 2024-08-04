@@ -13,7 +13,7 @@ import * as utils from '../modules/utils';
 
 import { ECommandOutputType } from "unreal-remote-execution";
 
-const STUB_FILE_NAME = "unreal.py";
+export const STUB_FILE_NAME = "unreal.py";
 
 const PYTHON_CONFIG = "python";
 const EXTRA_PATHS_CONFIG = "analysis.extraPaths";
@@ -23,7 +23,7 @@ const EXTRA_PATHS_CONFIG = "analysis.extraPaths";
  * Get the path to the directory where the 'unreal.py' stubfile is generated,
  * Based on the currently connected Unreal Engine project.
  */
-async function getUnrealStubDirectory(): Promise<vscode.Uri | null> {
+export async function getUnrealStubDirectory(): Promise<vscode.Uri | null> {
     const getPythonPathScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.codeCompletionGetPath);
     const response = await remoteHandler.executeFile(getPythonPathScript, {});
 
@@ -57,7 +57,7 @@ async function getUnrealStubDirectory(): Promise<vscode.Uri | null> {
  * @param pathToAdd The path to add
  * @returns `true` if the path was added or already existed, `false` if the path could not be added
  */
-function addPythonAnalysisPath(pathToAdd: string): void {
+function addPythonAnalysisPath(pathToAdd: string): "add" | "exists" | false {
     const fullConfigName = `${PYTHON_CONFIG}.${EXTRA_PATHS_CONFIG}`;
 
     const activeWorkspaceFolder = utils.getActiveWorkspaceFolder();
@@ -68,7 +68,7 @@ function addPythonAnalysisPath(pathToAdd: string): void {
     let extraPathsConfig = pythonConfig.inspect<string[]>(EXTRA_PATHS_CONFIG);
     if (!extraPathsConfig) {
         logger.log(`Failed to get the config '${fullConfigName}'`);
-        return;
+        return false;
     }
 
     // Use the global scope as default
@@ -109,7 +109,7 @@ function addPythonAnalysisPath(pathToAdd: string): void {
     if (newPathsValue.some(path => utils.isPathsSame(path, pathToAdd))) {
         logger.log(`Path "${pathToAdd}" already exists in '${fullConfigName}' in ${settingsInfo.niceName} settings.`);
         vscode.window.showInformationMessage(`Path "${pathToAdd}" already exists in '${fullConfigName}' in ${settingsInfo.niceName} settings.`);
-        return;
+        return "exists";
     }
 
     // Remove any paths that ends with 'Intermediate/PythonStub'
@@ -129,7 +129,7 @@ function addPythonAnalysisPath(pathToAdd: string): void {
         }
     );
 
-    return;
+    return "add";
 }
 
 
@@ -138,21 +138,25 @@ function addPythonAnalysisPath(pathToAdd: string): void {
  * If a valid stub file doesn't exist, user will be prompted to enable developer mode and the path will NOT be added to the python config.
  * @param stubDirectoryPath The directory where the 'unreal.py' stub file is located
  */
-async function validateStubAndAddToPath(stubDirectoryPath: vscode.Uri): Promise<void> {
+export async function validateStubAndAddToPath(stubDirectoryPath: vscode.Uri): Promise<false | "add" | "exists"> {
     // Check if a generated stub file exists
     const stubFilepath = vscode.Uri.joinPath(stubDirectoryPath, STUB_FILE_NAME);
 
-    if (!utils.uriExists(stubFilepath)) {
+    if (!await utils.uriExists(stubFilepath)) {
         logger.log(`Failed to find the generated stub file: "${stubFilepath}"`);
         // A generated stub file could not be found, ask the user to enable developer mode first
-        const clickedItem = await vscode.window.showErrorMessage("To setup code completion you first need to enable Developer Mode in Unreal Engine's Python plugin settings.", "Help");
-        if (clickedItem === "Help")
-            extensionWiki.openPageInBrowser(extensionWiki.FPages.enableDevmode);
+        vscode.window.showErrorMessage(
+            "To setup code completion you first need to enable Developer Mode in Unreal Engine's Python plugin settings.",
+            "Help"
+        ).then((item) => {
+            if (item === "Help")
+                extensionWiki.openPageInBrowser(extensionWiki.FPages.enableDevmode);
+        });
 
-        return;
+        return false;
     }
 
-    addPythonAnalysisPath(stubDirectoryPath.fsPath);
+    return addPythonAnalysisPath(stubDirectoryPath.fsPath);
 }
 
 

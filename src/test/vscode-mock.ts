@@ -150,7 +150,7 @@ export function mockOpenExternal() {
 
 export function getTempDir(name: string): vscode.Uri {
     const tmpDir = vscode.Uri.file(os.tmpdir());
-    return vscode.Uri.joinPath(tmpDir, "mobu-utils-test-" + TEST_UUID, name);
+    return vscode.Uri.joinPath(tmpDir, "ue-python-test-" + TEST_UUID, name);
 }
 
 
