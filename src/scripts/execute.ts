@@ -60,9 +60,9 @@ async function cleanUpTempFiles(commandId: string) {
  * Because 'vscode_execute.py' re-directs all of the output through a .txt file, `message` will be empty,
  * instead use `readResponse` to fetch the output. 
  * */
-function handleResponse(message: IRemoteExecutionMessageCommandOutputData, commandId: string) {
-    // If user is debugging MB, all output will automatically be appended to the debug console
-    if (utils.isDebuggingUnreal()) {
+function handleResponse(message: IRemoteExecutionMessageCommandOutputData, commandId: string, isDebugging: boolean) {
+    // If user is debugging, all output will automatically be appended to the debug console
+    if (isDebugging) {
         vscode.debug.activeDebugConsole.appendLine(">>>");
         return;
     }
@@ -111,8 +111,10 @@ export async function main() {
         }
     }
 
+    const projectName = (await remoteHandler.getRemoteExecutionInstance(false))?.connectedNode?.data.project_name;
+
     // Write an info file telling mb what script to run, etc.
-    const bIsDebugging = utils.isDebuggingUnreal();
+    const bIsDebugging = projectName !== undefined && utils.isDebuggingUnreal(projectName);
     const nameVar = extensionConfig.get<string>("execute.name");
 
     let vscodeData: any = {
@@ -129,6 +131,6 @@ export async function main() {
     const execFile = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.executeEntry);
     const response = await remoteHandler.executeFile(execFile, globalVariables);
     if (response) {
-        handleResponse(response, commandId);
+        handleResponse(response, commandId, bIsDebugging);
     }
 }

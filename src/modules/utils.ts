@@ -7,7 +7,7 @@ import * as os from "os";
 export const EXTENSION_ID = "ue-python";
 
 const DATA_FOLDER_NAME = "VSCode-Unreal-Python";  // Folder name used for Temp & Data directory
-export const DEBUG_SESSION_NAME = "Unreal Python"; // The name of the debug session when debugging Unreal
+const DEBUG_SESSION_NAME = "Unreal Python"; // The name of the debug session when debugging Unreal
 
 
 let _extensionDir: vscode.Uri | undefined; // Stores the absolute path to this extension's directory, set on activation
@@ -79,10 +79,13 @@ export function getExtensionConfig() {
     return vscode.workspace.getConfiguration(EXTENSION_ID, activeWorkspaceFolder);
 }
 
+export function getDebugSessionName(projectName: string) {
+    return `${DEBUG_SESSION_NAME} - ${projectName}`;
+}
 
 /** Check if we're currently attached to an Unreal instance */
-export function isDebuggingUnreal() {
-    return vscode.debug.activeDebugSession !== undefined && vscode.debug.activeDebugSession.name === DEBUG_SESSION_NAME;
+export function isDebuggingUnreal(projectName: string) {
+    return vscode.debug.activeDebugSession !== undefined && vscode.debug.activeDebugSession.name === getDebugSessionName(projectName);
 }
 
 

@@ -156,11 +156,11 @@ async function startDebugpyServer(port: number): Promise<boolean> {
  * Start a python debug session and attach VS Code to a port
  * @param attachSettings Launch settings for the debug session
  */
-function attach(attachSettings: IAttachConfiguration) {
+async function attach(name: string, attachSettings: IAttachConfiguration) {
     const moduleToIgnore = path.basename(utils.FPythonScriptFiles.execute);
 
     const configuration = {
-        "name": utils.DEBUG_SESSION_NAME,
+        "name": name,
         "type": "python",
         "request": "attach",
         "host": "localhost",
@@ -176,6 +176,16 @@ function attach(attachSettings: IAttachConfiguration) {
 
 /** Attach VS Code to Unreal Engine */
 export async function main(): Promise<boolean> {
+    const remoteExecution = await remoteHandler.getConnectedRemoteExecutionInstance();
+    const projectName = remoteExecution?.connectedNode?.data.project_name;
+    if (!projectName)
+        return false;
+
+    if (utils.isDebuggingUnreal(projectName)) {
+        logger.log(`Already attached to Unreal Engine project: ${projectName}`);
+        return true;
+    }
+
     // Make sure debugpy is installed
     const bInstalled = await isDebugpyInstalled();
     if (!bInstalled) {
@@ -199,11 +209,13 @@ export async function main(): Promise<boolean> {
         return false;
     }
 
+    const debugSessionName = utils.getDebugSessionName(projectName);
+
     // Check if debugpy is already running
     const currentPort = await getCurrentDebugpyPort();
     if (currentPort) {
         attachConfig.port = currentPort;
-        attach(attachConfig);
+        return attach(debugSessionName, attachConfig);
     }
     else {
         // If "strictPort" is enabled, make sure the port specified is available
@@ -230,7 +242,7 @@ export async function main(): Promise<boolean> {
 
         // Start the debugpy server and attach to it
         if (await startDebugpyServer(attachConfig.port)) {
-            return attach(attachConfig);
+            return attach(debugSessionName, attachConfig);
         }
     }
 
