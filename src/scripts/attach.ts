@@ -93,7 +93,7 @@ export async function getCurrentDebugpyPort(): Promise<number | null> {
  * @param callback The function to call once the module has been installed
  * @param target The directory where to install the module, if none is provided it'll be installed in the current Unreal Project
  */
-export async function installDebugpy(target?: vscode.Uri): Promise<boolean> {
+export async function installDebugpy(): Promise<boolean> {
     logger.log("Installing debugpy...");
 
     const installDebugpyScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.installDebugPy);
@@ -103,13 +103,11 @@ export async function installDebugpy(target?: vscode.Uri): Promise<boolean> {
 
     // Pass along the target to the python script as a global variable
     const globals = {
-        "install_dir": target?.fsPath, // eslint-disable-line @typescript-eslint/naming-convention
-        "success_id": successId  // eslint-disable-line @typescript-eslint/naming-convention
+        "vsc_success_id": successId  // eslint-disable-line @typescript-eslint/naming-convention
     };
 
     const response = await remoteHandler.executeFile(installDebugpyScript, globals);
 
-    // We should've recived a response with "True" or "False"
     let errorMessage = "";
     if (response) {
         for (const output of response.output) {

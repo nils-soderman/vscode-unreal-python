@@ -4,17 +4,15 @@ import subprocess
 import unreal
 
 
-def install_debugpy(target=""):
+def install_debugpy():
     python_exe = unreal.get_interpreter_executable_path()
     if not python_exe:
         return False
 
-    args = [python_exe, "-m", "pip", "install", "debugpy"]
-    if target:
-        args.append(f'--target="{target}"')
+    debugpy_install_args = [python_exe, "-m", "pip", "install", "-q", "--no-warn-script-location", "debugpy"]
 
     try:
-        result = subprocess.run(args, capture_output=True, check=True, text=True)
+        result = subprocess.run(debugpy_install_args, capture_output=True, check=True, text=True)
         unreal.log(result.stdout)
         unreal.log(result.stderr)
     except subprocess.CalledProcessError as e:
@@ -31,12 +29,11 @@ def install_debugpy(target=""):
         unreal.log_error(f"`import debugpy` -> {str(e)}")
         return
 
-    return globals().get("success_id")  # The response the extension expects if the installation was successful
+    return globals().get("vsc_success_id")  # The response the extension expects if the installation was successful
 
 
 def main():
-    install_dir = globals().get("install_dir")
-    response = install_debugpy(install_dir)
+    response = install_debugpy()
     if response:
         # Output is read by the VS Code extension
         unreal.log(response)
