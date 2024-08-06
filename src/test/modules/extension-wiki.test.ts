@@ -1,3 +1,5 @@
+import * as assert from 'assert';
+
 import sinon from 'sinon';
 
 import * as vscodeMock from '../vscode-mock';
@@ -16,6 +18,6 @@ suite('Extension Wiki', () => {
 
     test('Wiki Urls', async function () {
         for (const page of Object.values(wiki.FPages))
-            await wiki.openPageInBrowser(page);
+            assert.ok(await wiki.openPageInBrowser(page), `Failed to open page ${page}`);
     });
 });

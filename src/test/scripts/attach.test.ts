@@ -9,6 +9,10 @@ import * as vscodeMock from '../vscode-mock';
 
 import * as utils from '../../modules/utils';
 import * as attach from '../../scripts/attach';
+import * as remote from '../../modules/remote-handler';
+
+
+
 
 const CONFIG_KEYS = {
     port: "attach.port",
@@ -17,11 +21,13 @@ const CONFIG_KEYS = {
 
 
 suite('Attach', function () {
+    testUtils.initializeExtension();
     this.timeout(30 * 1000);
 
     const extensionConfig = new vscodeMock.ConfigMock({
         [CONFIG_KEYS.port]: 4243,
-        [CONFIG_KEYS.autoPort]: true
+        [CONFIG_KEYS.autoPort]: true,
+        ...testUtils.CONNECTION_CONFIG
     });
 
     let extensionContext: vscode.ExtensionContext;
@@ -33,8 +39,6 @@ suite('Attach', function () {
     });
 
     setup(() => {
-        testUtils.initializeExtension();
-
         extensionContext = vscodeMock.getExtensionContext();
         tempDebugpyInstallDir = vscode.Uri.joinPath(extensionContext.globalStorageUri, "site-packages");
 
@@ -52,39 +56,32 @@ suite('Attach', function () {
     });
 
     test('Install Debugpy', async function () {
-        assert.ok(await attach.installDebugpy(tempDebugpyInstallDir));
+        assert.ok(await attach.installDebugpy());
         assert.ok(await attach.isDebugpyInstalled());
-
-        // We expect to see a single folder with the Python version here, e.g. "Python311"
-        const folderContent = await vscode.workspace.fs.readDirectory(tempDebugpyInstallDir);
-        assert.equal(folderContent.length, 1);
-
-        const [name, type] = folderContent[0];
-        assert.ok(name.startsWith("Python"));
-        assert.strictEqual(type, vscode.FileType.Directory);
-
-        // Check that the debugpy module is present
-        const debugpyPath = vscode.Uri.joinPath(tempDebugpyInstallDir, name, "debugpy");
-        assert.ok(await vscode.workspace.fs.stat(debugpyPath));
-
     });
 
     test('Start Debugpy & Attach', async function () {
-        assert.ok(await attach.main());
+        const projectName = (await remote.getRemoteExecutionInstance())?.connectedNode?.data.project_name;
+        assert.ok(projectName, "Failed to get project name");
 
-        assert.ok(utils.isDebuggingUnreal());
+        assert.ok(await attach.main(), "Failed to attach");
+
+        assert.ok(utils.isDebuggingUnreal(projectName), "isDebuggingUnreal() returned false");
 
         // Re-attach should not start a new session
-        assert.ok(await attach.main());
+        assert.ok(await attach.main(), "Re-attach returned false");
     });
 
     test('Re-attach', async function () {
-        assert.ok(await attach.getCurrentDebugpyPort());
+        const projectName = (await remote.getRemoteExecutionInstance())?.connectedNode?.data.project_name;
+        assert.ok(projectName, "Failed to get project name");
 
-        assert.ok(!utils.isDebuggingUnreal());
-        assert.ok(await attach.main());
+        assert.ok(await attach.getCurrentDebugpyPort(), "Failed to get current Debugpy port");
 
-        assert.ok(utils.isDebuggingUnreal());
+        assert.ok(!utils.isDebuggingUnreal(projectName), "isDebuggingUnreal() returned true");
+        assert.ok(await attach.main(), "Failed to attach");
+
+        assert.ok(utils.isDebuggingUnreal(projectName), "isDebuggingUnreal() returned false");
     });
 
 });

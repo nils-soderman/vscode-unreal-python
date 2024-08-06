@@ -24,7 +24,23 @@ export class ConfigMock implements vscode.WorkspaceConfiguration {
     }
 
     get(key: string, defaultValue?: any) {
-        return this.globalValue[key] || defaultValue;
+        for (const value of [this.workspaceFolderValue, this.workspaceValue, this.globalValue]) {
+            if (value[key] !== undefined)
+                return value[key];
+        }
+
+        for (const value of [this.workspaceFolderValue, this.workspaceValue, this.globalValue]) {
+            let returnValue: any = {};
+            for (const k in value) {
+                if (k.startsWith(`${key}.`)) {
+                    returnValue[k.substring(key.length + 1)] = value[k];
+                }
+            }
+            if (Object.keys(returnValue).length > 0)
+                return returnValue;
+        }
+
+        return defaultValue;
     }
 
     inspect(key: string) {
@@ -133,11 +149,7 @@ export function mockOpenExternal() {
     stubOpenExternal.callsFake((uri: vscode.Uri): Promise<boolean> => {
         return new Promise((resolve, reject) => {
             https.get(uri.toString(), (res) => {
-                if (res.statusCode === 200) {
-                    resolve(true);
-                } else {
-                    reject(`Url ${uri.toString()} return with status code ${res.statusCode}, expected 200`);
-                }
+                resolve(res.statusCode === 200);
             }).on('error', (e) => {
                 reject(`Failed to make a GET request to ${uri.toString()}: ${e.message}`);
             });
