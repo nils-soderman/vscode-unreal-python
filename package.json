@@ -198,7 +198,8 @@
     "esbuild": "npm run esbuild-base -- --sourcemap",
     "watch": "npm run esbuild-base -- --sourcemap --watch",
     "lint": "eslint src --ext ts",
-    "test": "tsc -p ./ && vscode-test"
+    "test": "tsc -p ./ && vscode-test",
+    "watch-test": "tsc -p ./ --watch"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.7",
