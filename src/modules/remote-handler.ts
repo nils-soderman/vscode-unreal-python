@@ -143,12 +143,6 @@ export async function getRemoteExecutionInstance(bEnsureExists = true) {
 }
 
 
-export function nullifyRemoteExecutionInstance() {
-    gCachedRemoteExecution?.stop();
-    gCachedRemoteExecution = null;
-}
-
-
 /**
  * Get the global remote connection instance, and make sure it's connected
  * @returns The remote execution instance, or null if it failed to connect
@@ -200,7 +194,7 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
                         extensionWiki.openPageInBrowser(extensionWiki.FPages.failedToConnect);
                 });
 
-                nullifyRemoteExecutionInstance();
+                closeRemoteConnection();
                 return null;
             }
             finally {
@@ -208,7 +202,7 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
             }
         }
         else {
-            nullifyRemoteExecutionInstance();
+            closeRemoteConnection();
             gIsInitializatingConnection = false;
             return null;
         }
@@ -308,6 +302,6 @@ export function executeFile(uri: vscode.Uri, globals: any = {}) {
  * Close the global remote connection, if there is one
  */
 export async function closeRemoteConnection() {
-    const remoteConnection = await getRemoteExecutionInstance(false);
-    remoteConnection?.stop();
+    gCachedRemoteExecution?.stop();
+    gCachedRemoteExecution = null;
 }
