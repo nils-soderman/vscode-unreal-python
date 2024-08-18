@@ -88,7 +88,7 @@ function handleResponse(message: IRemoteExecutionMessageCommandOutputData, comma
 
 export async function main() {
     if (!vscode.window.activeTextEditor) {
-        return;
+        return false;
     }
 
     // Generate a random id, used to differentiate from other commands run at the same time
@@ -98,7 +98,7 @@ export async function main() {
     const tempExecFilepath = await getTempPythonExecFilepath(commandId);
     const fileToExecute = await vsCodeExec.getFileToExecute(tempExecFilepath);
     if (!fileToExecute) {
-        return;
+        return false;
     }
 
     const extensionConfig = utils.getExtensionConfig();
@@ -132,5 +132,8 @@ export async function main() {
     const response = await remoteHandler.executeFile(execFile, globalVariables);
     if (response) {
         handleResponse(response, commandId, bIsDebugging);
+        return true;
     }
+
+    return false;
 }

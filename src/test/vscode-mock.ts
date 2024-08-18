@@ -53,11 +53,11 @@ export class ConfigMock implements vscode.WorkspaceConfiguration {
         };
     }
 
-    update(key: string, value: any, configurationTarget?: boolean | vscode.ConfigurationTarget, overrideInLanguage?: boolean) {
-        if (configurationTarget === vscode.ConfigurationTarget.Workspace)
-            this.workspaceValue[key] = value;
-        else if (configurationTarget === vscode.ConfigurationTarget.WorkspaceFolder)
+    update(key: string, value: any, configurationTarget: boolean | vscode.ConfigurationTarget = vscode.ConfigurationTarget.WorkspaceFolder, overrideInLanguage?: boolean) {
+        if (configurationTarget === vscode.ConfigurationTarget.WorkspaceFolder)
             this.workspaceFolderValue[key] = value;
+        else if (configurationTarget === vscode.ConfigurationTarget.Workspace)
+            this.workspaceValue[key] = value;
         else
             this.globalValue[key] = value;
 

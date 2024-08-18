@@ -25,7 +25,7 @@ export function initializeExtension() {
 }
 
 export function getPythonTestFilepath(filename: string): vscode.Uri {
-    return vscode.Uri.joinPath(utils.getExtensionUri(), "test", "fixtures", filename);
+    return vscode.Uri.joinPath(utils.getExtensionUri(), "test", "fixture", filename);
 }
 
 export async function uriExists(uri: vscode.Uri): Promise<boolean> {
