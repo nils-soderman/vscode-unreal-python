@@ -4,6 +4,8 @@
 
 ### Fixed:
 - Stepping over indented code not always working correctly
+- Show an error message if [ms-python.vscode-pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) is not installed and _"Setup Code Completion"_ is run
+
 
 ## [1.4.0] - 2024-05-26
 

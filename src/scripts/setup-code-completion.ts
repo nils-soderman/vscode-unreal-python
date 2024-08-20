@@ -15,8 +15,8 @@ import { ECommandOutputType } from "unreal-remote-execution";
 
 export const STUB_FILE_NAME = "unreal.py";
 
-const PYTHON_CONFIG = "python";
-const EXTRA_PATHS_CONFIG = "analysis.extraPaths";
+const CONFIG_PYTHON = "python";
+const CONFIG_KEY_EXTRA_PATHS = "analysis.extraPaths";
 
 
 /**
@@ -58,16 +58,16 @@ export async function getUnrealStubDirectory(): Promise<vscode.Uri | null> {
  * @returns `true` if the path was added or already existed, `false` if the path could not be added
  */
 function addPythonAnalysisPath(pathToAdd: string): "add" | "exists" | false {
-    const fullConfigName = `${PYTHON_CONFIG}.${EXTRA_PATHS_CONFIG}`;
+    const extraPathsConfigName = `${CONFIG_PYTHON}.${CONFIG_KEY_EXTRA_PATHS}`;
 
     const activeWorkspaceFolder = utils.getActiveWorkspaceFolder();
-    const pythonConfig = vscode.workspace.getConfiguration(PYTHON_CONFIG, activeWorkspaceFolder?.uri);
+    const pythonConfig = vscode.workspace.getConfiguration(CONFIG_PYTHON, activeWorkspaceFolder?.uri);
 
     const bHasWorkspaceFileOpen = vscode.workspace.workspaceFile !== undefined;
 
-    let extraPathsConfig = pythonConfig.inspect<string[]>(EXTRA_PATHS_CONFIG);
+    let extraPathsConfig = pythonConfig.inspect<string[]>(CONFIG_KEY_EXTRA_PATHS);
     if (!extraPathsConfig) {
-        logger.log(`Failed to get the config '${fullConfigName}'`);
+        logger.log(`Failed to get the config '${extraPathsConfigName}'`);
         return false;
     }
 
@@ -107,8 +107,8 @@ function addPythonAnalysisPath(pathToAdd: string): "add" | "exists" | false {
 
     // Check if the path already exists
     if (newPathsValue.some(path => utils.isPathsSame(path, pathToAdd))) {
-        logger.log(`Path "${pathToAdd}" already exists in '${fullConfigName}' in ${settingsInfo.niceName} settings.`);
-        vscode.window.showInformationMessage(`Path "${pathToAdd}" already exists in '${fullConfigName}' in ${settingsInfo.niceName} settings.`);
+        logger.log(`Path "${pathToAdd}" already exists in '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`);
+        vscode.window.showInformationMessage(`Path "${pathToAdd}" already exists in '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`);
         return "exists";
     }
 
@@ -117,14 +117,35 @@ function addPythonAnalysisPath(pathToAdd: string): "add" | "exists" | false {
 
     // Add the new path and update the configuration
     newPathsValue.push(pathToAdd);
-    pythonConfig.update(EXTRA_PATHS_CONFIG, newPathsValue, settingsInfo.scope);
+    try {
+        pythonConfig.update(CONFIG_KEY_EXTRA_PATHS, newPathsValue, settingsInfo.scope);
+    }
+    catch (error) {
+        const err = error as Error;
 
-    logger.log(`Added path "${pathToAdd}" to '${fullConfigName}' in ${settingsInfo.niceName} settings.`);
+        if (err.name === "CodeExpectedError" && err.message.includes("is not a registered configuration")) {
+            logger.log(err.message);
 
-    vscode.window.showInformationMessage(`Updated '${fullConfigName}' in ${settingsInfo.niceName} settings.`, "Show Setting").then(
+            vscode.window.showErrorMessage(
+                `[ms-python.vscode-pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) not installed. Could not update the 'python.analysis.extraPaths' setting.`,
+                "Show Pylance"
+            ).then((value) => {
+                if (value === "Show Pylance")
+                    vscode.env.openExternal(vscode.Uri.parse(`${vscode.env.uriScheme}:extension/ms-python.vscode-pylance`));
+            });
+        }
+        else
+            logger.logError(`Failed to update '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`, err);
+
+        return false;
+    }
+
+    logger.log(`Added path "${pathToAdd}" to '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`);
+
+    vscode.window.showInformationMessage(`Updated '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`, "Show Setting").then(
         (value) => {
             if (value === "Show Setting") {
-                vscode.commands.executeCommand(settingsInfo.openSettingsCommand, `${fullConfigName}`);
+                vscode.commands.executeCommand(settingsInfo.openSettingsCommand, `${extraPathsConfigName}`);
             }
         }
     );
