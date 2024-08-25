@@ -161,7 +161,7 @@ export class DocumentationPannel {
                 return;
             }
         }
-        const tableOfContentsBytes = vscode.workspace.fs.readFile(filepath);
+        const tableOfContentsBytes = await vscode.workspace.fs.readFile(filepath);
         const data = JSON.parse(tableOfContentsBytes.toString());
 
         if (this.pannel) {
@@ -234,11 +234,15 @@ export class DocumentationPannel {
         const dropDownStatesStorage = vscode.Uri.joinPath(this.globalStorage, EConfigFiles.dropDownAreaStates);
         return vscode.workspace.fs.writeFile(dropDownStatesStorage, Buffer.from(JSON.stringify(this.dropDownAreaStates)));
     }
-    
+
     private async loadDropDownAreaOpenState() {
         const dropDownStatesStorage = vscode.Uri.joinPath(this.globalStorage, EConfigFiles.dropDownAreaStates);
-        const data = await vscode.workspace.fs.readFile(dropDownStatesStorage);
-        return JSON.parse(data.toString());
+        if (await utils.uriExists(dropDownStatesStorage)) {
+            const data = await vscode.workspace.fs.readFile(dropDownStatesStorage);
+            return JSON.parse(data.toString());
+        }
+
+        return {};
     }
 
     private getHtmlForWebview(webview: vscode.Webview) {
