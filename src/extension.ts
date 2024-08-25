@@ -77,7 +77,7 @@ function onConfigurationChanged(event: vscode.ConfigurationChangeEvent) {
 
 	for (const property of restartOnProperties) {
 		if (event.affectsConfiguration(`ue-python.${property}`)) {
-			remoteHandler.nullifyRemoteExecutionInstance();
+			remoteHandler.closeRemoteConnection();
 			break;
 		}
 	}
