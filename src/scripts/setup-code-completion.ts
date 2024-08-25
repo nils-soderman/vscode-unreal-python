@@ -58,6 +58,21 @@ export async function getUnrealStubDirectory(): Promise<vscode.Uri | null> {
  * @returns `true` if the path was added or already existed, `false` if the path could not be added
  */
 function addPythonAnalysisPath(pathToAdd: string): "add" | "exists" | false {
+
+    // Pylance is the extension that provides the 'python.analysis.extraPaths' setting
+    const pylanceExtension = vscode.extensions.getExtension("ms-python.vscode-pylance");
+    if (!pylanceExtension) {
+        vscode.window.showErrorMessage(
+            `[ms-python.vscode-pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) not installed. Could not update the 'python.analysis.extraPaths' setting.`,
+            "Show Pylance"
+        ).then((value) => {
+            if (value === "Show Pylance")
+                vscode.commands.executeCommand("extension.open", "ms-python.vscode-pylance");
+        });
+
+        return false;
+    }
+
     const extraPathsConfigName = `${CONFIG_PYTHON}.${CONFIG_KEY_EXTRA_PATHS}`;
 
     const activeWorkspaceFolder = utils.getActiveWorkspaceFolder();
@@ -121,22 +136,7 @@ function addPythonAnalysisPath(pathToAdd: string): "add" | "exists" | false {
         pythonConfig.update(CONFIG_KEY_EXTRA_PATHS, newPathsValue, settingsInfo.scope);
     }
     catch (error) {
-        const err = error as Error;
-
-        if (err.name === "CodeExpectedError" && err.message.includes("is not a registered configuration")) {
-            logger.log(err.message);
-
-            vscode.window.showErrorMessage(
-                `[ms-python.vscode-pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) not installed. Could not update the 'python.analysis.extraPaths' setting.`,
-                "Show Pylance"
-            ).then((value) => {
-                if (value === "Show Pylance")
-                    vscode.env.openExternal(vscode.Uri.parse(`${vscode.env.uriScheme}:extension/ms-python.vscode-pylance`));
-            });
-        }
-        else
-            logger.logError(`Failed to update '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`, err);
-
+        logger.logError(`Failed to update '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`, error as Error);
         return false;
     }
 
@@ -167,7 +167,7 @@ export async function validateStubAndAddToPath(stubDirectoryPath: vscode.Uri): P
         logger.log(`Failed to find the generated stub file: "${stubFilepath}"`);
         // A generated stub file could not be found, ask the user to enable developer mode first
         vscode.window.showErrorMessage(
-            "To setup code completion you first need to enable Developer Mode in Unreal Engine's Python plugin settings.",
+            "To setup code completion you first need to enable Developer Mode in Unreal Engine's Python plugin settings, then restart the Unreal",
             "Help"
         ).then((item) => {
             if (item === "Help")
