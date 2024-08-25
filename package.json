@@ -211,9 +211,9 @@
     "@typescript-eslint/parser": "^7.17.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
-    "esbuild": "^0.23.0",
+    "esbuild": "^0.23.1",
     "eslint": "^8.56.0",
-    "mocha": "^10.7.0",
+    "mocha": "^10.7.3",
     "sinon": "^18.0.0",
     "typescript": "^5.5.4"
   },
