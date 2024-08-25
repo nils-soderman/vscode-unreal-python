@@ -1,26 +1,26 @@
+.github
+**/.gitignore
+
 *.code-workspace
 **/.vscode/**
 **/**.vsix
-.github
 
+.pylintrc
 **/__pycache__
 **/**.pyc
 
-.yarnrc
-.pylintrc
 **/.eslintrc.json
-**/.gitignore
 **/tsconfig.json
 
 **/*.map
 **/*.ts
 
-build-scripts
-builds/**
 media/demo/**
 media/icon-font/*.svg
 src/**
+out/**
 test/**
+.vscode-test.mjs
 
 CONTRIBUTING.md
 
