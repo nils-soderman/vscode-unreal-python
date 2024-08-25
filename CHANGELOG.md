@@ -1,11 +1,12 @@
 # Change Log
 
-## [1.4.1] - UNRELEASED
+## [1.4.1] - 2024-08-25
 
 ### Fixed:
 - Stepping over indented code not always working correctly
 - Show an error message if [ms-python.vscode-pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) is not installed and _"Setup Code Completion"_ is run
-
+- Error if trying to attach to the same Unreal Engine instance multiple times
+- Use VS Code's API for opening external URLs
 
 ## [1.4.0] - 2024-05-26
 
