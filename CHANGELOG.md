@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.5.0] - 2024-11-17
+
+### Added:
+- Added experimental setting [ue-python.experimental.printLastExpression](vscode://settings/ue-python.experimental.printLastExpression) that wraps the last expression in a `print()` statement when executing code, mimicking the behavior of the Python REPL. [#38](https://github.com/nils-soderman/vscode-unreal-python/issues/38)
+
 ## [1.4.1] - 2024-08-25
 
 ### Fixed:

@@ -79,9 +79,41 @@ def find_package(filepath: str):
     return ""
 
 
-def execute_code(code: str, filename: str):
+def wrap_last_expression_in_print(code: str):
+    """ 
+    Replace the last expression in the code with a print statement and return the modified code 
+    """
+    import ast
+
     try:
-        exec(compile(code, filename, "exec"), get_exec_globals())
+        parsed_code = ast.parse(code)
+    except SyntaxError:
+        return code
+
+    last_expr = parsed_code.body[-1]
+    if isinstance(last_expr, ast.Expr):
+        lines = code.splitlines()
+
+        expr_code = ast.unparse(last_expr.value)
+
+        temp_var = "__ue_vscode_temp_var__"
+        print_code = f"{temp_var} = {expr_code}; print({temp_var}) if {temp_var} is not None else None"
+
+        lines[last_expr.lineno - 1:last_expr.end_lineno] = [print_code]
+
+        return '\n'.join(lines)
+
+    return code
+
+
+def execute_code(code: str, filename: str, print_last_expr: bool):
+    if print_last_expr:
+        # TODO: When making this default, don't parse the code twice.
+        # Instead always parse it into AST then compile the AST below
+        code = wrap_last_expression_in_print(code)
+
+    try:
+        exec(compile(code, filename, 'exec'), get_exec_globals())
     except Exception as e:
         exception_type, exc, traceback_type = sys.exc_info()
 
@@ -105,7 +137,7 @@ def execute_code(code: str, filename: str):
         unreal.log_error(traceback_message)
 
 
-def main(exec_file: str, exec_origin: str, is_debugging: bool, name_var: str | None = None):
+def main(exec_file: str, exec_origin: str, is_debugging: bool, name_var: str | None = None, print_last_expr = False):
     # Set some global variables
     exec_globals = get_exec_globals()
 
@@ -119,4 +151,4 @@ def main(exec_file: str, exec_origin: str, is_debugging: bool, name_var: str | N
 
     with open(exec_file, 'r', encoding="utf-8") as vscode_in_file:
         with UnrealLogRedirectDebugging() if is_debugging else nullcontext():
-            execute_code(vscode_in_file.read(), exec_origin)
+            execute_code(vscode_in_file.read(), exec_origin, print_last_expr)
