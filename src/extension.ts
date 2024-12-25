@@ -55,13 +55,10 @@ export function activate(context: vscode.ExtensionContext) {
 export async function deactivate() {
 	remoteHandler.removeStatusBarItem();
 
-	// TODO: await these 2 together
-
-	// Close command connection
-	await remoteHandler.closeRemoteConnection();
-
-	// Remove all temp files created by this extension
-	await utils.cleanupTempFiles();
+	await Promise.all([
+		remoteHandler.closeRemoteConnection(),
+		utils.cleanupTempFiles()
+	]);
 }
 
 
