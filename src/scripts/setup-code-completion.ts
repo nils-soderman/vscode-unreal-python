@@ -1,5 +1,5 @@
 /**
- * Script to add the directory where the 'unreal.py' stub file is generated to the `python.analysis.extraPaths` config.
+ * Adds the directory where the 'unreal.py' stub file is generated to the `python.analysis.extraPaths` config.
  */
 
 import * as vscode from 'vscode';
@@ -39,8 +39,11 @@ export async function getUnrealStubDirectory(): Promise<vscode.Uri | null> {
     const getPythonPathScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.codeCompletionGetPath);
     const response = await remoteHandler.evaluateFunction(getPythonPathScript, "get_python_stub_dir");
 
-    if (response && remoteHandler.logResponseAndReportErrors(response, "Failed to get the path to the Unreal Engine stub"))
-        return vscode.Uri.file(response.result);
+    if (response && remoteHandler.logResponseAndReportErrors(response, "Failed to get the path to the Unreal Engine stub")) {
+        // The result string contains quote characters, strip those
+        const stubDirectoryPath = response.result.slice(1, -1);
+        return vscode.Uri.file(stubDirectoryPath);
+    }
 
     return null;
 }
