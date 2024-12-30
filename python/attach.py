@@ -63,6 +63,6 @@ def start_debugpy_server(port: int) -> bool:
     return True
 
 
-def get_current_debugpy_port() -> str:
+def get_current_debugpy_port() -> int:
     """ Returns the current debugpy server port or -1 if it is not set """
-    return os.environ.get(VSCODE_DEBUG_SERVER_ENV_VAR, "-1")
+    return int(os.environ.get(VSCODE_DEBUG_SERVER_ENV_VAR, -1))
