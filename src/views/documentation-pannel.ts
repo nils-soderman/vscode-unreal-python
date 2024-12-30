@@ -2,13 +2,11 @@ import * as vscode from 'vscode';
 
 import * as crypto from 'crypto';
 import * as path from 'path';
-import * as fs from 'fs';
 
 import * as remoteHandler from '../modules/remote-handler';
+import * as logging from '../modules/logger';
 import * as utils from '../modules/utils';
 
-
-import { ECommandOutputType } from "unreal-remote-execution";
 
 enum EInOutCommands {
     getTableOfContents = "getTableOfContents",
@@ -35,51 +33,44 @@ enum EConfigFiles {
  * Open the documentation in a new tab
  * @param extensionUri The extension's Uri
  */
-export async function openDocumentationWindow(context: vscode.ExtensionContext) {
+export async function openDocumentationWindow(extensionUri: vscode.Uri, globalStorageUri: vscode.Uri, viewColumn = vscode.ViewColumn.Two): Promise<DocumentationPannel> {
     // Check if a single word is selected in the editor, and if so use that as the default filter
     let defaultFilter: string | undefined = undefined;
     const editor = vscode.window.activeTextEditor;
+
     if (editor?.selections.length === 1) {
         const selectedText = editor.document.getText(editor.selection);
-        if (selectedText) {
-            const words = selectedText.trim().split(" ");
-            if (words.length === 1) {
-                const selectedWord = words[0];
-
-                // Make sure the word does not contain any special characters
-                if (selectedWord.match(/^[a-zA-Z0-9_]+$/)) {
-                    defaultFilter = selectedWord;
-                }
-            }
+        const words = selectedText.trim().split(" ");
+        if (words.length === 1 && /^[a-zA-Z0-9_]+$/.test(words[0])) {
+            defaultFilter = words[0];
         }
     }
 
     // Create the documentation pannel and open it
-    const documentationPannel = new DocumentationPannel(context.extensionUri, context.globalStorageUri);
-    await documentationPannel.open(vscode.ViewColumn.Two, defaultFilter);
+    const documentationPannel = new DocumentationPannel(extensionUri, globalStorageUri);
+    await documentationPannel.open(viewColumn, defaultFilter);
 
     return documentationPannel;
 }
 
 
 /**
- *  
+ * Get the table of contents for the documentation
+ * @returns The table of contents as a JSON object
  */
-async function buildDocumentationTableOfContents(uri: vscode.Uri): Promise<boolean> {
-    const buildDocumentationTocScirpt = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.buildDocumentationToC);
+async function getTableOfContents() {
+    const getTableOfContentScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.buildDocumentationToC);
 
-    const globals = {
-        "outFilepath": uri.fsPath
-    };
-
-    const response = await remoteHandler.executeFile(buildDocumentationTocScirpt, globals);
-    if (response) {
-        for (let output of response.output.reverse()) {
-            if (output.type === ECommandOutputType.INFO) {
-                return output.output.trim().toLowerCase() === "true";
-            }
+    const response = await remoteHandler.evaluateFunction(getTableOfContentScript, "get_table_of_content_json");
+    if (response && remoteHandler.logResponseAndReportErrors(response, "Failed to get documentation")) {
+        // As the result is stringified JSON, remove the quotes and parse it
+        const result = response.result.replace(/^'|'$/g, '');
+        try {
+            return JSON.parse(result);
         }
-
+        catch (e) {
+            logging.logError("Failed to parse JSON", new Error(result));
+        }
     }
 
     return false;
@@ -89,35 +80,35 @@ async function buildDocumentationTableOfContents(uri: vscode.Uri): Promise<boole
 /**
  *  
  */
-async function buildPageContent(filepath: vscode.Uri, module: string): Promise<boolean> {
+async function getPageContent(module: string) {
     const getDocPageContentScirpt = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.getDocPageContent);
 
-    const globals = {
-        "object": module,
-        "outFilepath": filepath.fsPath
+    const kwargs = {
+        "object_name": module
     };
 
-    const response = await remoteHandler.executeFile(getDocPageContentScirpt, globals);
-    if (response) {
-        for (let output of response.output.reverse()) {
-            if (output.type === ECommandOutputType.INFO) {
-                return output.output.trim().toLowerCase() === "true";
-            }
+    const response = await remoteHandler.evaluateFunction(getDocPageContentScirpt, "get_object_documentation_json", kwargs);
+    if (response && remoteHandler.logResponseAndReportErrors(response, "Failed to get documentation")) {
+        // As the result is stringified JSON, remove the quotes and parse it
+        const result = response.result.replace(/^'|'$/g, '');
+        try {
+            return JSON.parse(result);
+        }
+        catch (e) {
+            logging.logError("Failed to parse JSON", new Error(result));
         }
     }
-
-    return false;
 }
 
 
 
 export class DocumentationPannel {
-
     private readonly pannelName = "UE-Python-Documentation";
     readonly title = "Unreal Engine Python";
 
-    private readonly webviewDirectory;
     private pannel?: vscode.WebviewPanel;
+
+    private tableOfContents: any = {};
 
     private dropDownAreaStates: { [id: string]: boolean } = {};
     private maxListItems: { [id: string]: number } = {};
@@ -127,9 +118,7 @@ export class DocumentationPannel {
     constructor(
         private readonly extensionUri: vscode.Uri,
         private readonly globalStorage: vscode.Uri
-    ) {
-        this.webviewDirectory = vscode.Uri.joinPath(extensionUri, 'webview-ui', "build");
-    }
+    ) { }
 
     /**
      * Open the documentation pannel in a new tab
@@ -149,36 +138,22 @@ export class DocumentationPannel {
         });
 
         this.pannel.webview.onDidReceiveMessage(data => { this.onDidReceiveMessage(data); });
-        this.pannel.webview.html = this.getHtmlForWebview(this.pannel.webview);
+        this.pannel.webview.html = this.getWebviewHtml(this.pannel.webview);
     }
 
 
     public async sendTableOfContents() {
-        const filepath = vscode.Uri.joinPath(await utils.getExtensionTempUri(), "documentation_toc.json");
-        // Build table of content if it doesn't already exists
-        if (!await utils.uriExists(filepath)) {
-            if (!await buildDocumentationTableOfContents(filepath)) {
-                return;
-            }
-        }
-        const tableOfContentsBytes = await vscode.workspace.fs.readFile(filepath);
-        const data = JSON.parse(tableOfContentsBytes.toString());
+        if (Object.keys(this.tableOfContents).length === 0)
+            this.tableOfContents = await getTableOfContents();
 
         if (this.pannel) {
-            this.pannel.webview.postMessage({ command: EInOutCommands.getTableOfContents, data: data });
+            this.pannel.webview.postMessage({ command: EInOutCommands.getTableOfContents, data: this.tableOfContents });
         }
-
     }
 
 
     public async openDetailsPage(module: string, property?: string) {
-        const filepath = vscode.Uri.joinPath(await utils.getExtensionTempUri(), `docpage_${module}.json`);
-        if (!await utils.uriExists(filepath)) {
-            await buildPageContent(filepath, module);
-        }
-
-        const tableOfContentsBytes = await vscode.workspace.fs.readFile(filepath);
-        const data = JSON.parse(tableOfContentsBytes.toString());
+        const data = await getPageContent(module);
 
         if (this.pannel) {
             this.pannel.webview.postMessage({ command: EInOutCommands.getDocPage, data: { pageData: data, property: property } });
@@ -245,31 +220,32 @@ export class DocumentationPannel {
         return {};
     }
 
-    private getHtmlForWebview(webview: vscode.Webview) {
-        // Use a nonce to only allow a specific script to be run.
-        const nonce = crypto.randomUUID().replace(/-/g, "");
+    private getWebviewHtml(webview: vscode.Webview) {
+        const webviewDirectory = vscode.Uri.joinPath(this.extensionUri, 'webview-ui', "build");
 
         // Read the manifest file to locate the required script and style files
-        const manifest = require(path.join(this.webviewDirectory.fsPath, 'asset-manifest.json'));
+        const manifest = require(path.join(webviewDirectory.fsPath, 'asset-manifest.json'));
         const mainScript = manifest['files']['main.js'];
         const mainStyle = manifest['files']['main.css'];
 
         // Get default stylesheet
         let stylesheetUris = [];
         stylesheetUris.push(
-            webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, mainStyle))
+            webview.asWebviewUri(vscode.Uri.joinPath(webviewDirectory, mainStyle))
         );
 
         let scritpUris = [];
         scritpUris.push(
-            webview.asWebviewUri(vscode.Uri.joinPath(this.webviewDirectory, mainScript))
+            webview.asWebviewUri(vscode.Uri.joinPath(webviewDirectory, mainScript))
         );
 
-        // Convert style & script Uri's to code
         let styleSheetString = "";
         for (const stylesheet of stylesheetUris) {
             styleSheetString += `<link href="${stylesheet}" rel="stylesheet">\n`;
         }
+
+        // Use a nonce to only allow a specific script to be run.
+        const nonce = crypto.randomUUID().replace(/-/g, "");
 
         let scriptsString = "";
         for (const scriptUri of scritpUris) {
@@ -283,7 +259,7 @@ export class DocumentationPannel {
 				<meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
 				${styleSheetString}
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src vscode-resource: https:; script-src 'nonce-${nonce}';style-src vscode-resource: 'unsafe-inline' http: https: data:;">
-				<base href="${webview.asWebviewUri(this.webviewDirectory)}/">
+				<base href="${webview.asWebviewUri(webviewDirectory)}/">
 			</head>
 			<body>
 				<noscript>You need to enable JavaScript to run this app.</noscript>

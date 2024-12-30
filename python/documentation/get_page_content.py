@@ -1,4 +1,4 @@
-""" Generates a JSON file with an indepth documentation for a given object """
+""" Print a JSON object with an indepth documentation for a given object """
 
 import inspect
 import types
@@ -28,7 +28,7 @@ PROPERTY_DOCSTRING_PATTERN = re.compile(r"\(*.+\):  \[[^\]]+\] [^\)]+[\:]?")
 FUNCTION_DOCSTRING_PATTERN = re.compile(r"^[Xx].+\(*\)\s*->\s*[\w\,]*\s*(or None)?")
 
 
-def get_docstring(obj: object, object_name: str):
+def get_docstring(obj: object, object_name: str) -> str:
     is_class = inspect.isclass(obj)
 
     def _patch_line(line: str, index: int):
@@ -85,7 +85,7 @@ def get_docstring(obj: object, object_name: str):
     return doc_string
 
 
-def patch_method_name_and_doc(name: str, doc: str):
+def patch_method_name_and_doc(name: str, doc: str) -> tuple[str, str, str]:
     name_hints = ""
 
     if "--" in doc:
@@ -104,7 +104,7 @@ def patch_method_name_and_doc(name: str, doc: str):
     return name, name_hints, doc
 
 
-def get_member_data(member: object, memeber_name: str):
+def get_member_data(member: object, memeber_name: str) -> tuple[str, dict]:
     name = memeber_name
 
     doc = get_docstring(member, memeber_name)
@@ -130,7 +130,7 @@ def get_member_data(member: object, memeber_name: str):
     }
 
 
-def generate(object_name: str):
+def get_object_documentation(object_name: str) -> dict:
     if not hasattr(unreal, object_name):
         return None
 
@@ -156,7 +156,6 @@ def generate(object_name: str):
             # Check where the method/property originates from
             #  Inherited                          Overriden
             if memeber_name not in object_dict or any(hasattr(x, memeber_name) for x in ue_object.__bases__):
-                # Inherited
                 inherited_members[member_type].append(member_data)
             else:
                 # Unique
@@ -186,17 +185,6 @@ def generate(object_name: str):
     }
 
 
-def main():
-    object_name = globals().get("object")
-    out_filepath = globals().get("outFilepath")
-
-    data = generate(object_name)
-    if data:
-        with open(out_filepath, "w", encoding="utf-8") as file:
-            json.dump(data, file)
-
-        return True
-    return False
-
-
-unreal.log(main())
+def get_object_documentation_json(object_name: str) -> str:
+    data = get_object_documentation(object_name)
+    return json.dumps(data, separators=(",", ":"))
