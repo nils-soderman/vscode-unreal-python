@@ -1,10 +1,12 @@
 import * as vscode from 'vscode';
 
+const OUTPUT_CHANNEL_NAME = "UE Python Log";
 let outputChannel: vscode.OutputChannel;
+
 
 function getOutputChannel() {
     if (!outputChannel) {
-        outputChannel = vscode.window.createOutputChannel("UE Python Log");
+        outputChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME);
     }
     return outputChannel;
 }
@@ -15,7 +17,8 @@ function getOutputChannel() {
  * @param message The message to log
  */
 export function log(message: string) {
-    getOutputChannel().appendLine(message);
+    const date = new Date();
+    getOutputChannel().appendLine(`[${date.toLocaleTimeString()}] ${message}`);
 }
 
 
@@ -30,13 +33,14 @@ export function show() {
 /**
  * Show an error message to the user and log the full error message
  * @param message The message to show to the user in the error dialog
- * @param fullLog The full error message to log
+ * @param error The full error message to log
  */
-export function logError(message: string, fullLog: Error) {
-    log(fullLog.toString());
+export function logError(message: string, error: Error) {
+    log(error.toString());
 
-    vscode.window.showErrorMessage(message, "Show Log").then((value) => {
-        if (value === "Show Log") {
+    const OPTION_SHOW_LOG = "Show Log";
+    vscode.window.showErrorMessage(message, OPTION_SHOW_LOG).then((value) => {
+        if (value === OPTION_SHOW_LOG) {
             show();
         }
     });
