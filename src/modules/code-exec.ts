@@ -1,5 +1,5 @@
 /**
- * Module for retriving an executable python file based on the current file/selection in Visual Studio Code
+ * Module for retrieving an executable python file based on the current file/selection in Visual Studio Code
  */
 
 import * as vscode from 'vscode';
@@ -13,7 +13,7 @@ export function getSelectedTextAsExecutableString() {
         return;
     }
 
-    const activeDocumenet = vscode.window.activeTextEditor.document;
+    const activeDocument = vscode.window.activeTextEditor.document;
     let executableCodeString = "";
 
     let selections: Array<vscode.Selection> = [vscode.window.activeTextEditor.selection];
@@ -26,9 +26,7 @@ export function getSelectedTextAsExecutableString() {
             selections.push(selection);
         }
 
-        selections = selections.sort(function (a: any, b: any) {
-            return a.start.line - b.start.line;
-        });
+        selections = selections.sort((a, b) => a.start.line - b.start.line);
     }
 
     // Combine all selections into a single string
@@ -38,7 +36,7 @@ export function getSelectedTextAsExecutableString() {
             // Get the character index of the first character that's not whitespace (on the first line that's not whitespace)
             let firstCharIndex = -1;
             for (let i = 0; i <= (selection.end.line - selection.start.line); i++) {
-                const line = activeDocumenet.lineAt(selection.start.line + i);
+                const line = activeDocument.lineAt(selection.start.line + i);
                 if (!line.isEmptyOrWhitespace) {
                     firstCharIndex = line.firstNonWhitespaceCharacterIndex;
                     break;
@@ -51,7 +49,7 @@ export function getSelectedTextAsExecutableString() {
             const numberOfLines = executableCodeString.split("\n").length - 1;
             const additionalEmptyLines = "\n".repeat(selection.start.line - numberOfLines);
 
-            executableCodeString += additionalEmptyLines + formatSelectedText(activeDocumenet.getText(selection), firstCharIndex);
+            executableCodeString += additionalEmptyLines + formatSelectedText(activeDocument.getText(selection), firstCharIndex);
         }
     }
 
@@ -65,7 +63,7 @@ export function getSelectedTextAsExecutableString() {
  * @param text The text to format
  * @param firstCharIndex Index of the first character (how far it's indented)
  */
-function formatSelectedText(text: string, firstCharIndex: number) {
+function formatSelectedText(text: string, firstCharIndex: number): string {
     if (firstCharIndex <= 0) {
         return text;
     }
@@ -106,7 +104,7 @@ function formatSelectedText(text: string, firstCharIndex: number) {
  * @param text Text to write to the file
  * @returns the absolute filepath of the file
  */
-async function saveFile(filepath: vscode.Uri, text: string) {
+async function saveFile(filepath: vscode.Uri, text: string): Promise<vscode.Uri> {
     await vscode.workspace.fs.writeFile(filepath, Buffer.from(text));
     return filepath;
 }
@@ -116,12 +114,12 @@ async function saveFile(filepath: vscode.Uri, text: string) {
  * @param tempFilepath If a temp file needs to be saved, this path will be used
  * @returns The filepath to a executable python file based on the curerrent file/selection in VS Code
  */
-export async function getFileToExecute(tempFilepath: vscode.Uri) {
+export async function getFileToExecute(tempFilepath: vscode.Uri): Promise<vscode.Uri | undefined> {
     if (!vscode.window.activeTextEditor) {
         return;
     }
 
-    const activeDocuemt = vscode.window.activeTextEditor.document;
+    const activeDocument = vscode.window.activeTextEditor.document;
     const selectedCode = getSelectedTextAsExecutableString();
 
     // If user has any selected text, save the selection as a temp file
@@ -130,10 +128,10 @@ export async function getFileToExecute(tempFilepath: vscode.Uri) {
     }
 
     // If file is dirty, save a copy of the file
-    else if (activeDocuemt.isDirty) {
-        return saveFile(tempFilepath, activeDocuemt.getText());
+    else if (activeDocument.isDirty) {
+        return saveFile(tempFilepath, activeDocument.getText());
     }
 
     // No selection and everything is saved, return the current file
-    return activeDocuemt.uri;
+    return activeDocument.uri;
 }
