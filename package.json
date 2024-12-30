@@ -208,20 +208,20 @@
     "watch-test": "tsc -p ./ --watch"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.9",
+    "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/sinon": "^17.0.3",
     "@types/tcp-port-used": "^1.0.4",
     "@types/vscode": "^1.91.0",
-    "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@typescript-eslint/parser": "^7.18.0",
+    "@typescript-eslint/eslint-plugin": "^8.19.0",
+    "@typescript-eslint/parser": "^8.19.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
-    "esbuild": "^0.24.0",
-    "eslint": "^8.57.1",
-    "mocha": "^10.8.2",
+    "esbuild": "^0.24.2",
+    "eslint": "^9.17.0",
+    "mocha": "^11.0.1",
     "sinon": "^19.0.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.7.2"
   },
   "dependencies": {
     "tcp-port-used": "^1.0.2",
