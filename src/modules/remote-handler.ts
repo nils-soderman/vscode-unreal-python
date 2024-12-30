@@ -4,13 +4,14 @@
 
 import * as vscode from 'vscode';
 
-import { RemoteExecution, RemoteExecutionConfig, RemoteExecutionNode, ECommandOutputType } from "unreal-remote-execution";
+import { RemoteExecution, RemoteExecutionConfig, RemoteExecutionNode, ECommandOutputType, EExecMode, IRemoteExecutionMessageCommandOutputData } from "unreal-remote-execution";
 
 import * as extensionWiki from "./extension-wiki";
 import * as utils from "./utils";
 import * as logger from "./logger";
 
 let gIsInitializatingConnection = false;
+let bHasCreatedEvalFunction = false;
 let gCachedRemoteExecution: RemoteExecution | null = null;
 let gStatusBarItem: vscode.StatusBarItem | null = null;
 
@@ -267,15 +268,16 @@ async function onRemoteConnectionClosed() {
  * Send a command to the remote connection
  * @param command The python code as a string
  */
-export async function runCommand(command: string) {
+export async function runCommand(command: string, bEval = false) {
     const remoteExec = await getConnectedRemoteExecutionInstance();
     if (!remoteExec) {
         return;
     }
 
     const bUnattended = utils.getExtensionConfig().get("execute.unattended") ? true : false;
+    const mode = bEval ? EExecMode.EVALUATE_STATEMENT : EExecMode.EXECUTE_STATEMENT;
 
-    return remoteExec.runCommand(command, bUnattended);
+    return remoteExec.runCommand(command, bUnattended, mode);
 }
 
 
@@ -297,6 +299,42 @@ export function executeFile(uri: vscode.Uri, globals: any = {}) {
     return runCommand(command);
 }
 
+export async function evaluateFunction(uri: vscode.Uri, functionName: string, kwargs: any = {}) {
+    if (!bHasCreatedEvalFunction) {
+        const filepath = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.eval);
+        await executeFile(filepath);
+        bHasCreatedEvalFunction = true;
+    }
+
+    let command = `vsc_eval(r'${uri.fsPath}', '${functionName}'`;
+    if (Object.keys(kwargs).length > 0) {
+        command += `, **json.loads(r'${JSON.stringify(kwargs)}')`;
+    }
+    command += `)`;
+
+    return runCommand(command, true);
+}
+
+/**
+ * Log all the outputs from the response, and check if there are any errors
+ * @param response The response from the remote execution
+ * @param errorMsg The error message to show if there are any errors
+ * @returns The `response.success` value
+ */
+export function logResponseAndReportErrors(response: IRemoteExecutionMessageCommandOutputData, errorMsg: string): boolean {
+    for (const output of response.output) {
+        if (output.type === ECommandOutputType.ERROR)
+            logger.logError(errorMsg, new Error(output.output));
+        else
+            logger.log(output.output);
+    }
+
+    if (!response.success)
+        logger.logError(errorMsg, new Error(response.result));
+
+    return response.success;
+}
+
 
 /**
  * Close the global remote connection, if there is one
@@ -304,4 +342,5 @@ export function executeFile(uri: vscode.Uri, globals: any = {}) {
 export async function closeRemoteConnection() {
     gCachedRemoteExecution?.stop();
     gCachedRemoteExecution = null;
+    bHasCreatedEvalFunction = false;
 }
