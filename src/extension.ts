@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('ue-python.openDocumentation', () => {
-			return openDocumentationWindow(context);
+			return openDocumentationWindow(context.extensionUri, context.globalStorageUri);
 		})
 	);
 
@@ -78,5 +78,4 @@ function onConfigurationChanged(event: vscode.ConfigurationChangeEvent) {
 			break;
 		}
 	}
-
 }
