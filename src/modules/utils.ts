@@ -39,16 +39,12 @@ export function getExtensionUri(): vscode.Uri {
 export class FPythonScriptFiles {
     static readonly execute = "execute/vscode_execute";
     static readonly executeEntry = "execute/vscode_execute_entry";
-    static readonly isDebugpyInstalled = "attach/is_debugpy_installed";
-    static readonly installDebugPy = "attach/install_debugpy";
-    static readonly startDebugServer = "attach/start_debug_server";
-    static readonly getCurrentDebugpyPort = "attach/current_debugy_port";
+    static readonly attach = "attach";
     static readonly codeCompletionGetPath = "setup_code_completion/get_stub_path";
-    static readonly isDevmodeEnabled = "setup_code_completion/is_devmode_enabled";
     static readonly buildDocumentationToC = "documentation/build_toc";
     static readonly getDocPageContent = "documentation/get_page_content";
     static readonly addSysPath = "add_sys_path";
-static readonly eval = "vsc_eval";
+    static readonly eval = "vsc_eval";
 
     /** Get the absolute path to one of the scripts defined in this struct */
     static getUri(file: string): vscode.Uri {

@@ -4,18 +4,14 @@
  */
 
 import * as vscode from 'vscode';
-import * as crypto from 'crypto';
 import * as path from 'path';
 
 import * as remoteHandler from '../modules/remote-handler';
 import * as logger from '../modules/logger';
 import * as utils from '../modules/utils';
 
-import { ECommandOutputType } from "unreal-remote-execution";
-
 
 const DEBUGPY_PYPI_URL = "https://pypi.org/project/debugpy/";
-const REPORT_BUG_URL = "https://github.com/nils-soderman/vscode-unreal-python/issues";
 
 // ------------------------------------------------------------------------------------------
 //                                  Interfaces
@@ -40,20 +36,10 @@ interface IAttachConfiguration {
 export async function isDebugpyInstalled(): Promise<boolean> {
     logger.log("Checking if debugpy is installed...");
 
-    const isDebugPyInstalledScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.isDebugpyInstalled);
-    const response = await remoteHandler.executeFile(isDebugPyInstalledScript, {});
-    if (response) {
-        for (const output of response.output) {
-            if (output.type === ECommandOutputType.INFO) {
-                if (output.output.trim().toLowerCase() === "true") {
-                    logger.log("debugpy python module found");
-                    return true;
-                }
-            }
-        }
-    }
-
-    logger.log("debugpy python module could not be found");
+    const attachScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.attach);
+    const response = await remoteHandler.evaluateFunction(attachScript, "is_debugpy_installed");
+    if (response && remoteHandler.logResponseAndReportErrors(response, "Failed to check if debugpy is installed"))
+        return response.result === "True";
 
     return false;
 }
@@ -63,26 +49,19 @@ export async function isDebugpyInstalled(): Promise<boolean> {
  * Check if the python module "debugpy" is installed and accessible with the current `sys.paths` in Unreal Engine.  
  */
 export async function getCurrentDebugpyPort(): Promise<number | null> {
-    const getCurrentDebugpyPortScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.getCurrentDebugpyPort);
-
     logger.log("Checking if debugpy is currently running...");
-
-    const response = await remoteHandler.executeFile(getCurrentDebugpyPortScript, {});
-    if (response) {
-        for (const output of response.output) {
-            if (output.type === ECommandOutputType.INFO) {
-                const port = Number(output.output);
-
-                if (port) {
-                    logger.log(`debugpy is already running on port ${port}`);
-                    return port;
-                }
-
-            }
+    
+    const attachScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.attach);
+    const response = await remoteHandler.evaluateFunction(attachScript, "get_current_debugpy_port");
+    if (response && remoteHandler.logResponseAndReportErrors(response, "Failed to check if debugpy is currently running")) {
+        const port = Number(response.result);
+        if (port > 0) {
+            logger.log(`debugpy is already running on port ${port}`);
+            return port;
         }
-    }
 
-    logger.log("debugpy is currently not running");
+        logger.log("debugpy is not currently running");
+    }
 
     return null;
 }
@@ -90,39 +69,19 @@ export async function getCurrentDebugpyPort(): Promise<number | null> {
 
 /**
  * pip install the "debugpy" python module
- * @param callback The function to call once the module has been installed
- * @param target The directory where to install the module, if none is provided it'll be installed in the current Unreal Project
  */
 export async function installDebugpy(): Promise<boolean> {
     logger.log("Installing debugpy...");
 
-    const installDebugpyScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.installDebugPy);
-
-    // Generate a random id that we expect as a response from the python script if the installation was successful
-    const successId = crypto.randomUUID();
-
-    // Pass along the target to the python script as a global variable
-    const globals = {
-        "vsc_success_id": successId  // eslint-disable-line @typescript-eslint/naming-convention
-    };
-
-    const response = await remoteHandler.executeFile(installDebugpyScript, globals);
-
-    let errorMessage = "";
-    if (response) {
-        for (const output of response.output) {
-            if (output.output.trim() === successId)
-                return true;
-
-            errorMessage += `${output.output}\n`;
-        }
+    const installDebugpyScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.attach);
+    const response = await remoteHandler.evaluateFunction(installDebugpyScript, "install_debugpy");
+    if (response && remoteHandler.logResponseAndReportErrors(response, `Failed to install [debugpy](${DEBUGPY_PYPI_URL}), consider installing it manually.`)) {
+        return response.result === "True";
     }
-
-    logger.log("Failed to install python module `debugpy`");
-    logger.logError(`Failed to install [debugpy](${DEBUGPY_PYPI_URL}), consider installing it manually.`, new Error(errorMessage));
 
     return false;
 }
+
 
 // ------------------------------------------------------------------------------------------
 //                                  Attach to Unreal Engine
@@ -134,20 +93,14 @@ export async function installDebugpy(): Promise<boolean> {
  * @param port The port to start the server on
  */
 async function startDebugpyServer(port: number): Promise<boolean> {
-    const startDebugServerScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.startDebugServer);
-
-    const globals = { "debug_port": port };  // eslint-disable-line @typescript-eslint/naming-convention
-
     logger.log(`Starting debugpy server on port ${port}`);
 
-    const response = await remoteHandler.executeFile(startDebugServerScript, globals);
-    for (const output of response?.output ?? []) {
-        if (output.type === ECommandOutputType.INFO) {
-            return output.output.trim().toLowerCase() === "true";
-        }
+    const startDebugServerScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.attach);
+    const response = await remoteHandler.evaluateFunction(startDebugServerScript, "start_debugpy_server", { port });
+    if (response && remoteHandler.logResponseAndReportErrors(response, "Failed to start debugpy server")) {
+        return response.result === "True";
     }
 
-    logger.log("Failed to start debugpy server");
     return false;
 }
 
