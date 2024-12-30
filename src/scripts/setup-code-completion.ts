@@ -11,12 +11,24 @@ import * as extensionWiki from '../modules/extension-wiki';
 import * as logger from '../modules/logger';
 import * as utils from '../modules/utils';
 
-import { ECommandOutputType } from "unreal-remote-execution";
-
 export const STUB_FILE_NAME = "unreal.py";
 
 const CONFIG_PYTHON = "python";
 const CONFIG_KEY_EXTRA_PATHS = "analysis.extraPaths";
+
+interface ISettingsInfo {
+    niceName: string;
+    paths: string[] | undefined;
+    scope: vscode.ConfigurationTarget;
+    openSettingsCommand: string;
+}
+
+interface IInspectionSettings {
+    globalValue?: string[];
+    workspaceValue?: string[];
+    workspaceFolderValue?: string[];
+    defaultValue?: string[];
+}
 
 
 /**
@@ -25,77 +37,56 @@ const CONFIG_KEY_EXTRA_PATHS = "analysis.extraPaths";
  */
 export async function getUnrealStubDirectory(): Promise<vscode.Uri | null> {
     const getPythonPathScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.codeCompletionGetPath);
-    const response = await remoteHandler.executeFile(getPythonPathScript, {});
+    const response = await remoteHandler.evaluateFunction(getPythonPathScript, "get_python_stub_dir");
 
-    let directory: string | undefined = undefined;
-
-    if (response) {
-        for (const output of response.output) {
-            logger.log(`[${output.type}] ${output.output}`);
-            if (response.success && output.type === ECommandOutputType.INFO) {
-                directory = output.output.trim();
-            }
-        }
-
-        if (!response.success) {
-            logger.logError("Failed to get the path to the Unreal Engine project", new Error(response.result));
-            return null;
-        }
-    }
-
-    if (directory)
-        return vscode.Uri.file(directory);
+    if (response && remoteHandler.logResponseAndReportErrors(response, "Failed to get the path to the Unreal Engine stub"))
+        return vscode.Uri.file(response.result);
 
     return null;
 }
 
 
 /**
- * Add a path to the `python.analysis.extraPaths` config. 
- * This function will also remove any current paths that ends w/ 'Intermediate/PythonStub' 
- * to prevent multiple Unreal stub directories beeing added
- * @param pathToAdd The path to add
- * @returns `true` if the path was added or already existed, `false` if the path could not be added
+ * Check if the 'ms-python.vscode-pylance' extension is installed, and if not prompt the user to install it.
+ * @returns 
  */
-function addPythonAnalysisPath(pathToAdd: string): "add" | "exists" | false {
+function validatePylanceExtension(): boolean {
+    const PYLANCE_EXTENSION_ID = "ms-python.vscode-pylance";
+    const PYLANCE_EXTENSION_URL = "https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance";
+    const SHOW_PYLANCE = "Show Pylance";
 
     // Pylance is the extension that provides the 'python.analysis.extraPaths' setting
-    const pylanceExtension = vscode.extensions.getExtension("ms-python.vscode-pylance");
+    const pylanceExtension = vscode.extensions.getExtension(PYLANCE_EXTENSION_ID);
     if (!pylanceExtension) {
         vscode.window.showErrorMessage(
-            `[ms-python.vscode-pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) not installed. Could not update the 'python.analysis.extraPaths' setting.`,
-            "Show Pylance"
+            `[${PYLANCE_EXTENSION_ID}](${PYLANCE_EXTENSION_URL}) not installed. Could not update the '${CONFIG_PYTHON}.${CONFIG_KEY_EXTRA_PATHS}' setting.`,
+            SHOW_PYLANCE
         ).then((value) => {
-            if (value === "Show Pylance")
-                vscode.commands.executeCommand("extension.open", "ms-python.vscode-pylance");
+            if (value === SHOW_PYLANCE)
+                vscode.commands.executeCommand("extension.open", PYLANCE_EXTENSION_ID);
         });
 
         return false;
     }
 
-    const extraPathsConfigName = `${CONFIG_PYTHON}.${CONFIG_KEY_EXTRA_PATHS}`;
+    return true;
+}
 
-    const activeWorkspaceFolder = utils.getActiveWorkspaceFolder();
-    const pythonConfig = vscode.workspace.getConfiguration(CONFIG_PYTHON, activeWorkspaceFolder?.uri);
-
-    const bHasWorkspaceFileOpen = vscode.workspace.workspaceFile !== undefined;
-
-    let extraPathsConfig = pythonConfig.inspect<string[]>(CONFIG_KEY_EXTRA_PATHS);
-    if (!extraPathsConfig) {
-        logger.log(`Failed to get the config '${extraPathsConfigName}'`);
-        return false;
-    }
-
-    // Use the global scope as default
-    let settingsInfo = {
+/** 
+ * 
+ */
+function getSettingsInfo(extraPathsConfig: IInspectionSettings): ISettingsInfo {
+    const defaultSettings: ISettingsInfo = {
         niceName: "User",
         paths: extraPathsConfig.globalValue,
         scope: vscode.ConfigurationTarget.Global,
         openSettingsCommand: "workbench.action.openSettings"
     };
 
+    const bHasWorkspaceFileOpen = vscode.workspace.workspaceFile !== undefined;
+
     // Search through the different scopes to find the first one that has a custom value
-    const valuesToCheck = [
+    const valuesToCheck: ISettingsInfo[] = [
         {
             niceName: "Folder",
             paths: extraPathsConfig.workspaceFolderValue,
@@ -112,26 +103,52 @@ function addPythonAnalysisPath(pathToAdd: string): "add" | "exists" | false {
 
     for (const value of valuesToCheck) {
         if (value.paths && value.paths !== extraPathsConfig.defaultValue) {
-            settingsInfo = value;
-            break;
+            return value;
         }
     }
+
+    return defaultSettings;
+}
+
+
+/**
+ * Add a path to the `python.analysis.extraPaths` config. 
+ * This function will also remove any current paths that ends w/ 'Intermediate/PythonStub' 
+ * to prevent multiple Unreal stub directories beeing added
+ * @param pathToAdd The path to add
+ * @returns `true` if the path was added or already existed, `false` if the path could not be added
+*/
+function addPythonAnalysisPath(pathToAdd: string): "add" | "exists" | false {
+    if (!validatePylanceExtension())
+        return false;
+
+    const extraPathsConfigName = `${CONFIG_PYTHON}.${CONFIG_KEY_EXTRA_PATHS}`;
+
+    const pythonConfig = vscode.workspace.getConfiguration(CONFIG_PYTHON, utils.getActiveWorkspaceFolder()?.uri);
+
+    let extraPathsConfig = pythonConfig.inspect<string[]>(CONFIG_KEY_EXTRA_PATHS);
+    if (!extraPathsConfig) {
+        logger.log(`Failed to get the config '${extraPathsConfigName}'`);
+        return false;
+    }
+
+    const settingsInfo = getSettingsInfo(extraPathsConfig);
 
     // Create a new list that will contain the old paths and the new one
     let newPathsValue = settingsInfo.paths ? [...settingsInfo.paths] : [];
 
     // Check if the path already exists
     if (newPathsValue.some(path => utils.isPathsSame(path, pathToAdd))) {
-        logger.log(`Path "${pathToAdd}" already exists in '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`);
-        vscode.window.showInformationMessage(`Path "${pathToAdd}" already exists in '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`);
+        const message = `Path "${pathToAdd}" already exists in '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`;
+        logger.log(message);
+        vscode.window.showInformationMessage(message);
         return "exists";
     }
 
-    // Remove any paths that ends with 'Intermediate/PythonStub'
+    // Make sure we only have one Unreal stub directory in the extra paths
     newPathsValue = newPathsValue.filter(path => !path.endsWith("Intermediate/PythonStub"));
-
-    // Add the new path and update the configuration
     newPathsValue.push(pathToAdd);
+
     try {
         pythonConfig.update(CONFIG_KEY_EXTRA_PATHS, newPathsValue, settingsInfo.scope);
     }
