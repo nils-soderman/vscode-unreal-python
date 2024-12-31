@@ -7,6 +7,7 @@ This script will be called from 'vscode_execute_entry.py' and will execute the u
 import traceback
 import tempfile
 import logging
+import ast
 import sys
 import os
 import re
@@ -79,62 +80,90 @@ def find_package(filepath: str):
     return ""
 
 
-def wrap_last_expression_in_print(code: str):
-    """ 
-    Replace the last expression in the code with a print statement and return the modified code 
+def add_print_for_last_expr(parsed_code: ast.Module) -> ast.Module:
     """
-    import ast
+    Modify the ast to print the last expression if it isn't None.
+    """
+    if parsed_code.body:
+        last_expr = parsed_code.body[-1]
+        if isinstance(last_expr, ast.Expr):
+            temp_var = "__vscode_temp__"
 
-    try:
-        parsed_code = ast.parse(code)
-    except SyntaxError:
-        return code
+            # Assign the last expression to a temporary variable
+            temp_var_assign = ast.Assign(
+                targets=[ast.Name(id=temp_var, ctx=ast.Store(),
+                                  lineno=last_expr.lineno, col_offset=last_expr.col_offset)],
+                value=last_expr.value,
+                lineno=last_expr.lineno,
+                col_offset=last_expr.col_offset
+            )
 
-    last_expr = parsed_code.body[-1]
-    if isinstance(last_expr, ast.Expr):
-        lines = code.splitlines()
+            # If the temporary variable isn't None, print it
+            print_stmt = ast.IfExp(
+                test=ast.Compare(
+                    left=ast.Name(id=temp_var, ctx=ast.Load(), lineno=last_expr.lineno, col_offset=last_expr.col_offset),
+                    ops=[ast.IsNot()],
+                    comparators=[ast.Constant(value=None, lineno=last_expr.lineno, col_offset=last_expr.col_offset)],
+                    lineno=last_expr.lineno,
+                    col_offset=last_expr.col_offset
+                ),
+                body=ast.Call(
+                    func=ast.Name(id='print', ctx=ast.Load(), lineno=last_expr.lineno, col_offset=last_expr.col_offset),
+                    args=[ast.Name(id=temp_var, ctx=ast.Load(), lineno=last_expr.lineno, col_offset=last_expr.col_offset)],
+                    keywords=[],
+                    lineno=last_expr.lineno,
+                    col_offset=last_expr.col_offset
+                ),
+                orelse=ast.Constant(value=None, lineno=last_expr.lineno, col_offset=last_expr.col_offset),
+                lineno=last_expr.lineno,
+                col_offset=last_expr.col_offset
+            )
 
-        expr_code = ast.unparse(last_expr.value)
+            parsed_code.body[-1] = temp_var_assign
+            parsed_code.body.append(ast.Expr(value=print_stmt, lineno=last_expr.lineno, col_offset=last_expr.col_offset))
 
-        temp_var = "__ue_vscode_temp_var__"
-        print_code = f"{temp_var} = {expr_code}; print({temp_var}) if {temp_var} is not None else None"
+    return parsed_code
 
-        lines[last_expr.lineno - 1:last_expr.end_lineno] = [print_code]
 
-        return '\n'.join(lines)
+def handle_exception():
+    exception_type, exc, traceback_type = sys.exc_info()
 
-    return code
+    traceback_lines = []
+    for line in traceback.format_exception(exception_type, exc, traceback_type):
+        if execute_code.__name__ in line:
+            continue
+
+        # Reformat path to include the file number, example: 'myfile.py:5'
+        # This is to make VS Code recognize this as a link to a spesific line number
+        if re.findall(r'file ".*", line \d*', line.lower()):
+            file_desc, _, number_and_module = line.partition(",")
+            line_number = "".join(x for x in number_and_module.partition(",")[0] if x.isdigit())
+            file_desc = '%s:%s"' % (file_desc[:-1], line_number)
+            line = file_desc + "," + number_and_module
+
+        traceback_lines.append(line)
+
+    traceback_message = "".join(traceback_lines).strip()
+
+    unreal.log_error(traceback_message)
 
 
 def execute_code(code: str, filename: str, print_last_expr: bool):
     if print_last_expr:
-        # TODO: When making this default, don't parse the code twice.
-        # Instead always parse it into AST then compile the AST below
-        code = wrap_last_expression_in_print(code)
+        try:
+            parsed_code = ast.parse(code, filename)
+        except (SyntaxError, ValueError) as e:
+            handle_exception()
+            return
+
+        parsed_code = add_print_for_last_expr(parsed_code)
+    else:
+        parsed_code = code
 
     try:
-        exec(compile(code, filename, 'exec'), get_exec_globals())
+        exec(compile(parsed_code, filename, 'exec'), get_exec_globals())
     except Exception as e:
-        exception_type, exc, traceback_type = sys.exc_info()
-
-        traceback_lines = []
-        for line in traceback.format_exception(exception_type, exc, traceback_type):
-            if execute_code.__name__ in line:
-                continue
-
-            # Reformat path to include the file number, example: 'myfile.py:5'
-            # This is to make VS Code recognize this as a link to a spesific line number
-            if re.findall(r'file ".*", line \d*', line.lower()):
-                file_desc, _, number_and_module = line.partition(",")
-                line_number = "".join(x for x in number_and_module.partition(",")[0] if x.isdigit())
-                file_desc = '%s:%s"' % (file_desc[:-1], line_number)
-                line = file_desc + "," + number_and_module
-
-            traceback_lines.append(line)
-
-        traceback_message = "".join(traceback_lines).strip()
-
-        unreal.log_error(traceback_message)
+        handle_exception()
 
 
 def main(exec_file: str, exec_origin: str, is_debugging: bool, name_var: str | None = None, print_last_expr = False):
