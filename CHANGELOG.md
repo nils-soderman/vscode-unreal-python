@@ -1,9 +1,16 @@
 # Change Log
 
+## [1.6.0] - UNRELEASED
+
+### Fixed:
+- Code is no longer parsed twice when using [ue-python.experimental.printLastExpression](vscode://settings/ue-python.experimental.printLastExpression)
+- Changed how the extension communicates with Unreal, removing some unwanted prints to stdout
+- Documentation is no longer written to a file, all communication now happens over the remote socket [#40](https://github.com/nils-soderman/vscode-unreal-python/issues/40)
+
 ## [1.5.0] - 2024-11-17
 
 ### Added:
-- Added experimental setting [ue-python.experimental.printLastExpression](vscode://settings/ue-python.experimental.printLastExpression) that wraps the last expression in a `print()` statement when executing code, mimicking the behavior of the Python REPL. [#38](https://github.com/nils-soderman/vscode-unreal-python/issues/38)
+- Added experimental setting [ue-python.experimental.printLastExpression](vscode://settings/ue-python.experimental.printLastExpression) that wraps the last expression in a `print()` statement when executing code, mimicking the behavior of the Python REPL [#38](https://github.com/nils-soderman/vscode-unreal-python/issues/38)
 
 ## [1.4.1] - 2024-08-25
 
