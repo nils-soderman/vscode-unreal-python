@@ -160,4 +160,42 @@ suite('Execute', function () {
         assert.equal(await execute.main(), false);
     });
 
+    test('Print Last Expression', async function () {
+        extensionConfig.update("experimental.printLastExpression", true); // TODO: Remove when this is no longer experimental
+
+        const doc = await vscode.workspace.openTextDocument({ language: "python", content: `5\n10` });
+        const editor = await vscode.window.showTextDocument(doc);
+
+        let edit = async (code: string) => {
+            return editor.edit(editBuilder => {
+                const fullRange = new vscode.Range(
+                    editor.document.positionAt(0),
+                    editor.document.positionAt(editor.document.getText().length)
+                );
+
+                editBuilder.replace(fullRange, code);
+            });
+        };
+
+        // Test #1
+        await execute.main();
+        assert.strictEqual(outputChannel.output.length, 2, `Unexpected number of output lines for test #1: [${outputChannel.output.join(", ")}]`);
+        assert.strictEqual(outputChannel.output[0].trim(), "10");
+        assert.strictEqual(outputChannel.output[1].trim(), ">>>");
+        
+        // Test #2
+        await edit("def test():\n\treturn None\ntest()");
+        await execute.main();
+        assert.strictEqual(outputChannel.output.length, 1, `Unexpected number of output lines for test #2: [${outputChannel.output.join(", ")}]`);
+        assert.strictEqual(outputChannel.output[0].trim(), ">>>");
+
+        // Test #3
+        await edit("def test():\n\tprint('ok')\n\treturn 5\ntest()");
+        await execute.main();
+        assert.strictEqual(outputChannel.output.length, 3, `Unexpected number of output lines for test #3: [${outputChannel.output.join(", ")}]`);
+        assert.strictEqual(outputChannel.output[0].trim(), "ok");
+        assert.strictEqual(outputChannel.output[1].trim(), "5");
+        assert.strictEqual(outputChannel.output[2].trim(), ">>>");
+    });
+
 });
