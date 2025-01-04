@@ -196,6 +196,13 @@ suite('Execute', function () {
         assert.strictEqual(outputChannel.output[0].trim(), "ok");
         assert.strictEqual(outputChannel.output[1].trim(), "5");
         assert.strictEqual(outputChannel.output[2].trim(), ">>>");
+        
+        // Test #4 - Print the temp variable holding the last expression
+        await edit("print(_)");
+        await execute.main();
+        assert.strictEqual(outputChannel.output.length, 2, `Unexpected number of output lines for test #4: [${outputChannel.output.join(", ")}]`);
+        assert.strictEqual(outputChannel.output[0].trim(), "5");
+        assert.strictEqual(outputChannel.output[1].trim(), ">>>");
     });
 
 });

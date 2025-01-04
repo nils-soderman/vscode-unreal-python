@@ -87,7 +87,7 @@ def add_print_for_last_expr(parsed_code: ast.Module) -> ast.Module:
     if parsed_code.body:
         last_expr = parsed_code.body[-1]
         if isinstance(last_expr, ast.Expr):
-            temp_var = "__vscode_temp__"
+            temp_var = "_"
 
             # Assign the last expression to a temporary variable
             temp_var_assign = ast.Assign(
