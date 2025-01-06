@@ -5,7 +5,8 @@
 ### Fixed:
 - Code is no longer parsed twice when using [ue-python.experimental.printLastExpression](vscode://settings/ue-python.experimental.printLastExpression)
 - Changed how the extension communicates with Unreal, removing some unwanted prints to stdout
-- Documentation is no longer written to a file, all communication now happens over the remote socket [#40](https://github.com/nils-soderman/vscode-unreal-python/issues/40)
+- Improved how user tracebacks are handled
+- Documentation data is no longer written to a file, all data is now sent over the socket [#40](https://github.com/nils-soderman/vscode-unreal-python/issues/40)
 
 ## [1.5.0] - 2024-11-17
 

@@ -64,7 +64,7 @@ def get_exec_globals() -> dict:
 def find_package(filepath: str):
     """ Find the expected __package__ value for the executed file, so relative imports work """
     normalized_filepath = os.path.normpath(filepath).lower()
-    
+
     valid_packages = []
     for path in sys.path:
         normalized_path = os.path.normpath(path).lower()
@@ -87,11 +87,11 @@ def add_print_for_last_expr(parsed_code: ast.Module) -> ast.Module:
     if parsed_code.body:
         last_expr = parsed_code.body[-1]
         if isinstance(last_expr, ast.Expr):
-            temp_var = "_"
+            temp_var_name = "_"
 
             # Assign the last expression to a temporary variable
             temp_var_assign = ast.Assign(
-                targets=[ast.Name(id=temp_var, ctx=ast.Store(),
+                targets=[ast.Name(id=temp_var_name, ctx=ast.Store(),
                                   lineno=last_expr.lineno, col_offset=last_expr.col_offset)],
                 value=last_expr.value,
                 lineno=last_expr.lineno,
@@ -101,7 +101,7 @@ def add_print_for_last_expr(parsed_code: ast.Module) -> ast.Module:
             # If the temporary variable isn't None, print it
             print_stmt = ast.IfExp(
                 test=ast.Compare(
-                    left=ast.Name(id=temp_var, ctx=ast.Load(), lineno=last_expr.lineno, col_offset=last_expr.col_offset),
+                    left=ast.Name(id=temp_var_name, ctx=ast.Load(), lineno=last_expr.lineno, col_offset=last_expr.col_offset),
                     ops=[ast.IsNot()],
                     comparators=[ast.Constant(value=None, lineno=last_expr.lineno, col_offset=last_expr.col_offset)],
                     lineno=last_expr.lineno,
@@ -109,7 +109,7 @@ def add_print_for_last_expr(parsed_code: ast.Module) -> ast.Module:
                 ),
                 body=ast.Call(
                     func=ast.Name(id='print', ctx=ast.Load(), lineno=last_expr.lineno, col_offset=last_expr.col_offset),
-                    args=[ast.Name(id=temp_var, ctx=ast.Load(), lineno=last_expr.lineno, col_offset=last_expr.col_offset)],
+                    args=[ast.Name(id=temp_var_name, ctx=ast.Load(), lineno=last_expr.lineno, col_offset=last_expr.col_offset)],
                     keywords=[],
                     lineno=last_expr.lineno,
                     col_offset=last_expr.col_offset
@@ -125,27 +125,51 @@ def add_print_for_last_expr(parsed_code: ast.Module) -> ast.Module:
     return parsed_code
 
 
-def handle_exception():
-    exception_type, exc, traceback_type = sys.exc_info()
+def format_exception(exception_in: BaseException, code: str, num_ignore_tracebacks: int = 0) -> str:
+    seen_exceptions = set()
+    messages = []
+    lines = code.splitlines()
 
-    traceback_lines = []
-    for line in traceback.format_exception(exception_type, exc, traceback_type):
-        if execute_code.__name__ in line:
-            continue
+    exception = exception_in
+    while exception:
+        if id(exception) in seen_exceptions:
+            break
+        seen_exceptions.add(id(exception))
 
-        # Reformat path to include the file number, example: 'myfile.py:5'
-        # This is to make VS Code recognize this as a link to a spesific line number
-        if re.findall(r'file ".*", line \d*', line.lower()):
-            file_desc, _, number_and_module = line.partition(",")
-            line_number = "".join(x for x in number_and_module.partition(",")[0] if x.isdigit())
-            file_desc = '%s:%s"' % (file_desc[:-1], line_number)
-            line = file_desc + "," + number_and_module
+        traceback_stack = []
+        for frame_summary in traceback.extract_tb(exception.__traceback__):
+            if num_ignore_tracebacks > 0:
+                num_ignore_tracebacks -= 1
+                continue
 
-        traceback_lines.append(line)
+            if frame_summary.lineno is not None and 0 < frame_summary.lineno <= len(lines):
+                line = lines[frame_summary.lineno - 1]
+            else:
+                line = frame_summary.line
 
-    traceback_message = "".join(traceback_lines).strip()
+            traceback_stack.append(
+                traceback.FrameSummary(
+                    f"{frame_summary.filename}:{frame_summary.lineno}",
+                    frame_summary.lineno,
+                    frame_summary.name,
+                    lookup_line=False,
+                    locals=frame_summary.locals,
+                    line=line,
+                    end_lineno=frame_summary.end_lineno,
+                    colno=frame_summary.colno,
+                    end_colno=frame_summary.end_colno
+                )
+            )
 
-    unreal.log_error(traceback_message)
+        text = "Traceback (most recent call last):\n"
+        text += "".join(traceback.format_list(traceback_stack))
+        text += "".join(traceback.format_exception_only(type(exception), exception))
+
+        messages.append(text)
+
+        exception = exception.__context__
+
+    return "\nDuring handling of the above exception, another exception occurred:\n\n".join(reversed(messages))
 
 
 def execute_code(code: str, filename: str, print_last_expr: bool):
@@ -153,7 +177,7 @@ def execute_code(code: str, filename: str, print_last_expr: bool):
         try:
             parsed_code = ast.parse(code, filename)
         except (SyntaxError, ValueError) as e:
-            handle_exception()
+            unreal.log_error(format_exception(e, code, num_ignore_tracebacks=2))
             return
 
         parsed_code = add_print_for_last_expr(parsed_code)
@@ -163,10 +187,10 @@ def execute_code(code: str, filename: str, print_last_expr: bool):
     try:
         exec(compile(parsed_code, filename, 'exec'), get_exec_globals())
     except Exception as e:
-        handle_exception()
+        unreal.log_error(format_exception(e, code, num_ignore_tracebacks=1))
 
 
-def main(exec_file: str, exec_origin: str, is_debugging: bool, name_var: str | None = None, print_last_expr = False):
+def main(exec_file: str, exec_origin: str, is_debugging: bool, name_var: str | None = None, print_last_expr=False):
     # Set some global variables
     exec_globals = get_exec_globals()
 
