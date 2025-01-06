@@ -1,6 +1,6 @@
 # Change Log
 
-## [1.6.0] - UNRELEASED
+## [1.6.0] - 2025-01-06
 
 ### Fixed:
 - Code is no longer parsed twice when using [ue-python.experimental.printLastExpression](vscode://settings/ue-python.experimental.printLastExpression)
