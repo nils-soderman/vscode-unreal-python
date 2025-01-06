@@ -17,5 +17,9 @@
         "media": true,
     },
 
-    "python.analysis.typeCheckingMode": "standard"
+    "python.analysis.typeCheckingMode": "standard",
+
+    "autopep8.args": [
+        "--ignore=E501"
+    ],
 }
