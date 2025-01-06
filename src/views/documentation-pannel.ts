@@ -69,7 +69,8 @@ async function getTableOfContents() {
             return JSON.parse(result);
         }
         catch (e) {
-            logging.logError("Failed to parse JSON", new Error(result));
+            logging.log(result);
+            logging.logError("Failed to parse JSON", e as Error);
         }
     }
 
@@ -89,13 +90,14 @@ async function getPageContent(module: string) {
 
     const response = await remoteHandler.evaluateFunction(getDocPageContentScirpt, "get_object_documentation_json", kwargs);
     if (response && remoteHandler.logResponseAndReportErrors(response, "Failed to get documentation")) {
-        // As the result is stringified JSON, remove the quotes and parse it
-        const result = response.result.replace(/^'|'$/g, '');
+        // As the result is stringified JSON, make it parsable
+        const result = response.result.replace(/^'|'$/g, '').replace(/\\'/g, '\'').replace(/\\\\/g, '\\');
         try {
             return JSON.parse(result);
         }
         catch (e) {
-            logging.logError("Failed to parse JSON", new Error(result));
+            logging.log(result);
+            logging.logError("Failed to parse JSON", e as Error);
         }
     }
 }
@@ -108,7 +110,7 @@ export class DocumentationPannel {
 
     private pannel?: vscode.WebviewPanel;
 
-    private tableOfContents: any = {};
+    private tableOfContentsCache: any = {};
 
     private dropDownAreaStates: { [id: string]: boolean } = {};
     private maxListItems: { [id: string]: number } = {};
@@ -143,11 +145,11 @@ export class DocumentationPannel {
 
 
     public async sendTableOfContents() {
-        if (Object.keys(this.tableOfContents).length === 0)
-            this.tableOfContents = await getTableOfContents();
+        if (Object.keys(this.tableOfContentsCache).length === 0)
+            this.tableOfContentsCache = await getTableOfContents();
 
         if (this.pannel) {
-            this.pannel.webview.postMessage({ command: EInOutCommands.getTableOfContents, data: this.tableOfContents });
+            this.pannel.webview.postMessage({ command: EInOutCommands.getTableOfContents, data: this.tableOfContentsCache });
         }
     }
 
