@@ -79,16 +79,8 @@ function validatePylanceExtension(): boolean {
  * 
  */
 function getSettingsInfo(extraPathsConfig: IInspectionSettings): ISettingsInfo {
-    const defaultSettings: ISettingsInfo = {
-        niceName: "User",
-        paths: extraPathsConfig.globalValue,
-        scope: vscode.ConfigurationTarget.Global,
-        openSettingsCommand: "workbench.action.openSettings"
-    };
-
     const bHasWorkspaceFileOpen = vscode.workspace.workspaceFile !== undefined;
 
-    // Search through the different scopes to find the first one that has a custom value
     const valuesToCheck: ISettingsInfo[] = [
         {
             niceName: "Folder",
@@ -103,14 +95,21 @@ function getSettingsInfo(extraPathsConfig: IInspectionSettings): ISettingsInfo {
             openSettingsCommand: "workbench.action.openWorkspaceSettings"
         }
     ];
-
+    
+    // Search through the different scopes to find the first one that has a custom value
     for (const value of valuesToCheck) {
         if (value.paths && value.paths !== extraPathsConfig.defaultValue) {
             return value;
         }
     }
 
-    return defaultSettings;
+    // Default to global/User settings
+    return {
+        niceName: "User",
+        paths: extraPathsConfig.globalValue,
+        scope: vscode.ConfigurationTarget.Global,
+        openSettingsCommand: "workbench.action.openSettings"
+    };
 }
 
 
@@ -165,7 +164,7 @@ function addPythonAnalysisPath(pathToAdd: string): "add" | "exists" | false {
     vscode.window.showInformationMessage(`Updated '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`, "Show Setting").then(
         (value) => {
             if (value === "Show Setting") {
-                vscode.commands.executeCommand(settingsInfo.openSettingsCommand, `${extraPathsConfigName}`);
+                vscode.commands.executeCommand(settingsInfo.openSettingsCommand, extraPathsConfigName);
             }
         }
     );
