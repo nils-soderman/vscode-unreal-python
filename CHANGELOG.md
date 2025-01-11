@@ -1,5 +1,11 @@
 # Change Log
 
+## [1.6.2] - 2025-01-11
+
+### Fixed:
+- Formatting user exceptions not working in Python versions below 3.11
+
+
 ## [1.6.1] - 2025-01-06
 
 ### Fixed:
