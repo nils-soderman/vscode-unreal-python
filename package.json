@@ -3,7 +3,7 @@
   "displayName": "Unreal Engine Python",
   "publisher": "NilsSoderman",
   "description": "Tools to assist when writing Python code for Unreal Engine.",
-  "version": "1.5.0",
+  "version": "1.6.1",
   "categories": [
     "Other",
     "Debuggers"
