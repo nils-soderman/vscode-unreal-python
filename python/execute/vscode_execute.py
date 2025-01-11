@@ -149,6 +149,15 @@ def format_exception(exception_in: BaseException, code: str, num_ignore_tracebac
             else:
                 line = frame_summary.line
 
+            if sys.version_info >= (3, 11):
+                col_info = {
+                    "end_lineno": frame_summary.end_lineno,
+                    "colno": frame_summary.colno,
+                    "end_colno": frame_summary.end_colno,
+                }
+            else:
+                col_info = {}
+
             traceback_stack.append(
                 traceback.FrameSummary(
                     f"{frame_summary.filename}:{frame_summary.lineno}",
@@ -157,9 +166,7 @@ def format_exception(exception_in: BaseException, code: str, num_ignore_tracebac
                     lookup_line=False,
                     locals=frame_summary.locals,
                     line=line,
-                    end_lineno=frame_summary.end_lineno,
-                    colno=frame_summary.colno,
-                    end_colno=frame_summary.end_colno
+                    **col_info
                 )
             )
 
