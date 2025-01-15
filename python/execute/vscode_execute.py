@@ -127,7 +127,7 @@ def add_print_for_last_expr(parsed_code: ast.Module) -> ast.Module:
     return parsed_code
 
 
-def format_exception(exception_in: BaseException, code: str, num_ignore_tracebacks: int = 0) -> str:
+def format_exception(exception_in: BaseException, filename: str, code: str, num_ignore_tracebacks: int = 0) -> str:
     seen_exceptions = set()
     messages = []
     lines = code.splitlines()
@@ -144,7 +144,8 @@ def format_exception(exception_in: BaseException, code: str, num_ignore_tracebac
                 num_ignore_tracebacks -= 1
                 continue
 
-            if frame_summary.lineno is not None and 0 < frame_summary.lineno <= len(lines):
+            if frame_summary.filename == filename and \
+                    (frame_summary.lineno is not None and 0 < frame_summary.lineno <= len(lines)):
                 line = lines[frame_summary.lineno - 1]
             else:
                 line = frame_summary.line
@@ -186,7 +187,7 @@ def execute_code(code: str, filename: str, print_last_expr: bool):
         try:
             parsed_code = ast.parse(code, filename)
         except (SyntaxError, ValueError) as e:
-            unreal.log_error(format_exception(e, code, num_ignore_tracebacks=2))
+            unreal.log_error(format_exception(e, filename, code, num_ignore_tracebacks=2))
             return
 
         parsed_code = add_print_for_last_expr(parsed_code)
@@ -196,7 +197,7 @@ def execute_code(code: str, filename: str, print_last_expr: bool):
     try:
         exec(compile(parsed_code, filename, 'exec'), get_exec_globals())
     except Exception as e:
-        unreal.log_error(format_exception(e, code, num_ignore_tracebacks=1))
+        unreal.log_error(format_exception(e, filename, code, num_ignore_tracebacks=1))
 
 
 def main(exec_file: str, exec_origin: str, is_debugging: bool, name_var: str | None = None, print_last_expr=False):
