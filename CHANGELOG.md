@@ -1,5 +1,10 @@
 # Change Log
 
+## [1.6.3] - 2025-01-15
+
+### Fixed:
+- User exceptions not being formatted correctly
+
 ## [1.6.2] - 2025-01-11
 
 ### Fixed:
