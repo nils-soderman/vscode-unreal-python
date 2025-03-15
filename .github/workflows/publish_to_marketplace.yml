@@ -1,4 +1,4 @@
-name: Publish to VS Code Marketplace
+name: Publish
 
 on:
     push:
@@ -14,8 +14,13 @@ jobs:
               with:
                   node-version: 20
             - run: npm ci
-            - name: Publish
-              uses: HaaLeo/publish-vscode-extension@v1
+            - name: Publish to Visual Studio Marketplace
+              uses: HaaLeo/publish-vscode-extension@v2
               with:
                 pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
                 registryUrl: https://marketplace.visualstudio.com
+            - name: Publish to Open VSX Registry
+              uses: HaaLeo/publish-vscode-extension@v2
+              id: publishToOpenVSX
+              with:
+                pat: ${{ secrets.OPEN_VSX_TOKEN }}
