@@ -171,6 +171,13 @@ def format_exception(exception_in: BaseException, filename: str, code: str, num_
                 )
             )
 
+        if isinstance(exception, SyntaxError):
+            if exception.filename == filename:
+                exception.filename = "%s:%s" % (exception.filename, exception.lineno)
+                if exception.lineno is not None and 0 < exception.lineno <= len(lines):
+                    line = lines[exception.lineno - 1]
+                    exception.text = line
+
         text = "Traceback (most recent call last):\n"
         text += "".join(traceback.format_list(traceback_stack))
         text += "".join(traceback.format_exception_only(type(exception), exception))
