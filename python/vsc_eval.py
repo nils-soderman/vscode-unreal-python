@@ -1,4 +1,4 @@
-import json
+import json  # Needs to be here to ensure the json module is available in the exec scope
 
 def vsc_eval(filepath: str, function_name: str, **args):
     """

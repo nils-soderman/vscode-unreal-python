@@ -256,9 +256,11 @@ async function onRemoteInstanceCreated(instance: RemoteExecution) {
  * Called when the remote connection is closed
  */
 async function onRemoteConnectionClosed() {
+    bHasCreatedEvalFunction = false;
+
     const remoteExecution = await getRemoteExecutionInstance(false);
     if (!remoteExecution?.hasCommandConnection())
-        removeStatusBarItem();
+        removeStatusBarItem();    
 
     logger.log("Remote connection closed");
 }
@@ -342,5 +344,4 @@ export function logResponseAndReportErrors(response: IRemoteExecutionMessageComm
 export async function closeRemoteConnection() {
     gCachedRemoteExecution?.stop();
     gCachedRemoteExecution = null;
-    bHasCreatedEvalFunction = false;
 }
