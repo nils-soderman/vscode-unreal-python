@@ -116,7 +116,6 @@ export async function main() {
     // Write an info file telling mb what script to run, etc.
     const bIsDebugging = projectName !== undefined && utils.isDebuggingUnreal(projectName);
     const nameVar = extensionConfig.get<string>("execute.name");
-    const printLastExpression = extensionConfig.get<boolean>("experimental.printLastExpression");
 
     let vscodeData: any = {
         "file": fileToExecute.fsPath,
@@ -124,7 +123,6 @@ export async function main() {
         "__name__": nameVar,  // eslint-disable-line @typescript-eslint/naming-convention
         // "id": commandId,
         "isDebugging": bIsDebugging,
-        "printLastExpression": printLastExpression,
     };
 
     // Set `vscodeData` as a global dict variable, that can be read by the python script

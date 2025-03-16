@@ -189,17 +189,14 @@ def format_exception(exception_in: BaseException, filename: str, code: str, num_
     return "\nDuring handling of the above exception, another exception occurred:\n\n".join(reversed(messages))
 
 
-def execute_code(code: str, filename: str, print_last_expr: bool):
-    if print_last_expr:
-        try:
-            parsed_code = ast.parse(code, filename)
-        except (SyntaxError, ValueError) as e:
-            unreal.log_error(format_exception(e, filename, code, num_ignore_tracebacks=2))
-            return
+def execute_code(code: str, filename: str):
+    try:
+        parsed_code = ast.parse(code, filename)
+    except (SyntaxError, ValueError) as e:
+        unreal.log_error(format_exception(e, filename, code, num_ignore_tracebacks=2))
+        return
 
-        parsed_code = add_print_for_last_expr(parsed_code)
-    else:
-        parsed_code = code
+    parsed_code = add_print_for_last_expr(parsed_code)
 
     try:
         exec(compile(parsed_code, filename, 'exec'), get_exec_globals())
@@ -207,7 +204,7 @@ def execute_code(code: str, filename: str, print_last_expr: bool):
         unreal.log_error(format_exception(e, filename, code, num_ignore_tracebacks=1))
 
 
-def main(exec_file: str, exec_origin: str, is_debugging: bool, name_var: str | None = None, print_last_expr=False):
+def main(exec_file: str, exec_origin: str, is_debugging: bool, name_var: str | None = None):
     # Set some global variables
     exec_globals = get_exec_globals()
 
@@ -221,4 +218,4 @@ def main(exec_file: str, exec_origin: str, is_debugging: bool, name_var: str | N
 
     with open(exec_file, 'r', encoding="utf-8") as vscode_in_file:
         with UnrealLogRedirectDebugging() if is_debugging else nullcontext():
-            execute_code(vscode_in_file.read(), exec_origin, print_last_expr)
+            execute_code(vscode_in_file.read(), exec_origin)

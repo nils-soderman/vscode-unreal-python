@@ -68,12 +68,6 @@
             "default": true,
             "description": "Add the workspace folder(s) to the Python path when connecting to Unreal Engine",
             "scope": "resource"
-          },
-          "ue-python.experimental.printLastExpression": {
-            "type": "boolean",
-            "default": false,
-            "markdownDescription": "Wrap the last expression in a `print()` statement when executing code, mimicking the behavior of the Python REPL. This is an experimental feature, please report any feedback here: https://github.com/nils-soderman/vscode-unreal-python/issues/38",
-            "scope": "resource"
           }
         }
       },

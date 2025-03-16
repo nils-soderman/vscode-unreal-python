@@ -18,6 +18,5 @@ vscode_execute.main(
     vscode_globals.get("file"),
     vscode_globals.get("__file__"),
     vscode_globals.get("isDebugging"),
-    vscode_globals.get("__name__"),
-    vscode_globals.get("printLastExpression")
+    vscode_globals.get("__name__")
 )

@@ -161,8 +161,6 @@ suite('Execute', function () {
     });
 
     test('Print Last Expression', async function () {
-        extensionConfig.update("experimental.printLastExpression", true); // TODO: Remove when this is no longer experimental
-
         const doc = await vscode.workspace.openTextDocument({ language: "python", content: `5\n10` });
         const editor = await vscode.window.showTextDocument(doc);
 
