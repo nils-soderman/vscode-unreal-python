@@ -1,4 +1,4 @@
-import json  # Needs to be here to ensure the json module is available in the exec scope
+import json  # Needs to be here to ensure the json module is available in remote-handler.ts `evaluateFunction`
 
 def vsc_eval(filepath: str, function_name: str, **args):
     """
