@@ -3,7 +3,7 @@
 ## [1.7.0] - 2025-03-16
 
 ### Changed:
-- Printing the last expression is now the default behaviour, and setting `ue-python.experimental.printLastExpression` has been removed [#38](https://github.com/nils-soderman/vscode-unreal-python/issues/38)
+- Printing the last expression is now the default behavior, and setting `ue-python.experimental.printLastExpression` has been removed [#38](https://github.com/nils-soderman/vscode-unreal-python/issues/38)
 - The 'UE Python Log' output channel is now of type `LogOutputChannel`, leading to improved readability
 - Suppress deprecation warnings when opening the documentation
 
