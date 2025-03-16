@@ -6,6 +6,7 @@ containing the table of contents, including classes, methods, properties, etc.
 """
 from __future__ import annotations
 
+import warnings
 import inspect
 import types
 import json
@@ -23,8 +24,8 @@ def issubclass_strict(__cls: type, __class_or_tuple):
     return __cls is not __class_or_tuple
 
 
-class UnrealClassRepresentation():
-    """ 
+class UnrealClassRepresentation:
+    """
     Each class in the unreal API will be represented by an instance of this class. (e.g. Enums, Structs, Classes)
     This class contains all methods, properties, constants, etc. of the class it represents.
     """
@@ -81,7 +82,7 @@ class UnrealClassRepresentation():
         return data
 
 
-class TableOfContents():
+class TableOfContents:
     """ Main class used for generating the table of contents. """
     def __init__(self):
         self.classes: list[UnrealClassRepresentation] = []
@@ -135,7 +136,10 @@ class TableOfContents():
 
 def get_table_of_content_json():
     table_of_contents = TableOfContents()
-    table_of_contents.load()
+    with warnings.catch_warnings():
+        # Suppress warnings about deprecated classes
+        warnings.simplefilter("ignore")
+        table_of_contents.load()
 
     # Use separators withouth spaces to reduce the size of the JSON object
     return json.dumps(table_of_contents.get_dict(), separators=(',', ':'))
