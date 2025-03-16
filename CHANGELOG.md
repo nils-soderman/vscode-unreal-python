@@ -1,5 +1,16 @@
 # Change Log
 
+## [1.7.0] - 2025-03-16
+
+### Changed:
+- Printing the last expression is now the default behaviour, and setting `ue-python.experimental.printLastExpression` has been removed [#38](https://github.com/nils-soderman/vscode-unreal-python/issues/38)
+- The 'UE Python Log' output channel is now of type `LogOutputChannel`, leading to improved readability
+- Supress deprecation warnings when opening the documentation
+
+### Fixed:
+- User SyntaxErrors not formatted correctly when executing unsaved files
+
+
 ## [1.6.3] - 2025-01-15
 
 ### Fixed:
@@ -19,7 +30,7 @@
 ## [1.6.0] - 2025-01-06
 
 ### Fixed:
-- Code is no longer parsed twice when using [ue-python.experimental.printLastExpression](vscode://settings/ue-python.experimental.printLastExpression)
+- Code is no longer parsed twice when using `ue-python.experimental.printLastExpression`
 - Changed how the extension communicates with Unreal, removing some unwanted prints to stdout
 - Improved how user tracebacks are handled
 - Documentation data is no longer written to a file, all data is now sent over the socket [#40](https://github.com/nils-soderman/vscode-unreal-python/issues/40)
@@ -27,7 +38,7 @@
 ## [1.5.0] - 2024-11-17
 
 ### Added:
-- Added experimental setting [ue-python.experimental.printLastExpression](vscode://settings/ue-python.experimental.printLastExpression) that wraps the last expression in a `print()` statement when executing code, mimicking the behavior of the Python REPL [#38](https://github.com/nils-soderman/vscode-unreal-python/issues/38)
+- Added experimental setting `ue-python.experimental.printLastExpression` that wraps the last expression in a `print()` statement when executing code, mimicking the behavior of the Python REPL [#38](https://github.com/nils-soderman/vscode-unreal-python/issues/38)
 
 ## [1.4.1] - 2024-08-25
 
