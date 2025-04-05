@@ -89,12 +89,14 @@ def add_print_for_last_expr(parsed_code: ast.Module) -> ast.Module:
         if isinstance(last_expr, ast.Expr):
             temp_var_name = "_"
 
-            line_info = {
+            line_info: dict = {
                 "lineno": last_expr.lineno,
-                "end_lineno": last_expr.end_lineno,
                 "col_offset": last_expr.col_offset,
-                "end_col_offset": last_expr.end_col_offset
             }
+
+            if sys.version_info >= (3, 8):
+                line_info["end_lineno"] = last_expr.end_lineno
+                line_info["end_col_offset"] = last_expr.end_col_offset
 
             # Assign the last expression to a temporary variable
             temp_var_assign = ast.Assign(
