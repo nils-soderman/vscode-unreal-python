@@ -10,7 +10,6 @@ import logging
 import ast
 import sys
 import os
-import re
 
 from contextlib import nullcontext
 
