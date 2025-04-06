@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 import * as crypto from 'crypto';
 
 import * as utils from '../modules/utils';
+import * as logger from '../modules/logger';
 
 import * as remoteHandler from "../modules/remote-handler";
 import * as vsCodeExec from "../modules/code-exec";
@@ -56,11 +57,14 @@ async function cleanUpTempFiles(commandId: string) {
 // ------------------------------------------------------------------------------------------
 
 /** 
- * Handle data recived from the Unreal python server  
- * Because 'vscode_execute.py' re-directs all of the output through a .txt file, `message` will be empty,
- * instead use `readResponse` to fetch the output. 
- * */
+ * Handle the response recived from Unreal
+ */
 function handleResponse(message: IRemoteExecutionMessageCommandOutputData, commandId: string, isDebugging: boolean) {
+    if (!message.success) {
+        logger.logError("Failed to execute code", Error(message.result));
+        return;
+    }
+
     // If user is debugging, all output will automatically be appended to the debug console
     if (isDebugging) {
         vscode.debug.activeDebugConsole.appendLine(">>>");
