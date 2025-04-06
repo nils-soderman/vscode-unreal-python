@@ -2,7 +2,7 @@
 
 ## [1.7.1] - 2025-04-06
 
-- Fixed executing code not working with Python versions below 3.8
+- Fixed executing code not working with Python versions below 3.8 [#46](https://github.com/nils-soderman/vscode-unreal-python/issues/46)
 
 ## [1.7.0] - 2025-03-16
 
