@@ -61,7 +61,7 @@ async function cleanUpTempFiles(commandId: string) {
  */
 function handleResponse(message: IRemoteExecutionMessageCommandOutputData, commandId: string, isDebugging: boolean) {
     if (!message.success) {
-        logger.logError("Failed to execute code", Error(message.result));
+        logger.showError("Failed to execute code", Error(message.result));
         return;
     }
 

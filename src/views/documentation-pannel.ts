@@ -62,15 +62,15 @@ async function getTableOfContents() {
     const getTableOfContentScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.buildDocumentationToC);
 
     const response = await remoteHandler.evaluateFunction(getTableOfContentScript, "get_table_of_content_json");
-    if (response && remoteHandler.logResponseAndReportErrors(response, "Failed to get documentation")) {
+    if (response && response.success) {
         // As the result is stringified JSON, remove the quotes and parse it
         const result = response.result.replace(/^'|'$/g, '');
         try {
             return JSON.parse(result);
         }
         catch (e) {
-            logging.log(result);
-            logging.logError("Failed to parse JSON", e as Error);
+            logging.info(result);
+            logging.showError("Failed to parse JSON", e as Error);
         }
     }
 
@@ -89,15 +89,15 @@ async function getPageContent(module: string) {
     };
 
     const response = await remoteHandler.evaluateFunction(getDocPageContentScirpt, "get_object_documentation_json", kwargs);
-    if (response && remoteHandler.logResponseAndReportErrors(response, "Failed to get documentation")) {
+    if (response && response.success) {
         // As the result is stringified JSON, make it parsable
         const result = response.result.replace(/^'|'$/g, '').replace(/\\'/g, '\'').replace(/\\\\/g, '\\');
         try {
             return JSON.parse(result);
         }
         catch (e) {
-            logging.log(result);
-            logging.logError("Failed to parse JSON", e as Error);
+            logging.info(result);
+            logging.showError("Failed to parse JSON", e as Error);
         }
     }
 }

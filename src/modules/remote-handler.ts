@@ -132,11 +132,11 @@ export async function getRemoteExecutionInstance(bEnsureExists = true) {
             gCachedRemoteExecution.events.addEventListener("commandConnectionClosed", onRemoteConnectionClosed);
             await gCachedRemoteExecution.start();
 
-            logger.log("Remote execution instance created");
-            logger.log(`Multicast TTL: ${config.multicastTTL}`);
-            logger.log(`Multicast Bind Address: ${config.multicastBindAddress}`);
-            logger.log(`Multicast Group Endpoint: ${config.multicastGroupEndpoint[0]}:${config.multicastGroupEndpoint[1]}`);
-            logger.log(`Command Endpoint: ${config.commandEndpoint[0]}:${config.commandEndpoint[1]}`);
+            logger.info("Remote execution instance created");
+            logger.info(`Multicast TTL: ${config.multicastTTL}`);
+            logger.info(`Multicast Bind Address: ${config.multicastBindAddress}`);
+            logger.info(`Multicast Group Endpoint: ${config.multicastGroupEndpoint[0]}:${config.multicastGroupEndpoint[1]}`);
+            logger.info(`Command Endpoint: ${config.commandEndpoint[0]}:${config.commandEndpoint[1]}`);
         }
     }
 
@@ -172,20 +172,20 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
             const extensionConfig = utils.getExtensionConfig();
             const timeout: number = extensionConfig.get("remote.timeout") ?? 3000;
 
-            logger.log(`Connecting with a timeout of ${timeout}ms.`);
+            logger.info(`Connecting with a timeout of ${timeout}ms.`);
 
             try {
                 const node = await remoteExecution.getFirstRemoteNode(1000, timeout);
                 await remoteExecution.openCommandConnection(node, true, timeout);
 
-                logger.log("Connected to: " + JSON.stringify(node.data));
+                logger.info("Connected to: " + JSON.stringify(node.data));
 
                 await onRemoteInstanceCreated(remoteExecution);
 
                 updateStatusBar(node);
             }
             catch (error: any) {
-                logger.log(error);
+                logger.info(error);
                 let message: string = error.message;
                 if (message.startsWith("Timed out"))
                     message = "Timed out while trying to connect to Unreal Engine.";
@@ -239,12 +239,12 @@ async function onRemoteInstanceCreated(instance: RemoteExecution) {
 
             if (response) {
                 if (response.result && response.result !== "None")
-                    logger.log(response.result);
+                    logger.info(response.result);
                 for (const output of response.output) {
                     if (output.type === ECommandOutputType.ERROR)
-                        logger.logError("Ran into an error while adding workspace folders to the python path.", new Error(output.output));
+                        logger.showError("Ran into an error while adding workspace folders to the python path.", new Error(output.output));
                     else
-                        logger.log(`[${output.type}] ${output.output}`);
+                        logger.info(`[${output.type}] ${output.output}`);
                 }
             }
         }
@@ -260,9 +260,9 @@ async function onRemoteConnectionClosed() {
 
     const remoteExecution = await getRemoteExecutionInstance(false);
     if (!remoteExecution?.hasCommandConnection())
-        removeStatusBarItem();    
+        removeStatusBarItem();
 
-    logger.log("Remote connection closed");
+    logger.info("Remote connection closed");
 }
 
 
@@ -301,6 +301,7 @@ export function executeFile(uri: vscode.Uri, globals: any = {}) {
     return runCommand(command);
 }
 
+
 export async function evaluateFunction(uri: vscode.Uri, functionName: string, kwargs: any = {}) {
     if (!bHasCreatedEvalFunction) {
         const filepath = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.eval);
@@ -314,27 +315,22 @@ export async function evaluateFunction(uri: vscode.Uri, functionName: string, kw
     }
     command += `)`;
 
-    return runCommand(command, true);
-}
+    const response = await runCommand(command, true);
+    if (response) {
+        for (const output of response.output) {
+            if (output.type === ECommandOutputType.ERROR)
+                logger.error(output.output.trimEnd());
+            else if (output.type === ECommandOutputType.WARNING)
+                logger.warn(output.output.trimEnd());
+            else
+                logger.info(output.output.trimEnd());
+        }
 
-/**
- * Log all the outputs from the response, and check if there are any errors
- * @param response The response from the remote execution
- * @param errorMsg The error message to show if there are any errors
- * @returns The `response.success` value
- */
-export function logResponseAndReportErrors(response: IRemoteExecutionMessageCommandOutputData, errorMsg: string): boolean {
-    for (const output of response.output) {
-        if (output.type === ECommandOutputType.ERROR)
-            logger.logError(errorMsg, new Error(output.output));
-        else
-            logger.log(output.output);
+        if (!response.success)
+            logger.showError("Extension ran into an error", new Error(response.result));
     }
 
-    if (!response.success)
-        logger.logError(errorMsg, new Error(response.result));
-
-    return response.success;
+    return response;
 }
 
 

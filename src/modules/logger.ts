@@ -4,9 +4,9 @@ const OUTPUT_CHANNEL_NAME = "UE Python Log";
 let outputChannel: vscode.LogOutputChannel;
 
 
-function getOutputChannel() {
+export function getOutputChannel() {
     if (!outputChannel) {
-        outputChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME, {log: true});
+        outputChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME, { log: true });
     }
     return outputChannel;
 }
@@ -16,8 +16,16 @@ function getOutputChannel() {
  * Log a message to the output channel
  * @param message The message to log
  */
-export function log(message: string) {
+export function info(message: string) {
     getOutputChannel().info(message);
+}
+
+export function warn(message: string) {
+    getOutputChannel().warn(message);
+}
+
+export function error(message: string) {
+    getOutputChannel().error(message);
 }
 
 
@@ -26,10 +34,11 @@ export function log(message: string) {
  * @param message The message to show to the user in the error dialog
  * @param error The full error message to log
  */
-export function logError(message: string, error: Error) {
+export function showError(message: string, error?: Error) {
     const outputChannel = getOutputChannel();
 
-    outputChannel.error(error.message);
+    if (error)
+        outputChannel.error(error.message);
 
     const OPTION_SHOW_LOG = "Show Log";
     vscode.window.showErrorMessage(message, OPTION_SHOW_LOG).then((value) => {

@@ -39,7 +39,7 @@ export async function getUnrealStubDirectory(): Promise<vscode.Uri | null> {
     const getPythonPathScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.codeCompletionGetPath);
     const response = await remoteHandler.evaluateFunction(getPythonPathScript, "get_python_stub_dir");
 
-    if (response && remoteHandler.logResponseAndReportErrors(response, "Failed to get the path to the Unreal Engine stub")) {
+    if (response && response.success) {
         // The result string contains quote characters, strip those
         const stubDirectoryPath = response.result.slice(1, -1);
         return vscode.Uri.file(stubDirectoryPath);
@@ -130,7 +130,7 @@ function addPythonAnalysisPath(pathToAdd: string): "add" | "exists" | false {
 
     let extraPathsConfig = pythonConfig.inspect<string[]>(CONFIG_KEY_EXTRA_PATHS);
     if (!extraPathsConfig) {
-        logger.log(`Failed to get the config '${extraPathsConfigName}'`);
+        logger.info(`Failed to get the config '${extraPathsConfigName}'`);
         return false;
     }
 
@@ -142,7 +142,7 @@ function addPythonAnalysisPath(pathToAdd: string): "add" | "exists" | false {
     // Check if the path already exists
     if (newPathsValue.some(path => utils.isPathsSame(path, pathToAdd))) {
         const message = `Path "${pathToAdd}" already exists in '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`;
-        logger.log(message);
+        logger.info(message);
         vscode.window.showInformationMessage(message);
         return "exists";
     }
@@ -155,11 +155,11 @@ function addPythonAnalysisPath(pathToAdd: string): "add" | "exists" | false {
         pythonConfig.update(CONFIG_KEY_EXTRA_PATHS, newPathsValue, settingsInfo.scope);
     }
     catch (error) {
-        logger.logError(`Failed to update '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`, error as Error);
+        logger.showError(`Failed to update '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`, error as Error);
         return false;
     }
 
-    logger.log(`Added path "${pathToAdd}" to '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`);
+    logger.info(`Added path "${pathToAdd}" to '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`);
 
     vscode.window.showInformationMessage(`Updated '${extraPathsConfigName}' in ${settingsInfo.niceName} settings.`, "Show Setting").then(
         (value) => {
@@ -183,7 +183,7 @@ export async function validateStubAndAddToPath(stubDirectoryPath: vscode.Uri): P
     const stubFilepath = vscode.Uri.joinPath(stubDirectoryPath, STUB_FILE_NAME);
 
     if (!await utils.uriExists(stubFilepath)) {
-        logger.log(`Failed to find the generated stub file: "${stubFilepath}"`);
+        logger.info(`Failed to find the generated stub file: "${stubFilepath}"`);
         // A generated stub file could not be found, ask the user to enable developer mode first
         vscode.window.showErrorMessage(
             "To setup code completion you first need to enable Developer Mode in Unreal Engine's Python plugin settings, then restart the Unreal",
