@@ -3,7 +3,7 @@
   "displayName": "Unreal Engine Python",
   "publisher": "NilsSoderman",
   "description": "Tools to assist when writing Python code for Unreal Engine",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "categories": [
     "Other",
     "Debuggers"
@@ -46,6 +46,11 @@
         "category": "Unreal Python",
         "title": "Select Instance",
         "command": "ue-python.selectInstance"
+      },
+      {
+        "category": "Unreal Python",
+        "title": "Reload Modules",
+        "command": "ue-python.reloadModules"
       }
     ],
     "keybindings": [
