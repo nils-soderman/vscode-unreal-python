@@ -1,5 +1,6 @@
 import json  # Needs to be here to ensure the json module is available in remote-handler.ts `evaluateFunction`
 
+
 def vsc_eval(filepath: str, function_name: str, **args):
     """
     Evaluate a function in a Python file, and return the function's return value
@@ -11,7 +12,7 @@ def vsc_eval(filepath: str, function_name: str, **args):
     # Find the function
     function = None
     exec_globals = {}
-    exec(code, exec_globals)
+    exec(compile(code, filepath, 'exec'), exec_globals)
     if function_name in exec_globals:
         function = exec_globals[function_name]
     else:
