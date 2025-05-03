@@ -8,6 +8,7 @@ import * as documentationPannel from './views/documentation-pannel';
 import * as selectInstance from './scripts/select-instance';
 import * as execute from './scripts/execute';
 import * as attach from './scripts/attach';
+import * as reload from './scripts/reload';
 
 
 export function activate(context: vscode.ExtensionContext) {
@@ -42,6 +43,12 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('ue-python.selectInstance', () => {
 			selectInstance.main();
+		})
+	);
+
+	context.subscriptions.push(
+		vscode.commands.registerCommand('ue-python.reloadModules', () => {
+			reload.reload();
 		})
 	);
 
