@@ -130,7 +130,8 @@ export async function main() {
             exec_origin: vscode.window.activeTextEditor.document.uri.fsPath,
             is_debugging: bIsDebugging,
             name_var: nameVar
-        }
+        }, 
+        false
     );
 
     if (response) {

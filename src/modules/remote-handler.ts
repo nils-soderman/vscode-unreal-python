@@ -302,7 +302,7 @@ export function executeFile(uri: vscode.Uri, globals: any = {}) {
 }
 
 
-export async function evaluateFunction(uri: vscode.Uri, functionName: string, kwargs: any = {}) {
+export async function evaluateFunction(uri: vscode.Uri, functionName: string, kwargs: any = {}, logOutput = true) {
     if (!bHasCreatedEvalFunction) {
         const filepath = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.eval);
         await executeFile(filepath);
@@ -317,6 +317,8 @@ export async function evaluateFunction(uri: vscode.Uri, functionName: string, kw
 
     const response = await runCommand(command, true);
     if (response) {
+        if (logOutput)
+        {
         for (const output of response.output) {
             if (output.type === ECommandOutputType.ERROR)
                 logger.error(output.output.trimEnd());
@@ -324,6 +326,7 @@ export async function evaluateFunction(uri: vscode.Uri, functionName: string, kw
                 logger.warn(output.output.trimEnd());
             else
                 logger.info(output.output.trimEnd());
+            }
         }
 
         if (!response.success)
