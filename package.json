@@ -211,15 +211,15 @@
     "@types/sinon": "^17.0.4",
     "@types/tcp-port-used": "^1.0.4",
     "@types/vscode": "^1.91.0",
-    "@typescript-eslint/eslint-plugin": "^8.26.1",
-    "@typescript-eslint/parser": "^8.26.1",
+    "@typescript-eslint/eslint-plugin": "^8.31.1",
+    "@typescript-eslint/parser": "^8.31.1",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1",
-    "esbuild": "^0.25.1",
-    "eslint": "^9.22.0",
-    "mocha": "^11.1.0",
-    "sinon": "^19.0.2",
-    "typescript": "^5.8.2"
+    "@vscode/test-electron": "^2.5.2",
+    "esbuild": "^0.25.3",
+    "eslint": "^9.26.0",
+    "mocha": "^11.2.2",
+    "sinon": "^20.0.0",
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "tcp-port-used": "^1.0.2",
