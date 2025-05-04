@@ -75,7 +75,7 @@ export async function installDebugpy(): Promise<boolean> {
     const installDebugpyScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.attach);
     const response = await remoteHandler.evaluateFunction(installDebugpyScript, "install_debugpy");
     if (response) {
-        if (!response.success && response.result === "True")
+        if (response.success && response.result === "True")
             return true;
 
         logger.showError("Failed to install debugpy", Error(response.result));
