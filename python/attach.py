@@ -28,10 +28,13 @@ def install_debugpy() -> bool:
     if not python_exe:
         return False
 
-    debugpy_install_args = [python_exe, "-m", "pip", "install", "-q", "--no-warn-script-location", "debugpy"]
+    debugpy_install_args = [python_exe, "-m", "pip", "install", "debugpy"]
+
+    env = os.environ.copy()
+    env["PYTHONNOUSERSITE"] = "1"
 
     try:
-        result = subprocess.run(debugpy_install_args, capture_output=True, check=True, text=True)
+        result = subprocess.run(debugpy_install_args, capture_output=True, check=True, text=True, env=env)
         unreal.log(result.stdout)
         unreal.log(result.stderr)
     except subprocess.CalledProcessError as e:

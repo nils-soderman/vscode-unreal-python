@@ -77,8 +77,6 @@ export async function installDebugpy(): Promise<boolean> {
     if (response) {
         if (response.success && response.result === "True")
             return true;
-
-        logger.showError("Failed to install debugpy", Error(response.result));
     }
 
     return false;
