@@ -230,23 +230,12 @@ async function onRemoteInstanceCreated(instance: RemoteExecution) {
         }
 
         if (foldersToAddToPath.length > 0) {
-            const response = await executeFile(
-                utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.addSysPath),
+            await evaluateFunction(
+                utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.addSysPath), "add_paths",
                 {
-                    vsc_paths: foldersToAddToPath // eslint-disable-line @typescript-eslint/naming-convention
+                    paths: foldersToAddToPath
                 }
             );
-
-            if (response) {
-                if (response.result && response.result !== "None")
-                    logger.info(response.result);
-                for (const output of response.output) {
-                    if (output.type === ECommandOutputType.ERROR)
-                        logger.showError("Ran into an error while adding workspace folders to the python path.", new Error(output.output));
-                    else
-                        logger.info(`[${output.type}] ${output.output}`);
-                }
-            }
         }
     }
 }
@@ -319,13 +308,13 @@ export async function evaluateFunction(uri: vscode.Uri, functionName: string, kw
     if (response) {
         if (logOutput)
         {
-        for (const output of response.output) {
-            if (output.type === ECommandOutputType.ERROR)
-                logger.error(output.output.trimEnd());
-            else if (output.type === ECommandOutputType.WARNING)
-                logger.warn(output.output.trimEnd());
-            else
-                logger.info(output.output.trimEnd());
+            for (const output of response.output) {
+                if (output.type === ECommandOutputType.ERROR)
+                    logger.error(output.output.trimEnd());
+                else if (output.type === ECommandOutputType.WARNING)
+                    logger.warn(output.output.trimEnd());
+                else
+                    logger.info(output.output.trimEnd());
             }
         }
 
