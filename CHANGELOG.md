@@ -1,8 +1,9 @@
 # Change Log
 
-## [1.8.0] - UNRELEASED
+## [1.8.0] - 2025-05-04
 
 - Added command `Unreal Python: Reload Modules` that reloads all modules within the current workspace folder(s)
+- Attaching to Unreal Engine now uses the _"debugpy"_ configuration type, instead of _"python"_ which is deprecated
 
 ## [1.7.1] - 2025-04-06
 

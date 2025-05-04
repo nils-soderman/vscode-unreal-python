@@ -291,14 +291,14 @@ export function executeFile(uri: vscode.Uri, globals: any = {}) {
 }
 
 
-export async function evaluateFunction(uri: vscode.Uri, functionName: string, kwargs: any = {}, logOutput = true) {
+export async function evaluateFunction(uri: vscode.Uri, functionName: string, kwargs: any = {}, useGlobals = false, logOutput = true) {
     if (!bHasCreatedEvalFunction) {
         const filepath = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.eval);
         await executeFile(filepath);
         bHasCreatedEvalFunction = true;
     }
 
-    let command = `vsc_eval(r'${uri.fsPath}', '${functionName}'`;
+    let command = `vsc_eval(r'${uri.fsPath}', '${functionName}', ${useGlobals ? "True" : "False"}`;
     if (Object.keys(kwargs).length > 0) {
         command += `, **json.loads(r'${JSON.stringify(kwargs)}')`;
     }
