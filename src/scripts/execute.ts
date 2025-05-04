@@ -121,19 +121,18 @@ export async function main() {
     const bIsDebugging = projectName !== undefined && utils.isDebuggingUnreal(projectName);
     const nameVar = extensionConfig.get<string>("execute.name");
 
-    let vscodeData: any = {
-        "file": fileToExecute.fsPath,
-        "__file__": vscode.window.activeTextEditor.document.uri.fsPath,  // eslint-disable-line @typescript-eslint/naming-convention
-        "__name__": nameVar,  // eslint-disable-line @typescript-eslint/naming-convention
-        // "id": commandId,
-        "isDebugging": bIsDebugging,
-    };
+    const execFile = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.execute);
+    const response = await remoteHandler.evaluateFunction(
+        execFile,
+        "main",
+        {
+            exec_file: fileToExecute.fsPath,
+            exec_origin: vscode.window.activeTextEditor.document.uri.fsPath,
+            is_debugging: bIsDebugging,
+            name_var: nameVar
+        }
+    );
 
-    // Set `vscodeData` as a global dict variable, that can be read by the python script
-    const globalVariables = { "vscode_globals": JSON.stringify(vscodeData) };  // eslint-disable-line @typescript-eslint/naming-convention
-
-    const execFile = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.executeEntry);
-    const response = await remoteHandler.executeFile(execFile, globalVariables);
     if (response) {
         handleResponse(response, commandId, bIsDebugging);
         return true;

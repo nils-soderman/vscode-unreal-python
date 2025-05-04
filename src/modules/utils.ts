@@ -39,11 +39,10 @@ export function getExtensionUri(): vscode.Uri {
 export class FPythonScriptFiles {
     static readonly buildDocumentationToC = "documentation/build_toc";
     static readonly getDocPageContent = "documentation/get_page_content";
-    static readonly executeEntry = "execute/vscode_execute_entry";
-    static readonly execute = "execute/vscode_execute";
-    static readonly codeCompletionGetPath = "setup_code_completion/get_stub_path";
+    static readonly getStubPath = "get_stub_path";
     static readonly addSysPath = "add_sys_path";
     static readonly attach = "attach";
+    static readonly execute = "execute";
     static readonly reload = "reload";
     static readonly eval = "vsc_eval";
 

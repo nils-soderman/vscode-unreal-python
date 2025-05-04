@@ -36,7 +36,7 @@ interface IInspectionSettings {
  * Based on the currently connected Unreal Engine project.
  */
 export async function getUnrealStubDirectory(): Promise<vscode.Uri | null> {
-    const getPythonPathScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.codeCompletionGetPath);
+    const getPythonPathScript = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.getStubPath);
     const response = await remoteHandler.evaluateFunction(getPythonPathScript, "get_python_stub_dir");
 
     if (response && response.success) {

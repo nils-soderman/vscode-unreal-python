@@ -4,7 +4,6 @@
  */
 
 import * as vscode from 'vscode';
-import * as path from 'path';
 
 import * as remoteHandler from '../modules/remote-handler';
 import * as logger from '../modules/logger';
@@ -113,14 +112,11 @@ async function startDebugpyServer(port: number): Promise<boolean> {
  * @param attachSettings Launch settings for the debug session
  */
 async function attach(name: string, attachSettings: IAttachConfiguration) {
-    const moduleToIgnore = path.basename(utils.FPythonScriptFiles.execute);
-
     const configuration = {
         "name": name,
-        "type": "python",
+        "type": "debugpy",
         "request": "attach",
         "host": "localhost",
-        "rules": [{ "module": moduleToIgnore, "include": false }], // Make sure the execute module isn't debugged
         ...attachSettings
     };
 
