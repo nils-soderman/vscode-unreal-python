@@ -2,29 +2,14 @@
 
 Contributions are welcome! 
 
-If it's a major change, please open an issue first to discuss what you would like to change.
+Refer to the offical documentation for information about extension development: https://code.visualstudio.com/api
 
 
-## Setting up your development environment
+## Requirements
+This extension uses [esbuild](https://esbuild.github.io/), 
+therefore you will need to install
+[connor4312.esbuild-problem-matchers](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers) to be able to debug the extension.
 
-### Prerequisites
-- Install [Node.js](https://nodejs.org/en/download/)
-- Install the VS Code extensions recommended by this workspace:
-    - [dbaeumer.vscode-eslint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
-    - [connor4312.esbuild-problem-matchers](https://marketplace.visualstudio.com/items?itemName=connor4312.esbuild-problem-matchers)
-
-### Setup
-- Clone this repository
-- Run the command `npm install` in the root directory of the repository
-- Open the _"vscode-unreal-python.code-workspace"_ workspace in VS Code
-
-### Debugging the extension
-- Once the workspace is open, press <kbd>F5</kbd> to start debugging the extension.
-    The extension will be launched in a new VS Code window. You should now be able to set breakpoints, see logs, etc.
-- After making a change to the source code you must reload the extension, by e.g. running "Developer: Reload Window" from the command palette in the window running the extension.
-
-
-More information about developing VS Code extensions can be found at: https://code.visualstudio.com/api
 
 <br>
 
