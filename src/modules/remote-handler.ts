@@ -11,7 +11,6 @@ import * as utils from "./utils";
 import * as logger from "./logger";
 
 let gIsInitializatingConnection = false;
-let bHasCreatedEvalFunction = false;
 let gCachedRemoteExecution: RemoteExecution | null = null;
 let gStatusBarItem: vscode.StatusBarItem | null = null;
 
@@ -218,6 +217,9 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
  * Called when a remote instance is created
  */
 async function onRemoteInstanceCreated(instance: RemoteExecution) {
+    if (!await defineVceEvalFunction())
+        return;
+
     // Check if we should add any workspace folders to the python path
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (workspaceFolders) {
@@ -245,13 +247,33 @@ async function onRemoteInstanceCreated(instance: RemoteExecution) {
  * Called when the remote connection is closed
  */
 async function onRemoteConnectionClosed() {
-    bHasCreatedEvalFunction = false;
-
     const remoteExecution = await getRemoteExecutionInstance(false);
     if (!remoteExecution?.hasCommandConnection())
         removeStatusBarItem();
 
     logger.info("Remote connection closed");
+}
+
+/**
+ * Define the vce_eval function used in `evaluateFunction`
+ */
+export async function defineVceEvalFunction(): Promise<boolean> {
+    const filepath = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.eval);
+    const vsc_eval_response = await executeFile(filepath);
+    if (!vsc_eval_response) {
+        return false;
+    }
+
+    for (const output of vsc_eval_response.output) {
+        logger.info(output.output.trimEnd());
+    }
+
+    if (!vsc_eval_response.success) {
+        logger.showError("Extension ran into an error", new Error(vsc_eval_response.result));
+        return false;
+    }
+
+    return true;
 }
 
 
@@ -292,12 +314,6 @@ export function executeFile(uri: vscode.Uri, globals: any = {}) {
 
 
 export async function evaluateFunction(uri: vscode.Uri, functionName: string, kwargs: any = {}, useGlobals = false, logOutput = true) {
-    if (!bHasCreatedEvalFunction) {
-        const filepath = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.eval);
-        await executeFile(filepath);
-        bHasCreatedEvalFunction = true;
-    }
-
     let command = `vsc_eval(r'${uri.fsPath}', '${functionName}', ${useGlobals ? "True" : "False"}`;
     if (Object.keys(kwargs).length > 0) {
         command += `, **json.loads(r'${JSON.stringify(kwargs)}')`;
@@ -306,8 +322,7 @@ export async function evaluateFunction(uri: vscode.Uri, functionName: string, kw
 
     const response = await runCommand(command, true);
     if (response) {
-        if (logOutput)
-        {
+        if (logOutput) {
             for (const output of response.output) {
                 if (output.type === ECommandOutputType.ERROR)
                     logger.error(output.output.trimEnd());
