@@ -180,6 +180,7 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
                 });
 
                 closeRemoteConnection();
+                gIsInitializatingConnection = false;
                 return null;
             }
 
