@@ -35,15 +35,6 @@ export function removeStatusBarItem() {
 }
 
 
-export function updateStatusBar(node: RemoteExecutionNode) {
-    const statusBarItem = getStatusBarItem();
-    if (statusBarItem) {
-        statusBarItem.text = `$(unreal-engine) ${node.data.project_name}`;
-        statusBarItem.show();
-    }
-}
-
-
 /**
  * Get a `RemoteExecutionConfig` based on the extension user settings
  */
@@ -173,18 +164,12 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
 
             logger.info(`Connecting with a timeout of ${timeout}ms.`);
 
+            let node: RemoteExecutionNode;
             try {
-                const node = await remoteExecution.getFirstRemoteNode(1000, timeout);
-                await remoteExecution.openCommandConnection(node, true, timeout);
-
-                logger.info("Connected to: " + JSON.stringify(node.data));
-
-                await onRemoteInstanceCreated(remoteExecution);
-
-                updateStatusBar(node);
+                node = await remoteExecution.getFirstRemoteNode(1000, timeout);
             }
             catch (error: any) {
-                logger.info(error);
+                logger.error(error);
                 let message: string = error.message;
                 if (message.startsWith("Timed out"))
                     message = "Timed out while trying to connect to Unreal Engine.";
@@ -197,9 +182,9 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
                 closeRemoteConnection();
                 return null;
             }
-            finally {
-                gIsInitializatingConnection = false;
-            }
+
+            await connectToRemoteInstance(remoteExecution, node, timeout);
+            gIsInitializatingConnection = false;
         }
         else {
             closeRemoteConnection();
@@ -214,10 +199,37 @@ export async function getConnectedRemoteExecutionInstance(): Promise<RemoteExecu
 
 
 /**
+ * Connect to a remote Unreal Engine instance and run the setup required for the extension to work properly
+ */
+export async function connectToRemoteInstance(instance: RemoteExecution, node: RemoteExecutionNode, timeout: number) {
+    try {
+        await instance.openCommandConnection(node, true, timeout);
+        logger.info("Connected to: " + JSON.stringify(node.data));
+
+        await onRemoteInstanceCreated(node);
+
+        return true;
+    }
+    catch (error: any) {
+        logger.showError("Failed to connect to Unreal Engine", error);
+        closeRemoteConnection();
+    }
+
+    return false;
+}
+
+
+/**
  * Called when a remote instance is created
  */
-async function onRemoteInstanceCreated(instance: RemoteExecution) {
-    if (!await defineVceEvalFunction())
+async function onRemoteInstanceCreated(node: RemoteExecutionNode) {
+    const statusBarItem = getStatusBarItem();
+    if (statusBarItem) {
+        statusBarItem.text = `$(unreal-engine) ${node.data.project_name}`;
+        statusBarItem.show();
+    }
+
+    if (!await defineVscEvalFunction())
         return;
 
     // Check if we should add any workspace folders to the python path
@@ -254,10 +266,11 @@ async function onRemoteConnectionClosed() {
     logger.info("Remote connection closed");
 }
 
+
 /**
- * Define the vce_eval function used in `evaluateFunction`
+ * Define the vsc_eval function used in `evaluateFunction`
  */
-export async function defineVceEvalFunction(): Promise<boolean> {
+export async function defineVscEvalFunction(): Promise<boolean> {
     const filepath = utils.FPythonScriptFiles.getUri(utils.FPythonScriptFiles.eval);
     const vsc_eval_response = await executeFile(filepath);
     if (!vsc_eval_response) {

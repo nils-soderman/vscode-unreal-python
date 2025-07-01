@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 
 import * as remoteHandler from '../modules/remote-handler';
+import * as utils from "../modules/utils";
 
 import { RemoteExecutionNode } from "unreal-remote-execution";
 
@@ -21,6 +22,9 @@ export async function main() {
     quickPick.placeholder = "Searching for Unreal Engine instances...";
     quickPick.busy = true;
 
+    const extensionConfig = utils.getExtensionConfig();
+    const timeout: number = extensionConfig.get("remote.timeout") ?? 3000;
+
     quickPick.onDidAccept(async () => {
         quickPick.hide();
         
@@ -35,9 +39,7 @@ export async function main() {
                 remoteExecution.closeCommandConnection();
             }
 
-            await remoteExecution.openCommandConnection(item.node);
-
-            remoteHandler.updateStatusBar(item.node);
+            await remoteHandler.connectToRemoteInstance(remoteExecution, item.node, timeout);
         }
 
         quickPick.dispose();
