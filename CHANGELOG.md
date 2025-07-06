@@ -1,6 +1,11 @@
 # Change Log
 
+## [1.8.2] - 2025-07-06
+
+- Fixed `Select Instance` command not running the setup required for the extension to work correctly [#51](https://github.com/nils-soderman/vscode-unreal-python/issues/51)
+
 ## [1.8.1] - 2025-06-03
+
 - Fixed an issue where the internal `vsc_eval` function could be undefined, preventing the extension from working correctly [#48](https://github.com/nils-soderman/vscode-unreal-python/issues/48)
 
 ## [1.8.0] - 2025-05-04
