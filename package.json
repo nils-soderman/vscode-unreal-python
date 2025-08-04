@@ -3,7 +3,7 @@
   "displayName": "Unreal Engine Python",
   "publisher": "NilsSoderman",
   "description": "Tools to assist when writing Python code for Unreal Engine",
-  "version": "1.8.2",
+  "version": "1.9.0",
   "categories": [
     "Other",
     "Debuggers"
@@ -89,6 +89,16 @@
             "type": "boolean",
             "default": true,
             "description": "Restricts debugging to user-written code only. Set to false to also enable debugging of standard library functions.",
+            "scope": "resource"
+          },
+          "ue-python.attach.type": {
+            "type":"string",
+            "enum": [
+              "debugpy",
+              "python"
+            ],
+            "default": "debugpy",
+            "description": "The attach `type` to use. 'python' has been deprecated and will be removed in a future version",
             "scope": "resource"
           }
         }

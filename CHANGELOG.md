@@ -1,5 +1,9 @@
 # Change Log
 
+## [1.9.0] - 2025-08-04
+
+- Added setting `ue-python.attach.type` to allow the deprecated 'python' config type to be used _(defaults to 'debugpy')_. This setting will be removed when 'python' is removed from the `ms-python.python` extension.
+
 ## [1.8.2] - 2025-07-06
 
 - Fixed `Select Instance` command not running the setup required for the extension to work correctly [#51](https://github.com/nils-soderman/vscode-unreal-python/issues/51)

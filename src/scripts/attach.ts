@@ -22,6 +22,7 @@ const DEBUGPY_PYPI_URL = "https://pypi.org/project/debugpy/";
 interface IAttachConfiguration {
     port: number;
     justMyCode: boolean;
+    type: string;
 };
 
 
@@ -110,12 +111,15 @@ async function startDebugpyServer(port: number): Promise<boolean> {
  * @param attachSettings Launch settings for the debug session
  */
 async function attach(name: string, attachSettings: IAttachConfiguration) {
+    const { port, ...restAttachSettings } = attachSettings;
     const configuration = {
         "name": name,
-        "type": "debugpy",
         "request": "attach",
-        "host": "localhost",
-        ...attachSettings
+        "connect": {
+            "host": "localhost",
+            "port": port
+        },
+        ...restAttachSettings
     };
 
     logger.info(`Attaching to Unreal Engine with the following config:\n${JSON.stringify(configuration, null, 4)}`);
