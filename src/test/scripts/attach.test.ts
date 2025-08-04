@@ -16,7 +16,8 @@ import * as remote from '../../modules/remote-handler';
 
 const CONFIG_KEYS = {
     port: "attach.port",
-    autoPort: "attach.autoPort"
+    autoPort: "attach.autoPort",
+    type: "attach.type"
 };
 
 
@@ -27,6 +28,7 @@ suite('Attach', function () {
     const extensionConfig = new vscodeMock.ConfigMock({
         [CONFIG_KEYS.port]: 4243,
         [CONFIG_KEYS.autoPort]: true,
+        [CONFIG_KEYS.type]: "debugpy",
         ...testUtils.CONNECTION_CONFIG
     });
 
